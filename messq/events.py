@@ -29,3 +29,4 @@ class FoodSignal:
     ts: float
     mess_id: str
     state: FoodState
+    item: str | None = None  # a tray such as "Rice"; None = the main tray (or, for OK, all trays)

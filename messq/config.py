@@ -25,6 +25,7 @@ class MessConfig:
     food_batch: int = 350
     food_refill_trigger: int = 120
     food_refill_time_min: float = 10.0
+    items: tuple[str, ...] = ("Main course", "Rice", "Roti", "Dal")  # trays the kitchen page shows; first = main
 
     @property
     def capacity_per_min(self) -> float:
@@ -48,6 +49,20 @@ class EngineConfig:
     food_low_expiry_min: float = 20.0
     assumed_compliance: float = 1.0
     natural_share: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class LayoutConfig:
+    # "doors": a screen outside each mess entrance; students see it at the mess
+    #          they were already walking to and either go in or walk to another.
+    # "hallway": one shared screen before the paths to the messes split.
+    mode: str = "doors"
+    switch_walk_s: float = 30.0  # walk from one mess door to another
+    min_saving_min: float = 2.0  # only suggest switching if it saves at least this much
+
+    def __post_init__(self):
+        if self.mode not in ("doors", "hallway"):
+            raise ValueError("layout.mode must be 'doors' or 'hallway'")
 
 
 @dataclass(frozen=True)
@@ -90,6 +105,7 @@ class AppConfig:
     engine: EngineConfig
     privacy: PrivacyConfig
     simulation: SimConfig
+    layout: LayoutConfig = field(default_factory=LayoutConfig)
 
     def mess(self, mess_id: str) -> MessConfig:
         for m in self.messes:
@@ -106,7 +122,7 @@ def load_config(path: str | os.PathLike | None = None) -> AppConfig:
 
 
 def config_from_dict(raw: dict) -> AppConfig:
-    messes = tuple(MessConfig(**m) for m in raw["mess"])
+    messes = tuple(MessConfig(**{**m, "items": tuple(m.get("items", MessConfig.items))}) for m in raw["mess"])
     if len({m.id for m in messes}) != len(messes):
         raise ValueError("mess ids must be unique")
     sim_raw = dict(raw.get("simulation", {}))
@@ -118,7 +134,8 @@ def config_from_dict(raw: dict) -> AppConfig:
         eng_raw["natural_share"] = _normalise(eng_raw["natural_share"], messes)
     engine = EngineConfig(**eng_raw)
     privacy = PrivacyConfig(**raw.get("privacy", {}))
-    return AppConfig(messes=messes, engine=engine, privacy=privacy, simulation=sim)
+    layout = LayoutConfig(**raw.get("layout", {}))
+    return AppConfig(messes=messes, engine=engine, privacy=privacy, simulation=sim, layout=layout)
 
 
 def _normalise(shares: dict[str, float], messes: tuple[MessConfig, ...]) -> dict[str, float]:

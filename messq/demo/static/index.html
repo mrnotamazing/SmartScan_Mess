@@ -38,32 +38,41 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 main { max-width: 1180px; margin: 0 auto; padding: 20px 16px 40px; }
-header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; margin-bottom: 16px; }
+header { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: end; justify-content: space-between; margin-bottom: 14px; }
 h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
 .sub { color: var(--text-2); margin: 2px 0 0; }
-.clock { font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 650; }
-.clock small { font-size: 13px; font-weight: 500; color: var(--text-2); margin-left: 6px; }
-.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+.clock { font-variant-numeric: tabular-nums; font-size: 30px; font-weight: 650; line-height: 1; }
+.clock small { display: block; font-size: 12px; font-weight: 500; color: var(--text-2); margin-top: 4px; text-align: right; }
 button, select { font: inherit; font-size: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
 button:hover, select:hover { border-color: var(--text-3); }
-button.primary { background: var(--text); color: var(--surface); border-color: var(--text); }
-.spacer { flex: 1; }
+button.primary { background: var(--text); color: var(--surface); border-color: var(--text); min-width: 84px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.panel { display: grid; gap: 12px; margin-bottom: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.timeline { display: grid; grid-template-columns: auto auto auto 1fr auto; gap: 8px; align-items: center; }
+.timeline input[type=range] { width: 100%; accent-color: var(--with); }
+.tl-label { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--text-2); min-width: 92px; text-align: right; }
+.ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
+.ctl input[type=range] { width: 140px; accent-color: var(--with); }
+.ctl b { color: var(--text); font-variant-numeric: tabular-nums; min-width: 52px; display: inline-block; }
+.sep { width: 1px; height: 24px; background: var(--border); }
+.msg { font-size: 13px; color: var(--text-2); }
+.msg.err { color: var(--critical); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .worldtitle { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 16px; margin-bottom: 12px; }
-.swatch { width: 12px; height: 12px; border-radius: 3px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .stat .v { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .stat .l { font-size: 12px; color: var(--text-2); }
-.hall { display: grid; grid-template-columns: 64px 1fr 92px; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--grid); }
+.hall { display: grid; grid-template-columns: 70px 1fr 92px; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--grid); }
 .hall .name { font-weight: 600; }
 .bar { height: 14px; background: var(--track); border-radius: 4px; overflow: hidden; }
 .bar > div { height: 100%; border-radius: 0 4px 4px 0; transition: width .4s; }
 .hall .n { font-size: 13px; color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
 .food { font-size: 12px; color: var(--text-2); }
-.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border); color: var(--text); }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border); color: var(--text); white-space: nowrap; }
 .chip i { font-style: normal; }
-.chip.good i { color: var(--good); } .chip.amber i { color: var(--warning); } .chip.red i { color: var(--critical); }
+.chip.ok i { color: var(--good); } .chip.low i { color: var(--warning); } .chip.out i { color: var(--critical); }
 .banner { margin: 16px 0; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font-size: 17px; }
 .banner b { font-variant-numeric: tabular-nums; }
 .row2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px; }
@@ -75,15 +84,25 @@ h2 { font-size: 15px; margin: 0 0 4px; }
 svg { display: block; width: 100%; height: auto; }
 svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
 .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; box-shadow: 0 4px 14px rgb(0 0 0 / .12); display: none; white-space: nowrap; }
-.kiosk .advice { font-size: 26px; font-weight: 700; margin: 6px 0 2px; }
-.kiosk .why { color: var(--text-2); font-size: 13px; margin-bottom: 10px; }
-.kh { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--grid); }
-.kh .w { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.door { padding: 10px 0; border-top: 1px solid var(--grid); }
+.door:first-child { border-top: 0; padding-top: 4px; }
+.door .where { font-size: 12px; color: var(--text-2); }
+.door .say { font-weight: 650; font-size: 16px; margin: 2px 0 6px; }
+.fill { display: grid; grid-template-columns: 64px 1fr 116px; gap: 8px; align-items: center; font-size: 12px; color: var(--text-2); margin-top: 3px; }
+.fill .bar { height: 8px; }
+.links { font-size: 13px; margin: 8px 0 0; }
 .links a { color: var(--with); }
+.kgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; margin-top: 8px; }
+.tray { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px; }
+.feed { font-size: 13px; color: var(--text-2); margin: 0; padding-left: 18px; }
 .note { color: var(--text-3); font-size: 12px; margin-top: 18px; }
+input[type=file] { display: none; }
 @media (max-width: 760px) {
   .grid2, .row2 { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
+  .timeline { grid-template-columns: auto auto auto 1fr; }
+  .tl-label { grid-column: 1 / -1; text-align: left; }
+  .sep { display: none; }
 }
 </style>
 </head>
@@ -92,23 +111,34 @@ svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
   <header>
     <div>
       <h1>Mess Queue Balancer: live demo</h1>
-      <p class="sub">The same simulated <span id="slot">lunch</span>, run twice with the same students: once as today, once with the system advising which mess to go to.</p>
+      <p class="sub" id="sub">The same meal, run twice with the same students.</p>
     </div>
     <div class="clock"><span id="clock">--:--</span><small id="speedlbl"></small></div>
   </header>
 
-  <div class="controls">
-    <button id="play" class="primary">Pause</button>
-    <select id="speed" aria-label="Speed">
-      <option value="30">30× speed</option>
-      <option value="60" selected>60× speed</option>
-      <option value="120">120× speed</option>
-      <option value="240">240× speed</option>
-    </select>
-    <button id="restart">New day ↻</button>
-    <span class="spacer"></span>
-    <span id="runouts"></span>
-  </div>
+  <section class="card panel" aria-label="Controls">
+    <div class="timeline">
+      <button id="play" class="primary">Pause</button>
+      <button id="back" title="Back 5 minutes">−5 min</button>
+      <button id="fwd" title="Forward 5 minutes">+5 min</button>
+      <input type="range" id="scrub" min="0" max="150" step="1" value="0" aria-label="Meal time">
+      <span class="tl-label" id="tl-label">--:-- / --:--</span>
+    </div>
+    <div class="row">
+      <label class="ctl">Speed <input type="range" id="speed" min="0" max="100" value="64" aria-label="Speed"><b id="speedv"></b></label>
+      <span class="sep"></span>
+      <label class="ctl">Students who follow the screen <input type="range" id="comp" min="0" max="100" step="5" value="60" aria-label="Students who follow the screen"><b id="compv"></b></label>
+    </div>
+    <div class="row">
+      <label class="ctl">Meal <select id="source" aria-label="Meal to show"></select></label>
+      <button id="upload">Upload a day's log (CSV)…</button>
+      <input type="file" id="file" accept=".csv,.txt,text/csv">
+      <button id="newday" title="Same meal, different random students">New day ↻</button>
+      <span class="sep"></span>
+      <span class="ctl" id="runouts"></span>
+    </div>
+    <div class="msg" id="msg"></div>
+  </section>
 
   <div class="grid2">
     <section class="card" id="w-none"></section>
@@ -121,44 +151,93 @@ svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
     <section class="card">
       <h2>People waiting in line</h2>
       <div class="legend">
-        <span><i class="ln" style="background:var(--without)"></i>Without the system</span>
-        <span><i class="ln" style="background:var(--with)"></i>With the system</span>
+        <span><i class="ln" style="background:var(--without)"></i><span id="lg-none">Without the system</span></span>
+        <span><i class="ln" style="background:var(--with)"></i>With the screens</span>
       </div>
-      <div class="chartwrap" id="chartwrap">
-        <svg id="chart" viewBox="0 0 700 260" role="img" aria-label="People waiting in line over the meal, with and without the system"></svg>
+      <div class="chartwrap">
+        <svg id="chart" viewBox="0 0 700 260" role="img" aria-label="People waiting in line over the meal, with and without the screens"></svg>
         <div class="tip" id="tip"></div>
       </div>
     </section>
-    <section class="card kiosk">
-      <h2>What students see right now</h2>
-      <div class="advice" id="k-advice">…</div>
-      <div class="why" id="k-why"></div>
-      <div id="k-halls"></div>
-      <p class="links" style="font-size:13px;margin:10px 0 0">Full screen: <a href="/screen" target="_blank">student screen</a> · <a href="/kitchen" target="_blank">kitchen buttons</a></p>
+    <section class="card">
+      <h2>What the door screens say now</h2>
+      <div id="doors"></div>
+      <p class="links" id="screenlinks"></p>
     </section>
   </div>
 
-  <p class="note">All data is simulated. Seats, serving speed, food batches and arrival pattern are assumed values from <code>config/default.toml</code>. <span id="compl"></span></p>
+  <section class="card" style="margin-top:16px">
+    <h2>Kitchen trays <span class="msg">(what managers have tapped)</span></h2>
+    <div class="kgrid" id="kitchen"></div>
+    <div class="row" style="margin-top:12px;align-items:start">
+      <div style="flex:1;min-width:240px"><div class="msg">Latest updates</div><ol class="feed" id="feed"></ol></div>
+      <p class="links" id="kitchenlinks" style="margin:0"></p>
+    </div>
+  </section>
+
+  <p class="note">Simulated data unless you uploaded a log. With a log, arrival times and messes are real; queues, serving and seating are simulated
+    from the assumed speeds in <code>config/default.toml</code>. The system only counts people who have scanned in, never anyone still outside.</p>
 </main>
 
 <script>
-const STATUS = { green: ["good", "●", "Short wait"], amber: ["amber", "▲", "Busy"], red: ["red", "■", "Very busy"] };
+const STATUS = { green: ["good", "●", "Short wait"], amber: ["warning", "▲", "Busy"], red: ["critical", "■", "Very busy"] };
+const TRAY = { ok: ["ok", "●", "OK"], low: ["low", "▲", "Low"], out: ["out", "■", "Out"] };
 const FOOD = { ok: "Food OK", low: "Tray low", out: "Food out, refilling" };
-let last = null;
+const MAXSPEED = 600;
+let last = null, scrubbing = false, sourceKey = "";
 
-const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-document.getElementById("play").onclick = () => post("/api/control", { action: last && last.paused ? "resume" : "pause" }).then(poll);
-document.getElementById("speed").onchange = e => post("/api/control", { action: "speed", value: +e.target.value }).then(poll);
-document.getElementById("restart").onclick = () => post("/api/control", { action: "reset" }).then(poll);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+  .then(async r => { if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || r.statusText); } });
+const control = (action, value) => post("/api/control", { action, value }).then(poll).catch(e => msg(e.message, true));
+function msg(t, err) { $("msg").textContent = t || ""; $("msg").className = "msg" + (err ? " err" : ""); }
+const speedFromSlider = v => Math.max(1, Math.round(Math.pow(MAXSPEED, v / 100)));
+const sliderFromSpeed = s => Math.round(100 * Math.log(s) / Math.log(MAXSPEED));
+const speedText = s => s === 1 ? "1× (real time)" : s < 60 ? `${s}×` : `${s}× (${+(s / 60).toFixed(1)} min/s)`;
+const mins = m => m < 1 ? "<1" : "~" + Math.round(m);
+function clockAt(min) {
+  const [h, m] = last.start_clock.split(":").map(Number), t = h * 60 + m + Math.floor(min);
+  return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+}
 
-function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+$("play").onclick = () => control(last && last.paused ? "resume" : "pause");
+$("back").onclick = () => control("jump", -5);
+$("fwd").onclick = () => control("jump", 5);
+$("newday").onclick = () => control("reset");
+$("scrub").oninput = e => { scrubbing = true; $("tl-label").textContent = `${clockAt(+e.target.value)} / ${clockAt(last.max_t_min)}`; };
+$("scrub").onchange = e => { msg("Jumping…"); control("seek", +e.target.value).then(() => { scrubbing = false; msg(""); }); };
+$("speed").oninput = e => { $("speedv").textContent = speedText(speedFromSlider(+e.target.value)); };
+$("speed").onchange = e => control("speed", speedFromSlider(+e.target.value));
+$("comp").oninput = e => { $("compv").textContent = e.target.value + "%"; };
+$("comp").onchange = e => { msg("Re-running with the new share…"); control("compliance", +e.target.value / 100).then(() => msg("")); };
+$("source").onchange = e => {
+  const [type, v] = e.target.value.split(":");
+  post("/api/source", type === "replay" ? { type, session: +v } : { type, slot: v }).then(poll).catch(err => msg(err.message, true));
+};
+$("upload").onclick = () => $("file").click();
+$("file").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  if (f.size > 20 * 1024 * 1024) return msg("That file is over 20 MB. Export a single day.", true);
+  msg(`Reading ${f.name}…`);
+  const r = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "text/csv" }, body: await f.text() });
+  const j = await r.json().catch(() => ({ error: "Upload failed." }));
+  if (!r.ok) return msg(j.error, true);
+  const map = Object.entries(j.log.mapping).map(([k, v]) => `"${k}" → ${v}`).join(", ");
+  msg(`Loaded ${j.log.scans.toLocaleString()} scans, ${j.log.sessions.length} meal(s). Devices: ${map}. ` +
+      `Columns used: ${Object.entries(j.log.columns).map(([k, v]) => `${k} = "${v}"`).join(", ")}. ${j.log.warnings.join(" ")} ` +
+      `Showing the busiest meal; pick another under "Meal".`);
+  poll();
+};
 
-function worldCard(w, key) {
+function worldCard(w, key, s) {
   const color = key === "advised" ? "var(--with)" : "var(--without)";
-  const title = key === "advised" ? "With the system" : "Without the system (today)";
-  const maxQ = Math.max(120, ...Object.values(last.worlds).flatMap(x => x.halls.map(h => h.queue)));
+  const maxQ = Math.max(120, ...Object.values(s.worlds).flatMap(x => x.halls.map(h => h.queue)));
+  const extra = key === "advised" && w.students
+    ? `<div class="msg" style="margin-top:6px">${w.switched} of ${w.students} students (${Math.round(100 * w.switched / w.students)}%) walked to the other mess because of a screen.</div>` : "";
   return `
-    <div class="worldtitle"><span class="swatch" style="background:${color}"></span>${title}</div>
+    <div class="worldtitle"><span class="swatch" style="background:${color}"></span>${esc(s.titles[key])}</div>
     <div class="stats">
       <div class="stat"><div class="v">${w.avg_wait.toFixed(1)}<small style="font-size:14px"> min</small></div><div class="l">average wait</div></div>
       <div class="stat"><div class="v">${w.waiting_now}</div><div class="l">in line now</div></div>
@@ -170,51 +249,80 @@ function worldCard(w, key) {
         <div><div class="name">${esc(h.name)}</div><div class="food">${FOOD[h.food]}</div></div>
         <div class="bar" title="${h.queue} waiting"><div style="width:${Math.min(100, 100 * h.queue / maxQ)}%;background:${color}"></div></div>
         <div class="n">${h.queue} in line<br>${h.students} came</div>
-      </div>`).join("")}`;
+      </div>`).join("")}${extra}`;
 }
 
 function banner(s) {
   const a = s.worlds.advised, n = s.worlds.none;
   if (a.seated < 50) return "Students are starting to arrive…";
-  const saved = n.avg_wait - a.avg_wait;
-  const fewer = n.long_waits - a.long_waits;
-  const head = saved >= 0.1
-    ? `With the system, the average wait is <b>${saved.toFixed(1)} min shorter</b>`
+  const saved = n.avg_wait - a.avg_wait, fewer = n.long_waits - a.long_waits;
+  const head = saved >= 0.1 ? `With the screens, the average wait is <b>${saved.toFixed(1)} min shorter</b>`
     : `So far both are about the same (the halls aren't busy yet)`;
   const tail = fewer > 0 ? `, and <b>${fewer}</b> fewer students have waited more than 10 minutes.` : ".";
-  return head + tail + (s.finished ? " <b>Meal over.</b> Press <i>New day</i> to replay with different students." : "");
+  return head + tail + (s.finished ? " <b>Meal over.</b> Drag the timeline back to replay." : "");
 }
 
-function kiosk(s) {
-  const adv = s.advice;
-  document.getElementById("k-advice").textContent = adv.text;
-  const head = adv.halls.find(h => h.id === adv.headline);
-  document.getElementById("k-why").textContent = head.share >= 0.6
-    ? `About ${Math.round(head.share * 10)} in 10 students are being sent to ${head.name} right now.`
-    : "Waits are similar in both halls.";
-  document.getElementById("k-halls").innerHTML = adv.halls.map(h => {
-    const [cls, icon, label] = STATUS[h.status];
-    return `<div class="kh"><div><b>${esc(h.name)}</b><br><span class="chip ${cls}"><i>${icon}</i>${label}</span>
-      ${h.food !== "ok" ? `<span class="chip"><i>🍲</i>${FOOD[h.food]}</span>` : ""}</div>
-      <div class="w">${h.wait_min < 1 ? "&lt;1" : "~" + Math.round(h.wait_min)} min</div></div>`;
+function doorSay(d, here) {
+  if (d.level === "strong") return `${esc(d.go_to_name)} is faster right now →`;
+  if (d.level === "soft") return `In a hurry? ${esc(d.go_to_name)} is ${mins(d.saving_min)} min faster →`;
+  return here.status === "green" ? "Come on in, short wait" : "Busy, but this is still your fastest option";
+}
+function doors(s) {
+  const halls = Object.fromEntries(s.advice.halls.map(h => [h.id, h]));
+  const fills = s.advice.halls.map(h => {
+    const [cls] = STATUS[h.status];
+    return `<div class="fill"><span>${esc(h.name)}</span><div class="bar"><div style="width:${Math.min(100, 100 * h.load)}%;background:var(--${cls})"></div></div><span>${Math.min(100, Math.round(100 * h.load))}% full · ${mins(h.to_food_min)} min</span></div>`;
   }).join("");
+  if (s.mode !== "doors") {
+    $("doors").innerHTML = `<div class="door"><div class="where">Hallway screen</div><div class="say">${esc(s.advice.text)}</div>${fills}</div>`;
+  } else {
+    $("doors").innerHTML = Object.values(s.doors).map(d =>
+      `<div class="door"><div class="where">Outside ${esc(halls[d.at].name)}</div><div class="say">${doorSay(d, halls[d.at])}</div></div>`
+    ).join("") + `<div class="door">${fills}</div>`;
+  }
+  $("screenlinks").innerHTML = "Open full screen: " + s.advice.halls.map(h => `<a href="/screen?at=${h.id}" target="_blank">outside ${esc(h.name)}</a>`).join(" · ");
 }
 
-function runoutButtons(s) {
-  const el = document.getElementById("runouts");
-  if (el.dataset.ready) return;
-  el.dataset.ready = 1;
-  el.innerHTML = "Make food run out: " + s.advice.halls.map(h => `<button data-m="${h.id}">${esc(h.name)}</button>`).join(" ");
-  el.querySelectorAll("button").forEach(b => b.onclick = () => post("/api/runout", { mess: b.dataset.m }).then(poll));
+function kitchen(s) {
+  const names = Object.fromEntries(s.advice.halls.map(h => [h.id, h.name]));
+  $("kitchen").innerHTML = Object.entries(s.kitchen).map(([id, trays]) => `<div><b>${esc(names[id])}</b>${trays.map(t => {
+    const [cls, icon, label] = TRAY[t.state];
+    return `<div class="tray"><span>${esc(t.item)}</span><span class="chip ${cls}"><i>${icon}</i>${label}${t.since ? ` · ${t.since}` : ""}</span></div>`;
+  }).join("")}</div>`).join("");
+  $("feed").innerHTML = s.kitchen_feed.length
+    ? s.kitchen_feed.map(f => `<li>${f.clock} · ${esc(f.mess)}: ${esc(f.item)} ${f.state === "ok" ? "refilled" : TRAY[f.state][2].toLowerCase()}</li>`).join("")
+    : "<li>No updates yet</li>";
+  $("kitchenlinks").innerHTML = "Kitchen pages: " + s.advice.halls.map(h => `<a href="/kitchen?mess=${h.id}" target="_blank">${esc(h.name)}</a>`).join(" · ");
+}
+
+function controls(s) {
+  const key = JSON.stringify([s.slots, s.log && s.log.sessions.length, s.source.type, s.source.session, s.source.slot]);
+  if (key !== sourceKey) {
+    sourceKey = key;
+    let opts = s.slots.map(n => `<option value="sim:${n}">Simulated ${n}</option>`).join("");
+    if (s.log) opts += `<optgroup label="From your log">${s.log.sessions.map(x => `<option value="replay:${x.index}">${esc(x.label)}</option>`).join("")}</optgroup>`;
+    $("source").innerHTML = opts;
+    $("source").value = s.source.type === "replay" ? `replay:${s.source.session}` : `sim:${s.source.slot}`;
+    $("runouts").innerHTML = "Make food run out: " + s.advice.halls.map(h => `<button data-m="${h.id}">${esc(h.name)}</button>`).join(" ");
+    $("runouts").querySelectorAll("button").forEach(b => b.onclick = () => post("/api/runout", { mess: b.dataset.m }).then(poll));
+  }
+  $("newday").style.display = s.source.type === "replay" ? "none" : "";
+  $("scrub").max = s.max_t_min;
+  if (!scrubbing) {
+    $("scrub").value = s.t_min;
+    $("tl-label").textContent = `${s.clock} / ${clockAt(s.max_t_min)}`;
+  }
+  if (document.activeElement !== $("speed")) { $("speed").value = sliderFromSpeed(s.speed); $("speedv").textContent = speedText(s.speed); }
+  if (document.activeElement !== $("comp")) { $("comp").value = Math.round(s.compliance * 100); $("compv").textContent = Math.round(s.compliance * 100) + "%"; }
 }
 
 // ---- chart ---------------------------------------------------------------
 const W = 700, H = 260, M = { l: 40, r: 16, t: 10, b: 28 };
-let scale = null;
+let scale = null, lastHover = null;
 function niceMax(v) { const s = [40, 80, 120, 160, 200, 240, 320, 400, 600, 800, 1000]; return s.find(x => x >= v) || Math.ceil(v / 400) * 400; }
 function chart(s) {
   const hn = s.worlds.none.history, ha = s.worlds.advised.history;
-  const xMax = Math.max(s.duration_min, hn.length ? hn[hn.length - 1][0] : 0);
+  const xMax = s.max_t_min;
   const yMax = niceMax(Math.max(10, ...hn.map(p => p[1]), ...ha.map(p => p[1])));
   const x = v => M.l + (W - M.l - M.r) * v / xMax, y = v => H - M.b - (H - M.t - M.b) * v / yMax;
   scale = { x, y, xMax, hn, ha };
@@ -224,40 +332,34 @@ function chart(s) {
     g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
     g += `<text x="${M.l - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
   }
-  const hh = +s.clock.split(":")[0] * 60 + +s.clock.split(":")[1] - Math.floor(s.t_min);
-  for (let m = 0; m <= xMax; m += 30) {
-    const t = hh + m;
-    g += `<text x="${x(m)}" y="${H - 8}" text-anchor="middle">${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}</text>`;
-  }
+  const stepMin = xMax > 200 ? 60 : 30;
+  for (let m = 0; m <= xMax; m += stepMin) g += `<text x="${x(m)}" y="${H - 8}" text-anchor="middle">${clockAt(m)}</text>`;
+  g += `<line x1="${x(s.t_min)}" x2="${x(s.t_min)}" y1="${M.t}" y2="${H - M.b}" stroke="var(--border)" stroke-width="1"/>`;
   const path = pts => pts.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
   g += `<path d="${path(hn)}" fill="none" stroke="var(--without)" stroke-width="2" stroke-linejoin="round"/>`;
   g += `<path d="${path(ha)}" fill="none" stroke="var(--with)" stroke-width="2" stroke-linejoin="round"/>`;
   g += `<g id="hover"></g><rect id="hit" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}" fill="transparent"/>`;
-  const svg = document.getElementById("chart");
+  const svg = $("chart");
   svg.innerHTML = g;
   svg.querySelector("#hit").onmousemove = e => { lastHover = e; hover(e); };
-  svg.querySelector("#hit").onmouseleave = () => { lastHover = null; document.getElementById("tip").style.display = "none"; svg.querySelector("#hover").innerHTML = ""; };
-  if (lastHover) hover(lastHover);  // keep the tooltip while the chart refreshes
+  svg.querySelector("#hit").onmouseleave = () => { lastHover = null; $("tip").style.display = "none"; svg.querySelector("#hover").innerHTML = ""; };
+  if (lastHover) hover(lastHover);
 }
-let lastHover = null;
 function hover(e) {
-  const svg = document.getElementById("chart"), r = svg.getBoundingClientRect();
-  const vx = (e.clientX - r.left) * W / r.width;
+  const svg = $("chart"), r = svg.getBoundingClientRect();
   const { x, y, xMax, hn, ha } = scale;
   if (!hn.length) return;
-  const tm = (vx - M.l) / (W - M.l - M.r) * xMax;
+  const tm = ((e.clientX - r.left) * W / r.width - M.l) / (W - M.l - M.r) * xMax;
   let i = 0; while (i < hn.length - 1 && Math.abs(hn[i + 1][0] - tm) < Math.abs(hn[i][0] - tm)) i++;
   const pn = hn[i], pa = ha[Math.min(i, ha.length - 1)];
   svg.querySelector("#hover").innerHTML =
     `<line x1="${x(pn[0])}" x2="${x(pn[0])}" y1="${M.t}" y2="${H - M.b}" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="3 3"/>` +
     `<circle cx="${x(pn[0])}" cy="${y(pn[1])}" r="4" fill="var(--without)" stroke="var(--surface)" stroke-width="2"/>` +
     `<circle cx="${x(pa[0])}" cy="${y(pa[1])}" r="4" fill="var(--with)" stroke="var(--surface)" stroke-width="2"/>`;
-  const tip = document.getElementById("tip");
-  const base = +last.clock.split(":")[0] * 60 + +last.clock.split(":")[1] - Math.floor(last.t_min) + Math.floor(pn[0]);
-  tip.innerHTML = `<b>${String(Math.floor(base / 60) % 24).padStart(2, "0")}:${String(base % 60).padStart(2, "0")}</b><br>Without: ${pn[1]} in line<br>With: ${pa[1]} in line`;
+  const tip = $("tip");
+  tip.innerHTML = `<b>${clockAt(pn[0])}</b><br>${esc(last.titles.none.split(" (")[0])}: ${pn[1]} in line<br>With the screens: ${pa[1]} in line`;
   tip.style.display = "block";
-  const px = x(pn[0]) * r.width / W;
-  tip.style.left = Math.min(px + 12, r.width - 130) + "px";
+  tip.style.left = Math.min(x(pn[0]) * r.width / W + 12, r.width - 220) + "px";
   tip.style.top = "8px";
 }
 
@@ -265,16 +367,19 @@ async function poll() {
   try {
     const s = await (await fetch("/api/state")).json();
     last = s;
-    document.getElementById("slot").textContent = s.slot;
-    document.getElementById("clock").textContent = s.clock;
-    document.getElementById("speedlbl").textContent = s.paused ? "paused" : s.finished ? "meal over" : `${s.speed}× speed`;
-    document.getElementById("play").textContent = s.paused ? "Play" : "Pause";
-    document.getElementById("w-none").innerHTML = worldCard(s.worlds.none, "none");
-    document.getElementById("w-advised").innerHTML = worldCard(s.worlds.advised, "advised");
-    document.getElementById("banner").innerHTML = banner(s);
-    document.getElementById("compl").textContent = `In this run, ${Math.round(s.compliance * 100)}% of students follow the advice; the rest go where they usually go.`;
-    kiosk(s); runoutButtons(s); chart(s);
-  } catch (e) { document.getElementById("banner").textContent = "Lost connection to the demo server. Is it still running?"; }
+    $("clock").textContent = s.clock;
+    $("speedlbl").textContent = s.paused ? "paused" : s.finished ? "meal over" : speedText(s.speed);
+    $("play").textContent = s.paused ? "▶ Play" : "❚❚ Pause";
+    $("sub").textContent = `${s.source.label}. ${s.source.type === "replay"
+      ? "Left: the real arrivals from your log. Right: the same students, with a screen outside each mess."
+      : "The same students twice: once as today, once with a screen outside each mess."}`;
+    $("lg-none").textContent = s.titles.none.split(" (")[0];
+    controls(s);
+    $("w-none").innerHTML = worldCard(s.worlds.none, "none", s);
+    $("w-advised").innerHTML = worldCard(s.worlds.advised, "advised", s);
+    $("banner").innerHTML = banner(s);
+    doors(s); kitchen(s); chart(s);
+  } catch (e) { $("banner").textContent = "Lost connection to the demo server. Is it still running?"; }
 }
 poll(); setInterval(poll, 700);
 </script>

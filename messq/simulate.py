@@ -4,6 +4,8 @@
     python -m messq.simulate --slot dinner --runs 50
     python -m messq.simulate --compliance 0.2 0.4 0.6 0.8 1.0
     python -m messq.simulate --trace                  # what the screen would show, every 5 min
+    python -m messq.simulate --replay logs.csv        # list the meals found in a scanner log
+    python -m messq.simulate --replay logs.csv --session 1   # replay that meal under each policy
 """
 
 from __future__ import annotations
@@ -61,10 +63,31 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--compliance", type=float, nargs="+", help="override simulation.compliance (one or more)")
     p.add_argument("--csv", default="results/simulation_runs.csv")
     p.add_argument("--trace", action="store_true", help="print one equilibrium run as the screen would show it")
+    p.add_argument("--replay", help="CSV scanner log to replay instead of simulated arrivals")
+    p.add_argument("--session", type=int, help="which meal in the log to replay (see --replay alone)")
     args = p.parse_args(argv)
 
     cfg = load_config(args.config)
     slot = cfg.simulation.slot(args.slot)
+    arrivals = natural = None
+    if args.replay:
+        from .logs import parse_log, replay_slot
+        from .privacy import load_salt
+
+        log = parse_log(Path(args.replay).read_text(encoding="utf-8-sig", errors="replace"), cfg.messes, load_salt(cfg.privacy.salt_env))
+        print(f"Columns used: {log.columns}; devices -> messes: {log.mapping}")
+        for w in log.warnings:
+            print("Note:", w)
+        for sess in log.sessions:
+            print(f"  [{sess.index}] {sess.label()}  {sess.counts}")
+        if args.session is None:
+            print("\nPick one with --session N")
+            return
+        sess = log.sessions[args.session]
+        slot, start = replay_slot(sess)
+        arrivals = log.arrivals(sess, start)
+        natural = {k: v / sess.total for k, v in sess.counts.items()}
+        print(f"\nReplaying {sess.label()}. Arrivals are real; queues, serving and seating are simulated.")
 
     if args.trace:
         comp = (args.compliance or [cfg.simulation.compliance])[0]
@@ -75,13 +98,16 @@ def main(argv: list[str] | None = None) -> None:
 
     compliances = args.compliance or [cfg.simulation.compliance]
     rows: list[SimResult] = []
-    print(f"Slot '{slot.name}': {slot.expected_students} students expected, {args.runs} runs per setting\n")
+    if not args.replay:
+        print(f"Slot '{slot.name}': {slot.expected_students} students expected, {args.runs} runs per setting\n")
     header = f"{'policy':12s} {'comply':>6s} " + " ".join(f"{label:>14s}" for _, label, _ in METRICS)
     print(header)
     print("-" * len(header))
     for policy in [Policy(x) for x in args.policies]:
         for comp in [0.0] if policy is Policy.NONE else compliances:
-            results = [simulate(cfg, slot, policy, comp, seed=i) for i in range(args.runs)]
+            results = [
+                simulate(cfg, slot, policy, comp, seed=i, arrivals=arrivals, natural=natural) for i in range(args.runs)
+            ]
             rows.extend(results)
             summ = summarise(results)
             cells = []

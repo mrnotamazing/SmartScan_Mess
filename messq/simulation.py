@@ -177,12 +177,13 @@ class SimResult:
     peak_queue: int  # largest serving queue in any hall
     outages: int  # food run-out incidents
     outage_minutes: float
-    compliance_rate: float  # went where advised (nan without advice)
+    compliance_rate: float  # of students advised to go somewhere new, share who did (nan without advice)
     switch_rate: float  # went somewhere other than their habit
     occupancy_mae: float  # |estimated - true people in hall|, averaged
     hall_counts: dict[str, int] = field(default_factory=dict)
     unfinished: int = 0
     snapshots: list[Snapshot] = field(default_factory=list)
+    students_list: list[Student] = field(default_factory=list, repr=False)
 
 
 class Simulation:
@@ -197,8 +198,13 @@ class Simulation:
         policy: Policy,
         compliance: float | None = None,
         seed: int = 0,
+        arrivals: list[tuple[float, str]] | None = None,
     ):
+        """`arrivals`: replay mode. (seconds since slot start, mess id) for each
+        scan in a real log. The mess in the log is taken as where that student
+        was heading (their habit); policies may then redirect them."""
         self.cfg, self.slot, self.policy, self.seed = cfg, slot, policy, seed
+        self._replay = deque(sorted(arrivals)) if arrivals is not None else None
         sim = cfg.simulation
         self.compliance = sim.compliance if compliance is None else compliance
         self._arrivals = random.Random(seed)
@@ -210,6 +216,7 @@ class Simulation:
         hall_seed = random.Random(f"halls-{seed}")
         self.halls = {m.id: Hall(m, sim, random.Random(hall_seed.random()), self._signals.append) for m in cfg.messes}
         self._walk = {m.id: m.walk_time_s for m in cfg.messes}
+        self._doors = cfg.layout.mode == "doors"
         self._habit_ids, self._habit_w = list(sim.habit_share), list(sim.habit_share.values())
         self.students: list[Student] = []
         self._in_transit: list[tuple[float, int, Student]] = []
@@ -224,7 +231,7 @@ class Simulation:
     def finished(self) -> bool:
         if self.t >= self._hard_stop:
             return True
-        return self.t >= self.end and not self._in_transit and all(
+        return self.t >= self.end and not self._replay and not self._in_transit and all(
             not h.queue and not h.serving and not h.seat_queue for h in self.halls.values()
         )
 
@@ -232,16 +239,35 @@ class Simulation:
         dt = self.cfg.simulation.step_s
         t, t1 = self.t, self.t + dt
         engine = self.engine
-        # New students reach the decision point (screen) and pick a hall.
-        for _ in range(poisson(self._arrivals, arrival_rate_per_min(self.slot, (t + dt / 2) / 60) * dt / 60)):
-            ts = t + self._arrivals.random() * dt
-            habit = self._arrivals.choices(self._habit_ids, self._habit_w)[0]
+        # New students reach a screen and pick a hall. Doors layout: the screen is
+        # outside the mess they were heading to. Hallway: one screen before the fork.
+        if self._replay is not None:
+            new = []
+            while self._replay and self._replay[0][0] < t1:
+                new.append(self._replay.popleft())
+        else:
+            n = poisson(self._arrivals, arrival_rate_per_min(self.slot, (t + dt / 2) / 60) * dt / 60)
+            new = [
+                (t + self._arrivals.random() * dt, self._arrivals.choices(self._habit_ids, self._habit_w)[0])
+                for _ in range(n)
+            ]
+        for ts, habit in new:
             follows = self._arrivals.random() < self.compliance
-            advised = None if self.policy is Policy.NONE else engine.recommend(self._choices)
+            if self.policy is Policy.NONE:
+                advised = None
+            elif self._doors:
+                advised = engine.recommend_at(habit, self._choices)
+            else:
+                advised = engine.recommend(self._choices)
             hall = advised if advised is not None and follows else habit
-            s = Student(pseudonymise(f"S{len(self.students)}", self._salt), ts, habit, advised, hall)
+            if self._doors:
+                decided, arrive = ts, ts + (self.cfg.layout.switch_walk_s if hall != habit else 0.0)
+            else:  # in a replayed log the scan time is the arrival; the decision came a walk earlier
+                decided = ts - self._walk[habit] if self._replay is not None else ts
+                arrive = decided + self._walk[hall]
+            s = Student(pseudonymise(f"S{len(self.students)}", self._salt), decided, habit, advised, hall)
             self.students.append(s)
-            s.arrived_at = ts + self._walk[hall]
+            s.arrived_at = max(arrive, t)
             heapq.heappush(self._in_transit, (s.arrived_at, len(self.students), s))
         # Arrivals at halls: scanned at the entrance, then join the serving queue.
         while self._in_transit and self._in_transit[0][0] <= t1:
@@ -270,11 +296,11 @@ class Simulation:
             self.engine.food_signal(sig)
         self._signals.clear()
 
-    def result(self, snapshots: list[Snapshot] | None = None) -> SimResult:
+    def result(self, snapshots: list[Snapshot] | None = None, keep_students: bool = False) -> SimResult:
         students = self.students
         done = [s for s in students if s.seated_at is not None]
         waits = sorted((s.seated_at - s.arrived_at) / 60 for s in done)
-        advised = [s for s in students if s.advised is not None]
+        redirected = [s for s in students if s.advised is not None and s.advised != s.habit]
         halls = self.halls
         return SimResult(
             policy=self.policy.value,
@@ -287,12 +313,13 @@ class Simulation:
             peak_queue=max(h.peak_queue for h in halls.values()),
             outages=sum(h.outages for h in halls.values()),
             outage_minutes=sum(h.outage_minutes for h in halls.values()),
-            compliance_rate=(sum(s.hall == s.advised for s in advised) / len(advised)) if advised else math.nan,
+            compliance_rate=(sum(s.hall == s.advised for s in redirected) / len(redirected)) if redirected else math.nan,
             switch_rate=sum(s.hall != s.habit for s in students) / max(1, len(students)),
             occupancy_mae=mean(self._abs_err) if self._abs_err else 0.0,
             hall_counts={m.id: sum(s.hall == m.id for s in students) for m in self.cfg.messes},
             unfinished=len(students) - len(done),
             snapshots=snapshots or [],
+            students_list=list(students) if keep_students else [],
         )
 
 
@@ -303,11 +330,16 @@ def simulate(
     compliance: float | None = None,
     seed: int = 0,
     snapshot_every_s: float | None = None,
+    arrivals: list[tuple[float, str]] | None = None,
+    keep_students: bool = False,
+    natural: dict[str, float] | None = None,
 ) -> SimResult:
-    sim = Simulation(cfg, slot, policy, compliance, seed)
+    sim = Simulation(cfg, slot, policy, compliance, seed, arrivals)
+    if natural:
+        sim.engine.natural = natural
     snapshots: list[Snapshot] = []
     while not sim.finished:
         sim.step()
         if snapshot_every_s and int(sim.t) % int(snapshot_every_s) == 0 and sim.t <= sim.end:
             snapshots.append(sim.engine.snapshot())
-    return sim.result(snapshots)
+    return sim.result(snapshots, keep_students)

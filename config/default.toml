@@ -25,6 +25,13 @@ assumed_compliance = 1.0      # set < 1 to over-correct for students who ignore 
 A = 0.65
 B = 0.35
 
+[layout]
+mode = "doors"                # "doors": a screen outside each mess entrance (students see it at the
+                              #   mess they were walking to, then go in or walk to the other one)
+                              # "hallway": one shared screen before the paths to the messes split
+switch_walk_s = 30            # ASSUMED: walk from one mess door to the other
+min_saving_min = 2            # only suggest switching if it saves at least this many minutes
+
 [privacy]
 salt_env = "MESSQ_ID_SALT"    # env var holding the secret used to pseudonymise student IDs
 retention_days = 30           # delete scan logs older than this (DPDP Act: minimise + limit)
@@ -35,10 +42,11 @@ name = "Mess A"
 seats = 300                   # ASSUMED
 counters = 3                  # ASSUMED: serving lines running in parallel
 service_rate_per_counter_per_min = 4.0   # ASSUMED: ~15 s to serve one student
-walk_time_s = 30              # from the decision point (screen) to the hall
+walk_time_s = 30              # hallway layout only: from the shared screen to this hall
 food_batch = 350              # ASSUMED: portions of the main item per batch
 food_refill_trigger = 120     # ASSUMED: kitchen starts the next batch at this stock
 food_refill_time_min = 10     # ASSUMED: minutes to bring the next batch out
+items = ["Main course", "Rice", "Roti", "Dal"]   # trays on the kitchen page; the first is the main one
 
 [[mess]]
 id = "B"

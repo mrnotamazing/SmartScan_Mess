@@ -46,9 +46,12 @@ class WaitBreakdown:
         return self.walk + self.queue + self.service + self.seat + self.food
 
 
-def predict_wait(mess: MessConfig, eng: EngineConfig, state: HallState, lam: float) -> WaitBreakdown:
-    """Wait for a student arriving after the walk, if the hall receives `lam` students/min."""
-    walk = mess.walk_time_s / 60.0
+def predict_wait(
+    mess: MessConfig, eng: EngineConfig, state: HallState, lam: float, walk_s: float | None = None
+) -> WaitBreakdown:
+    """Wait for a student arriving after the walk, if the hall receives `lam` students/min.
+    `walk_s` overrides the configured walk (0 for someone already at the door)."""
+    walk = (mess.walk_time_s if walk_s is None else walk_s) / 60.0
     mu = mess.service_rate_per_counter_per_min
     cap = mess.capacity_per_min
     if cap <= 0:

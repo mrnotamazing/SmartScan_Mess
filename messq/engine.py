@@ -2,11 +2,14 @@
 
 It only sees what the real system will see (entry scans and kitchen taps),
 never ground truth, so the simulator tests the estimator as well as the policy.
+Everything it knows about a hall comes from people who have already scanned in;
+people still outside are invisible to it by design.
 """
 
 from __future__ import annotations
 
 import random
+from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 
@@ -15,6 +18,9 @@ from .config import AppConfig, MessConfig
 from .estimator import Deduplicator, MessEstimator
 from .events import FoodSignal, FoodState, ScanEvent
 from .waits import HallState, WaitBreakdown, predict_wait
+
+FRESH_BATCH_MIN = 10  # after a "refilled" tap, screens may say "fresh batch just out" for this long
+_SEVERITY = {FoodState.OK: 0, FoodState.LOW: 1, FoodState.OUT: 2}
 
 
 class Policy(str, Enum):
@@ -33,21 +39,45 @@ class Status(str, Enum):
 class HallView:
     mess_id: str
     name: str
-    occupancy: int  # estimated
+    occupancy: int  # people who scanned in during the last N minutes (estimate of people inside)
     seats: int
     load: float  # occupancy / seats
     arrival_rate: float  # scans/min over the rate window (measured)
     backlog: float  # estimated people waiting to be served
     food: FoodState
-    wait: WaitBreakdown
+    fresh: bool  # kitchen tapped "refilled" in the last few minutes
+    wait: WaitBreakdown  # for someone already at this door (no walk)
     status: Status
-    share: float  # fraction of students currently advised to go here
+    share: float  # fraction of students the system wants in this hall
+
+    @property
+    def space(self) -> int:
+        return max(0, self.seats - self.occupancy)
+
+
+@dataclass(frozen=True)
+class DoorAdvice:
+    """What the screen outside one mess says."""
+
+    at: str
+    go_to: str | None  # the mess to suggest walking to, or None = come in here
+    p_switch: float  # share of arriving students that should switch
+    saving_min: float  # minutes saved by switching, after the walk
+
+    @property
+    def level(self) -> str:
+        """strong: "Mess B is faster, go there"; soft: "in a hurry? B is faster"; stay."""
+        if self.go_to is None or self.p_switch < 0.15:
+            return "stay"
+        return "strong" if self.p_switch >= 0.5 else "soft"
 
 
 @dataclass(frozen=True)
 class Snapshot:
     ts: float
     halls: tuple[HallView, ...]
+    doors: dict[str, DoorAdvice]
+    mode: str
 
     @property
     def headline(self) -> HallView:
@@ -55,8 +85,8 @@ class Snapshot:
 
     @property
     def advice(self) -> str:
-        """Text for a shared screen. A near-even split means both halls are fine;
-        saying "Go to A" there would be noise that costs trust."""
+        """Text for one shared (hallway) screen. A near-even split means both
+        halls are fine; saying "Go to A" there would be noise that costs trust."""
         head = self.headline
         if head.share < 0.6:
             return "Both halls OK, go to either"
@@ -72,11 +102,23 @@ class Engine:
         self.policy = policy
         e = cfg.engine
         self._est = {m.id: MessEstimator(e.occupancy_window_min * 60, e.rate_window_min * 60) for m in cfg.messes}
-        self._food = {m.id: (FoodState.OK, 0.0) for m in cfg.messes}
+        self._trays = {(m.id, item): (FoodState.OK, -1e9) for m in cfg.messes for item in m.items}
+        self._fresh_since = {m.id: -1e9 for m in cfg.messes}
+        self.kitchen_log: deque[FoodSignal] = deque(maxlen=500)
         self._dedupe = Deduplicator()
         self._shares: dict[str, float] | None = None
+        self._door: dict[str, tuple[str | None, float]] = {m.id: (None, 0.0) for m in cfg.messes}
         self._last_route_ts: float | None = None
+        # Where students go by habit. Needed by door screens; a replayed log sets it from real counts.
+        self.natural = dict(e.natural_share) or {m.id: 1 / len(cfg.messes) for m in cfg.messes}
         self.now = 0.0
+
+    @property
+    def doors_mode(self) -> bool:
+        return self.cfg.layout.mode == "doors"
+
+    def _walk_s(self, m: MessConfig) -> float:
+        return 0.0 if self.doors_mode else m.walk_time_s
 
     # ---- inputs -----------------------------------------------------------
     def ingest(self, events: list[ScanEvent]) -> int:
@@ -89,15 +131,22 @@ class Engine:
         return n
 
     def food_signal(self, sig: FoodSignal) -> None:
-        current, since = self._food[sig.mess_id]
-        if sig.state is not current:
-            self._food[sig.mess_id] = (sig.state, sig.ts)
+        """A kitchen tap. item=None means the main tray, or every tray for "refilled"."""
+        m = self.cfg.mess(sig.mess_id)
+        items = m.items if (sig.item is None and sig.state is FoodState.OK) else [sig.item or m.items[0]]
+        was_short = any(self.tray_state(m.id, i, sig.ts)[0] is not FoodState.OK for i in items)
+        for item in items:
+            if (m.id, item) in self._trays:
+                self._trays[(m.id, item)] = (sig.state, sig.ts)
+        if sig.state is FoodState.OK and was_short:
+            self._fresh_since[m.id] = sig.ts
+        self.kitchen_log.append(sig)
 
-    def food_state(self, mess_id: str, now: float) -> tuple[FoodState, float]:
-        """Kitchen state, with stale taps expired. Staff forget to tap
+    def tray_state(self, mess_id: str, item: str, now: float) -> tuple[FoodState, float]:
+        """One tray's state, with stale taps expired. Staff forget to tap
         "refilled"; without expiry one missed tap would keep a hall marked
         empty and send everyone to the other hall for the rest of the meal."""
-        state, since = self._food[mess_id]
+        state, since = self._trays[(mess_id, item)]
         age_min = (now - since) / 60.0
         e = self.cfg.engine
         if state is FoodState.OUT and age_min > self.cfg.mess(mess_id).food_refill_time_min + e.food_out_grace_min:
@@ -105,6 +154,22 @@ class Engine:
         if state is FoodState.LOW and age_min > e.food_low_expiry_min:
             return FoodState.OK, since
         return state, since
+
+    def food_state(self, mess_id: str, now: float) -> tuple[FoodState, float]:
+        """Whole-hall state: the worst tray. Only the main tray running out stops
+        service; any other tray being out just slows it, so it counts as LOW."""
+        m = self.cfg.mess(mess_id)
+        worst, since = FoodState.OK, 0.0
+        for idx, item in enumerate(m.items):
+            st, ts = self.tray_state(mess_id, item, now)
+            if st is FoodState.OUT and idx > 0:
+                st = FoodState.LOW
+            if _SEVERITY[st] > _SEVERITY[worst]:
+                worst, since = st, ts
+        return worst, since
+
+    def trays(self, mess_id: str, now: float) -> list[tuple[str, FoodState, float]]:
+        return [(item, *self.tray_state(mess_id, item, now)) for item in self.cfg.mess(mess_id).items]
 
     # ---- update -----------------------------------------------------------
     def update(self, now: float) -> None:
@@ -114,7 +179,7 @@ class Engine:
             self._est[m.id].advance(now, cap)
         due = self._last_route_ts is None or now - self._last_route_ts >= self.cfg.engine.routing_update_s
         if due:
-            self._shares = self._route(now)
+            self._route(now)
             self._last_route_ts = now
 
     def _state(self, m: MessConfig, now: float) -> HallState:
@@ -127,33 +192,53 @@ class Engine:
             food_out_for_min=(now - since) / 60.0 if food is FoodState.OUT else 0.0,
         )
 
-    def _route(self, now: float) -> dict[str, float]:
-        e = self.cfg.engine
-        states = {m.id: self._state(m, now) for m in self.cfg.messes}
-        rates = {m.id: self._est[m.id].arrival_rate_per_min(now) for m in self.cfg.messes}
+    def _route(self, now: float) -> None:
+        e, messes = self.cfg.engine, self.cfg.messes
+        states = {m.id: self._state(m, now) for m in messes}
+        rates = {m.id: self._est[m.id].arrival_rate_per_min(now) for m in messes}
         if self.policy is Policy.NONE:
-            return {m.id: 1 / len(self.cfg.messes) for m in self.cfg.messes}
+            self._shares = {m.id: 1 / len(messes) for m in messes}
+            return
+        waits_now = {m.id: predict_wait(m, e, states[m.id], rates[m.id], self._walk_s(m)).total for m in messes}
         if self.policy is Policy.GREEDY:
-            return routing.greedy_split(
-                {m.id: predict_wait(m, e, states[m.id], rates[m.id]).total for m in self.cfg.messes}
+            target = routing.greedy_split(waits_now)
+        else:
+            fns = {m.id: (lambda lam, m=m: predict_wait(m, e, states[m.id], lam, self._walk_s(m)).total) for m in messes}
+            target = routing.equilibrium_split(fns, sum(rates.values()))
+
+        if self.doors_mode:
+            self._shares = target
+            lay = self.cfg.layout
+            new = routing.door_switch_probs(
+                target, self.natural, e.assumed_compliance, waits_now, lay.switch_walk_s / 60, lay.min_saving_min
             )
-        fns = {m.id: (lambda lam, m=m: predict_wait(m, e, states[m.id], lam).total) for m in self.cfg.messes}
-        target = routing.equilibrium_split(fns, sum(rates.values()))
+            a = 1.0  # no smoothing at doors: the min-saving rule already keeps advice stable (smoothing measured worse)
+            for door, (dest, p) in new.items():
+                # Ramp switch advice up smoothly, but drop it at once when it stops
+                # paying off: never ask someone to walk for a saving that isn't there.
+                old_dest, old_p = self._door[door]
+                if dest is not None:
+                    p = a * p + (1 - a) * (old_p if old_dest == dest else 0.0)
+                self._door[door] = (dest, p)
+            return
+
         advised = routing.compensate_for_noncompliance(target, e.natural_share, e.assumed_compliance)
-        open_halls = {i for i, s in states.items() if s.food is not FoodState.OUT}
-        advised = routing.apply_floor(advised, e.min_share, open_halls)
-        return routing.smooth(self._shares, advised, e.routing_smoothing)
+        if self.policy is Policy.EQUILIBRIUM:
+            open_halls = {i for i, s in states.items() if s.food is not FoodState.OUT}
+            advised = routing.apply_floor(advised, e.min_share, open_halls)
+            advised = routing.smooth(self._shares, advised, e.routing_smoothing)
+        self._shares = advised
 
     # ---- outputs ----------------------------------------------------------
     def snapshot(self) -> Snapshot:
         e = self.cfg.engine
         now = self.now
-        shares = self._shares or {m.id: 1 / len(self.cfg.messes) for m in self.cfg.messes}
+        shares = self.shares()
         views = []
         for m in self.cfg.messes:
             st = self._state(m, now)
             rate = self._est[m.id].arrival_rate_per_min(now)
-            wb = predict_wait(m, e, st, rate)
+            wb = predict_wait(m, e, st, rate, self._walk_s(m))
             if st.food is FoodState.OUT or wb.wait >= e.red_wait_min:
                 status = Status.RED
             elif st.food is FoodState.LOW or wb.wait >= e.amber_wait_min:
@@ -170,18 +255,27 @@ class Engine:
                     arrival_rate=rate,
                     backlog=st.backlog,
                     food=st.food,
+                    fresh=st.food is FoodState.OK and now - self._fresh_since[m.id] < FRESH_BATCH_MIN * 60,
                     wait=wb,
                     status=status,
                     share=shares[m.id],
                 )
             )
-        return Snapshot(ts=now, halls=tuple(views))
+        by_id = {v.mess_id: v for v in views}
+        walk_min = self.cfg.layout.switch_walk_s / 60
+        doors = {}
+        for door, (dest, p) in self._door.items():
+            saving = by_id[door].wait.wait - (by_id[dest].wait.wait + walk_min) if dest else 0.0
+            if dest and saving < self.cfg.layout.min_saving_min:  # waits moved since the last routing update
+                dest, p, saving = None, 0.0, 0.0
+            doors[door] = DoorAdvice(at=door, go_to=dest, p_switch=p, saving_min=saving)
+        return Snapshot(ts=now, halls=tuple(views), doors=doors, mode=self.cfg.layout.mode)
 
     def shares(self) -> dict[str, float]:
         return dict(self._shares or {m.id: 1 / len(self.cfg.messes) for m in self.cfg.messes})
 
     def recommend(self, rng: random.Random) -> str:
-        """One student's advice: a random draw from the current split."""
+        """Hallway layout: one student's advice, a random draw from the split."""
         shares = self.shares()
         r, acc = rng.random(), 0.0
         for mess_id, s in shares.items():
@@ -189,6 +283,11 @@ class Engine:
             if r < acc:
                 return mess_id
         return mess_id
+
+    def recommend_at(self, door: str, rng: random.Random) -> str:
+        """Doors layout: advice for one student standing at `door`."""
+        dest, p = self._door.get(door, (None, 0.0))
+        return dest if dest is not None and rng.random() < p else door
 
     def scans_last(self, mess_id: str, seconds: float) -> int:
         return self._est[mess_id].count_last(self.now, seconds)

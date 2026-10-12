@@ -96,3 +96,38 @@ def smooth(prev: Mapping[str, float] | None, new: Mapping[str, float], alpha: fl
     out = {i: alpha * new[i] + (1 - alpha) * prev.get(i, new[i]) for i in new}
     s = sum(out.values())
     return {i: v / s for i, v in out.items()}
+
+
+def door_switch_probs(
+    target: Mapping[str, float],
+    natural: Mapping[str, float],
+    compliance: float,
+    waits_here: Mapping[str, float],
+    switch_walk_min: float,
+    min_saving_min: float,
+) -> dict[str, tuple[str | None, float]]:
+    """Screens outside each door: what fraction of students arriving at door i
+    should be told to walk to another mess, and which one.
+
+    Students reach the mess they usually go to (`natural` split). To turn that
+    into the `target` split, the surplus at over-target doors is sent to the
+    most under-target mess. Nobody is told to switch unless it saves at least
+    `min_saving_min` after the walk, so near-ties never cost anyone a walk.
+    """
+    k = max(compliance, 1e-6)
+    deficit = {j: target.get(j, 0.0) - natural.get(j, 0.0) for j in target}
+    out: dict[str, tuple[str | None, float]] = {}
+    for i in target:
+        h = natural.get(i, 0.0)
+        surplus = h - target[i]
+        others = [j for j in target if j != i]
+        if surplus <= 1e-9 or h <= 0 or not others:
+            out[i] = (None, 0.0)
+            continue
+        dest = max(others, key=lambda j: deficit[j])
+        saving = waits_here[i] - (waits_here[dest] + switch_walk_min)
+        if deficit[dest] <= 0 or saving < min_saving_min:
+            out[i] = (None, 0.0)
+            continue
+        out[i] = (dest, min(1.0, surplus / h / k))
+    return out

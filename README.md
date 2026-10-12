@@ -4,13 +4,17 @@ Uses live entry scans from the mess face-recognition terminals (Matrix COSEC
 ARGO FACE) to estimate how busy each mess is, and tells students which mess
 to go to so the queues balance out.
 
-**Status: Phase 1 (simulator + core logic) is done. Everything runs on
-simulated data. Nothing connects to a real scanner yet.**
+**Status: Phase 1 (simulator + core logic) is done, and the demo (Phase 2 preview) runs on
+simulated data or on a scanner log you upload. Nothing connects to a live scanner yet.**
+
+**Deployment assumed:** a screen **outside each mess entrance**. A student walks to the mess they
+usually go to, sees the screen, and either goes in or walks ~30 s to the other mess. The system
+only counts people who have **scanned in**; it never tries to count people still outside.
 
 | Phase | What | State |
 |---|---|---|
 | 1 | Scanner adapter interface, fake-event simulator, occupancy/wait estimation, probabilistic routing, food-stock input, tests | ✅ done |
-| 2 | Student display (kiosk + phone), kitchen "tray low / refilled" page, manager dashboard | demo versions running on simulated data (`python -m messq.demo`); production version next |
+| 2 | Door screens, kitchen tray page, manager dashboard, log upload + replay | demo versions working (`python -m messq.demo`); production hardening next |
 | 3 | Surge alerts (1-/5-min counts, learned baselines, cooldown, Telegram/WhatsApp) | |
 | 4 | Real COSEC adapter (pycosec / official API) + CSV-export fallback | needs credentials + permission |
 | 5 | A/B logging, metrics, report notebook | |
@@ -36,12 +40,42 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
 
 | Page | Use it for |
 |---|---|
-| `localhost:8000/` | **Pitch dashboard**: the same lunch run twice with identical students, *without* vs *with* the system, a live chart, and controls |
-| `localhost:8000/screen` | What students would see on the hallway TV or phone. Put it full-screen (F11) on a second monitor or projector |
-| `localhost:8000/kitchen` | The kitchen staff's "tray low / out / refilled" buttons |
+| `localhost:8000/` | **Pitch dashboard**: the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
+| `localhost:8000/screen?at=A` | The screen **outside Mess A** (use `?at=B` for Mess B). Full-screen it (F11) on a projector. Add `&dir=left` if Mess B is to the left |
+| `localhost:8000/kitchen?mess=A` | Mess A kitchen managers' page: tap *Low / Out / Refilled* per tray (Main course, Rice, Roti, Dal) |
+
+**Dashboard controls**
+
+* **Timeline**: play/pause, −5/+5 min, and a slider to jump to any time, forwards or backwards.
+  Jumping back re-runs the meal and replays anything you clicked (run-outs, kitchen taps) at the same moments.
+* **Speed**: from 1× (real time) up to 600× (a 2-hour lunch in 12 seconds).
+* **Students who follow the screen**: change it mid-meal; the meal is re-run with the new share up to the current time.
+* **Meal**: simulated breakfast/lunch/dinner, or any meal from an uploaded log.
+* **Upload a day's log (CSV)**: see below.
+* **Make food run out**: simulates a real shortage at a mess. The kitchen page is different: it's what managers *report*.
+
+### Replaying a real day from a log file
+
+Click **Upload a day's log (CSV)** and pick an export from the scanner software. The app:
+
+1. finds the columns by name: a time (`Timestamp`, `Punch Time`, or separate `Date` + `Time`), a
+   device or mess (`Device Name`, `Terminal`, `Door`, `Mess`…), and optionally a person ID and an
+   IN/OUT column (exit rows are ignored),
+2. matches device names to messes (`MESS-A-ENTRY` → Mess A; unknown names are assigned in order),
+3. splits the day into meals wherever there's a 45-minute gap, and shows the busiest one.
+
+The left side then shows **what happened** (real arrival times and messes). The right side shows
+**the same students with screens**. Queues, serving and seating on both sides are simulated from
+the assumed speeds, so treat the minutes as estimates.
+
+* Try it with `samples/sample_day_log.csv`, a fake day in the shape a COSEC export might have.
+  Make another with `python -m messq.make_sample_log`.
+* The file is read in memory and never saved; raw IDs are hashed as each row is read.
+* Excel files: *File → Save As → CSV* first. Limit 20 MB (export one day).
+* Start straight into a replay: `python -m messq.demo --log path/to/log.csv`.
 
 **Phones in the room.** Run `python -m messq.demo --lan` and the terminal prints an address like
-`http://192.168.1.23:8000/screen`. Anyone on the **same Wi-Fi** can open it on their phone. Hand
+`http://192.168.1.23:8000/screen?at=A`. Anyone on the **same Wi-Fi** can open it on their phone. Hand
 someone `/kitchen` and let them tap "Out" during the pitch. (Windows may ask to allow Python
 through the firewall: allow it on *private* networks. College Wi-Fi often blocks
 device-to-device traffic; a phone hotspot works.)
@@ -51,12 +85,15 @@ Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--
 
 ### A 3-minute pitch script
 
-1. *"Same students, same lunch, two worlds. On the left is today. On the right, students check a screen first."*
-2. Let the rush build (around 13:00 on the clock). The orange line climbs while Mess B sits half-empty on the left.
-3. Point at **"waited >10 min"**: that's the number students feel.
-4. Click **Make food run out → Mess A**. The student screen switches to *Go to Mess B* within seconds.
-5. Open `/screen`: *"This is all a student sees: where to go and roughly how long it'll take."*
-6. Close with what you need: permission to read scan counts (not faces), and one pilot meal slot.
+1. *"Same students, same lunch, two worlds. On the left is today. On the right, there's a screen outside each mess."*
+2. Drag the timeline to about **13:00**. The orange line climbs while Mess B sits half-empty on the left.
+3. Point at **"waited >10 min"** and at the line under the blue card: *"only about 1 in 10 students
+   had to walk 30 seconds to the other mess."*
+4. Open `/screen?at=A`: *"This is what you'd see outside Mess A: how full each mess is and when you'd get food."*
+5. Hand someone the kitchen page and have them tap **Out** on Mess A's main course. Mess A's
+   screen starts pointing to Mess B within seconds.
+6. If you have a real log, upload it: *"This is last Tuesday's lunch, replayed."*
+7. Close with what you need: permission to read scan counts (not faces), and one pilot meal slot.
 
 Be upfront that it is a simulation with assumed numbers. The pilot exists to measure the real ones.
 
@@ -64,11 +101,13 @@ Be upfront that it is a simulation with assumed numbers. The pilot exists to mea
 
 ```bash
 pip install pytest                 # only needed for the tests
-python -m pytest                   # 24 tests
+python -m pytest                   # 33 tests
 
 python -m messq.simulate --trace   # one simulated lunch, as the screen would show it, in the terminal
 python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilibrium routing
 python -m messq.simulate --slot dinner --runs 50 --compliance 0.2 0.4 0.6 0.8 1.0
+python -m messq.simulate --replay samples/sample_day_log.csv              # list meals in a log
+python -m messq.simulate --replay samples/sample_day_log.csv --session 1  # replay one under each policy
 ```
 
 Per-run results are written to `results/simulation_runs.csv`, ready for the analysis in your MDS report.
@@ -95,19 +134,43 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
 
 **Anti-herding.** The engine does not tell everyone to go to the emptier
 hall. It finds the split of incoming students that would make the predicted
-waits equal (a Wardrop equilibrium). Each phone user gets a random draw from
-that split. The shared screen (Phase 2) will show the split ("Go to Mess B, 7 in 10
-are being sent there"). When the split is close to even, the screen says
-"Both halls OK".
+waits equal (a Wardrop equilibrium).
+
+**Door screens** (`layout.mode = "doors"`, the default). Students arrive at their usual mess, so the
+engine works out what share of the people at the busier door should walk over to reach that
+split. The screen turns that share into a message: a *strong* "Mess B is faster right now →",
+a *soft* "In a hurry? Mess B is ~4 min faster", or "come on in". It never suggests switching
+unless it saves at least `layout.min_saving_min` (2 min) after the walk. The older single
+shared screen is still available as `layout.mode = "hallway"`.
+
+**Kitchen trays.** Each mess has trays (`items` in the config). Only the main tray running out
+stops service; another tray out counts as "busy". "All refilled" resets every tray and lights up
+"✨ Fresh batch just out" on the door screens for 10 minutes.
 
 **Partial compliance.** If you know (from a no-screen baseline) where
 students go by habit and roughly what fraction follow advice, set
 `engine.assumed_compliance` and `engine.natural_share`. The engine then
 over-corrects so that the *realised* split is balanced.
 
-## Phase 1 results (simulated lunch, 1,600 students, default config)
+## Results (default config, ASSUMED numbers)
 
-30 runs per row, ±95% CI. Every policy sees the same simulated students (paired comparison). Wait = minutes from scanning in at the hall to sitting down with food.
+Every policy sees the same students (paired comparison), ±95% CI.
+Wait = minutes from scanning in at the hall to sitting down with food.
+
+### Door screens (the default layout), simulated lunch, 30 runs per row
+
+| Policy | Students who follow | Avg wait | p90 wait | Peak queue | Students who walked to the other mess |
+|---|---|---|---|---|---|
+| No screens (habit 65/35) | – | 5.4 ± 0.4 | 14.8 ± 1.2 | 192 ± 14 | 0% |
+| "Switch if it saves ≥2 min" (greedy) | 60% | 2.1 ± 0.3 | 5.3 ± 0.8 | 76 ± 10 | 11% |
+| Equilibrium split | 30% | 2.4 ± 0.2 | 6.3 ± 0.7 | 88 ± 7 | 9% |
+| Equilibrium split | 60% | 2.2 ± 0.3 | 5.5 ± 0.8 | 79 ± 9 | 10% |
+| Equilibrium split | 100% | 2.2 ± 0.3 | 5.5 ± 0.8 | 79 ± 10 | 11% |
+
+**Replaying the sample log's lunch** (1,604 real-shaped arrivals, 20 runs): no screens 6.0 ± 0.3 min
+average (p90 16.0); equilibrium split at 60% follow 1.9 ± 0.2 min (p90 4.5), with 11% of students switching.
+
+### One shared hallway screen (`layout.mode = "hallway"`), simulated lunch
 
 | Policy | Compliance | Avg wait | p90 wait | Peak queue | Food run-outs | Occupancy est. error |
 |---|---|---|---|---|---|---|
@@ -130,10 +193,15 @@ arrive** (e.g. on their phone in the hostel), so feedback lags:
 
 What this says (under the ASSUMED parameters):
 
-1. With these parameters, balancing cuts the average wait from about 5.6 to about 2 minutes and the p90 wait from about 15 to about 5 minutes. Much of that comes from students who switch away from their habitual hall.
-2. Greedy advice herds when the advice lags. In the 5-minute table it gets *worse* as more students obey it (3.0 → 4.3 min). The equilibrium split doesn't have this problem.
-3. Balancing alone did **not** reduce food run-outs in this model. Total consumption is unchanged, and refills are triggered by stock level. Fewer run-outs need kitchen-side changes (earlier refill triggers, forecasting: Phase 6). Don't promise the vendor fewer run-outs from routing alone.
-4. A missed "refilled" tap is dangerous. Before tap expiry was added, one missed tap kept a hall marked empty, sent every student to the other hall, and pushed one run to a 9-minute average wait. Taps now expire, and that case is a regression test.
+1. With these parameters, balancing cuts the average wait from about 5.5 to about 2 minutes and the p90 wait from about 15 to about 5 minutes.
+2. **Door screens need far fewer people to move.** About 1 in 10 students walks to the other mess,
+   against 30–50% with one shared screen, for the same benefit. That's the pitch line.
+3. At the doors, a simple "switch if it saves ≥2 min" rule does as well as the equilibrium split.
+   Feedback is fast (30 s walk) and the threshold stops herding. The equilibrium split matters
+   when advice is read early, e.g. on phones (next table).
+4. Greedy advice herds when the advice lags. In the 5-minute table it gets *worse* as more students obey it (3.0 → 4.3 min). The equilibrium split doesn't have this problem.
+5. Balancing alone did **not** reduce food run-outs in this model. Total consumption is unchanged, and refills are triggered by stock level. Fewer run-outs need kitchen-side changes (earlier refill triggers, forecasting: Phase 6). Don't promise the vendor fewer run-outs from routing alone.
+6. A missed "refilled" tap is dangerous. Before tap expiry was added, one missed tap kept a hall marked empty, sent every student to the other hall, and pushed one run to a 9-minute average wait. Taps now expire, and that case is a regression test.
 
 ## Configuration
 
@@ -172,7 +240,8 @@ and whether push/webhooks exist.
 ### What to get from the college / vendor
 
 - [ ] Written permission from the college admin **and** the mess vendor to read scan events
-- [ ] Where the scanners are: one per mess entrance, or a shared point?
+- [ ] Confirm one scanner per mess entrance, and where each screen can be mounted (power + network)
+- [ ] One day's attendance export (CSV) to replay in the demo
 - [ ] Exact device model (ARGO FACE210?) and firmware version
 - [ ] Whether events are read from the device or from the COSEC server (VYOM/CENTRA), plus its IP
 - [ ] API username/password with **read-only** access to events
@@ -201,12 +270,17 @@ and whether push/webhooks exist.
 2. **Seats are probably not the bottleneck; serving counters are.**
    `load = occupancy / seats` is shown, but the wait estimate is driven by
    counter throughput.
-3. **Herding matters less than expected for a hallway screen 30 s from
-   both halls.** Feedback is fast, so even greedy advice works there.
-   Probabilistic routing matters once advice is read earlier (on phones).
-   It is never worse, so it is the default.
+3. **Herding matters less than expected for screens 30 s apart.** Feedback is fast,
+   so even simple advice works there. Probabilistic routing matters once advice is
+   read earlier (on phones).
 4. **Compliance can't be measured per student from a shared screen**,
    because the screen doesn't know who read it. For the screen, measure it in
    aggregate (advised split vs observed split, screen-on vs screen-off
    days). Per-student compliance needs the phone page.
-5. **Food run-outs**: see result 3 above.
+5. **Food run-outs**: see result 5 above.
+
+## Student screen psychology
+
+How the door screen tries to make students actually care about the wait (colour, framing,
+food cues, social proof, rewards), what's built, and what to A/B test in the pilot:
+[docs/student-screen-psychology.md](docs/student-screen-psychology.md).
