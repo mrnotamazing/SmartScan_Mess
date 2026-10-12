@@ -647,13 +647,13 @@ def main(argv: list[str] | None = None) -> None:
     base = f"http://localhost:{args.port}"
     print(f"Mess queue demo running ({cfg.layout.mode} layout, {args.speed:g}x speed).\n")
     print("For students (no login):")
-    print(f"  Phone page                {base}/")
+    print(f"  Phone page                    {base}/")
     for m in cfg.messes:
-        print(f"  {'Screen outside ' + m.name:26s}{base}/screen?at={m.id}")
+        print(f"  {'Screen outside ' + m.name:30s}{base}/screen?at={m.id}")
     print("\nFor staff (login):")
-    print(f"  Manager dashboard         {base}/manager")
-    print(f"  Live spreadsheet          {base}/sheet")
-    print(f"  Kitchen trays             {base}/kitchen")
+    print(f"  Manager dashboard             {base}/manager")
+    print(f"  Live spreadsheet              {base}/sheet")
+    print(f"  Kitchen trays                 {base}/kitchen")
     print("\nPasswords:")
     for role in ("manager", "kitchen"):
         if role in auth.generated:
