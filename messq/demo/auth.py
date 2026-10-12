@@ -6,7 +6,8 @@
 
 Passwords come from the environment (MESSQ_MANAGER_PASSWORD, MESSQ_KITCHEN_PASSWORD),
 never from files in the repo. If one isn't set, a random password is made at
-start-up and printed in the terminal. Sessions are HMAC-signed cookies
+start-up and printed in the terminal. If both are set to the same password,
+everyone who logs in is a manager. Sessions are HMAC-signed cookies
 (HttpOnly, SameSite=Strict) that end when the demo restarts.
 """
 
@@ -41,8 +42,8 @@ class Auth:
                 pw = _readable_password()
                 self.generated[role] = pw
             self.passwords[role] = pw
-        if self.passwords["kitchen"] == self.passwords["manager"]:
-            raise ValueError("Use different passwords for kitchen staff and managers.")
+        # One shared password is allowed; anyone who logs in then gets manager access.
+        self.shared = self.passwords["kitchen"] == self.passwords["manager"]
         self._secret = secrets.token_bytes(32)
         self._fails: dict[str, deque[float]] = defaultdict(deque)
 

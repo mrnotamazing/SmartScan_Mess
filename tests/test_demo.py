@@ -192,3 +192,9 @@ def test_uploaded_names_hidden_unless_enabled():
     demo2.upload(text)
     demo2.seek(60 * 60)
     assert demo2.sheet(None, 30)["logs"]["A"][0][1] == "Real Person 0"
+
+
+def test_shared_password_gives_manager_access():
+    auth = Auth({"manager": "appleisyum", "kitchen": "appleisyum"})
+    assert auth.shared
+    assert auth.login("9.9.9.9", "appleisyum") == "manager"

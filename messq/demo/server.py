@@ -660,6 +660,8 @@ def main(argv: list[str] | None = None) -> None:
             print(f"  {role:8s} {auth.generated[role]}   (made up for this run; set {AUTH_ENV[role]} to choose your own)")
         else:
             print(f"  {role:8s} from {AUTH_ENV[role]}")
+    if auth.shared:
+        print("  (same password for both: everyone who logs in gets the full manager view)")
     if args.lan and (ip := _lan_ip()):
         print(f"\nFrom phones on the same Wi-Fi: http://{ip}:{args.port}/")
     if args.save_sheets:

@@ -64,6 +64,9 @@ set MESSQ_KITCHEN_PASSWORD=another-different-one
 py -m messq.demo
 ```
 
+If you set both to the same password, there's one shared staff login and everyone who uses it
+gets the full manager view (dashboard, spreadsheet with names, kitchen page).
+
 Logins last 12 hours and end when the demo restarts. After 8 wrong passwords from one device,
 that device has to wait 5 minutes.
 
