@@ -49,7 +49,7 @@ button.all { min-width: 0; padding: 8px 12px; font-size: 14px; }
 </head>
 <body>
 <main>
-  <div class="top"><h1>Kitchen: food trays</h1><span class="clock" id="clock"></span></div>
+  <div class="top"><h1>Kitchen: food trays</h1><span class="clock"><span id="clock"></span> · <a href="/logout" style="color:var(--text-2)">Log out</a></span></div>
   <p class="lead">Tap as soon as a tray runs low or out, and again when it's refilled. Screens outside the mess update within seconds.</p>
   <div class="tabs" id="tabs"></div>
   <div id="messes"></div>
@@ -66,14 +66,16 @@ let busy = false;
 function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(el._t); el._t = setTimeout(() => el.style.display = "none", 1800); }
 async function tap(mess, item, state, label) {
   busy = true;
-  const r = await fetch("/api/kitchen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mess, item, state }) });
+  const r = await fetch("/api/kitchen", { method: "POST", headers: { "Content-Type": "application/json", "X-Messq": "1" }, body: JSON.stringify({ mess, item, state }) });
   busy = false;
   toast(r.ok ? `Sent: ${label}` : "Couldn't send. Try again.");
   poll();
 }
 async function poll() {
   if (busy) return;
-  const s = await (await fetch("/api/state")).json();
+  const r = await fetch("/api/kitchen-state");
+  if (r.status === 401) { location.href = "/login?next=/kitchen"; return; }
+  const s = await r.json();
   document.getElementById("clock").textContent = s.clock;
   const names = Object.fromEntries(s.advice.halls.map(h => [h.id, h.name]));
   document.getElementById("tabs").innerHTML = `<a href="/kitchen" class="${ONLY ? "" : "on"}">All</a>` +

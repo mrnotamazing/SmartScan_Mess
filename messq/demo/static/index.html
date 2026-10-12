@@ -113,7 +113,7 @@ input[type=file] { display: none; }
       <h1>Mess Queue Balancer: live demo</h1>
       <p class="sub" id="sub">The same meal, run twice with the same students.</p>
     </div>
-    <div class="clock"><span id="clock">--:--</span><small id="speedlbl"></small></div>
+    <div class="clock"><span id="clock">--:--</span><small id="speedlbl"></small><small><a href="/logout" style="color:var(--text-2)">Log out</a></small></div>
   </header>
 
   <section class="card panel" aria-label="Controls">
@@ -189,7 +189,7 @@ let last = null, scrubbing = false, sourceKey = "";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Messq": "1" }, body: JSON.stringify(body) })
   .then(async r => { if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || r.statusText); } });
 const control = (action, value) => post("/api/control", { action, value }).then(poll).catch(e => msg(e.message, true));
 function msg(t, err) { $("msg").textContent = t || ""; $("msg").className = "msg" + (err ? " err" : ""); }
@@ -222,7 +222,7 @@ $("file").onchange = async e => {
   if (!f) return;
   if (f.size > 20 * 1024 * 1024) return msg("That file is over 20 MB. Export a single day.", true);
   msg(`Reading ${f.name}…`);
-  const r = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "text/csv" }, body: await f.text() });
+  const r = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "text/csv", "X-Messq": "1" }, body: await f.text() });
   const j = await r.json().catch(() => ({ error: "Upload failed." }));
   if (!r.ok) return msg(j.error, true);
   const map = Object.entries(j.log.mapping).map(([k, v]) => `"${k}" → ${v}`).join(", ");
@@ -281,7 +281,8 @@ function doors(s) {
       `<div class="door"><div class="where">Outside ${esc(halls[d.at].name)}</div><div class="say">${doorSay(d, halls[d.at])}</div></div>`
     ).join("") + `<div class="door">${fills}</div>`;
   }
-  $("screenlinks").innerHTML = "Open full screen: " + s.advice.halls.map(h => `<a href="/screen?at=${h.id}" target="_blank">outside ${esc(h.name)}</a>`).join(" · ");
+  $("screenlinks").innerHTML = "Open full screen: " + s.advice.halls.map(h => `<a href="/screen?at=${h.id}" target="_blank">outside ${esc(h.name)}</a>`).join(" · ") +
+    ` · <a href="/" target="_blank">student phone page</a>`;
 }
 
 function kitchen(s) {
@@ -380,7 +381,7 @@ async function poll() {
     $("w-advised").innerHTML = worldCard(s.worlds.advised, "advised", s);
     $("banner").innerHTML = banner(s);
     doors(s); kitchen(s); chart(s);
-  } catch (e) { $("banner").textContent = "Lost connection to the demo server. Is it still running?"; }
+  } catch (e) { $("banner").textContent = "Lost connection to the demo server, or your login expired. Reload the page."; }
 }
 poll(); setInterval(poll, 700);
 </script>

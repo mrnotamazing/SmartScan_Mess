@@ -6,39 +6,128 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 
 from messq.config import load_config
+from messq.demo.auth import Auth
 from messq.demo.server import Demo, make_handler
 
 
-def _call(port, path, body=None):
-    data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=data, method="POST" if data else "GET")
-    with urllib.request.urlopen(req) as r:
-        return r.read()
+PW = {"manager": "manager-pass-1", "kitchen": "kitchen-pass-2"}
+
+
+class Client:
+    """Talks to the demo server like a browser: keeps cookies, sends the X-Messq header."""
+
+    def __init__(self, port):
+        import http.cookiejar
+
+        self.port = port
+        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+
+    def call(self, path, body=None, header=True, expect=200):
+        import urllib.error
+
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(f"http://127.0.0.1:{self.port}{path}", data=data, method="POST" if data else "GET")
+        if header and data:
+            req.add_header("X-Messq", "1")
+        try:
+            with self.opener.open(req) as r:
+                code, out, url = r.status, r.read(), r.url
+        except urllib.error.HTTPError as e:
+            code, out, url = e.code, e.read(), e.url
+        assert code == expect, (path, code, out[:200])
+        return out, url
+
+    def login(self, role):
+        out, _ = self.call("/api/login", {"password": PW[role]})
+        return json.loads(out)
+
+
+def _serve(demo):
+    auth = Auth(PW)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(demo, auth))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, server.server_address[1]
 
 
 def test_demo_server_end_to_end():
     demo = Demo(load_config(), "lunch", 0.6, seed=1, speed=60)
-    server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(demo))
-    port = server.server_address[1]
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    server, port = _serve(demo)
     try:
+        c = Client(port)
+        assert c.login("manager")["next"] == "/manager"
         demo.tick(40)  # 40 s real at 60x = 40 simulated minutes
-        state = json.loads(_call(port, "/api/state"))
+        state = json.loads(c.call("/api/state")[0])
         assert state["t_min"] >= 39
         a, n = state["worlds"]["advised"], state["worlds"]["none"]
         assert a["students"] == n["students"] > 0  # same students in both worlds
         assert len(a["history"]) == len(n["history"]) > 0
-        _call(port, "/api/runout", {"mess": "A"})
-        _call(port, "/api/kitchen", {"mess": "B", "state": "low"})
-        state = json.loads(_call(port, "/api/state"))
+        c.call("/api/runout", {"mess": "A"})
+        c.call("/api/kitchen", {"mess": "B", "state": "low"})
+        state = json.loads(c.call("/api/state")[0])
         foods = {h["id"]: h["food"] for h in state["advice"]["halls"]}
         assert foods == {"A": "out", "B": "low"}
-        for page in ("/", "/screen", "/kitchen"):
-            assert b"<html" in _call(port, page)
-        _call(port, "/api/control", {"action": "reset"})
-        assert json.loads(_call(port, "/api/state"))["t_min"] == 0
+        for page in ("/", "/screen", "/kitchen", "/manager", "/sheet"):
+            assert b"<html" in c.call(page)[0]
+        c.call("/api/control", {"action": "reset"})
+        assert json.loads(c.call("/api/state")[0])["t_min"] == 0
     finally:
         server.shutdown()
+
+
+def test_access_control():
+    demo = Demo(load_config(), "lunch", 0.6, seed=1, speed=60)
+    demo.seek(40 * 60)
+    server, port = _serve(demo)
+    try:
+        anon = Client(port)
+        # Students: door screens, phone page and the public feed only.
+        for page in ("/", "/screen?at=A", "/screen?at=B", "/login"):
+            anon.call(page)
+        pub = json.loads(anon.call("/api/public")[0])
+        assert set(pub) == {"clock", "mode", "switch_walk_s", "min_saving_min", "doors", "advice"}
+        assert "Name" not in json.dumps(pub) and "worlds" not in pub
+        for page in ("/manager", "/sheet", "/kitchen"):
+            _, url = anon.call(page)
+            assert "/login?next=" in url  # redirected to the login page
+        for api in ("/api/state", "/api/sheet", "/api/export.xlsx", "/api/kitchen-state"):
+            anon.call(api, expect=401)
+        anon.call("/api/kitchen", {"mess": "A", "state": "out"}, expect=401)
+        anon.call("/api/control", {"action": "reset"}, expect=401)
+        anon.call("/api/login", {"password": "wrong"}, expect=401)
+
+        # Kitchen staff: the kitchen page and tray updates, nothing else.
+        k = Client(port)
+        assert k.login("kitchen")["next"] == "/kitchen"
+        k.call("/kitchen")
+        k.call("/api/kitchen-state")
+        k.call("/api/kitchen", {"mess": "A", "item": "Rice", "state": "low"})
+        k.call("/sheet", expect=403)
+        k.call("/manager", expect=403)
+        k.call("/api/sheet", expect=401)
+        k.call("/api/control", {"action": "pause"}, expect=401)
+
+        # Cross-site requests can't add the header, so even a logged-in browser is protected.
+        m = Client(port)
+        m.login("manager")
+        m.call("/api/control", {"action": "pause"}, header=False, expect=403)
+        m.call("/api/control", {"action": "pause"})
+        m.call("/logout")
+        m.call("/api/state", expect=401)
+    finally:
+        server.shutdown()
+
+
+def test_login_rate_limit_and_tampered_cookie():
+    auth = Auth(PW)
+    for _ in range(8):
+        assert auth.login("1.2.3.4", "nope") is None
+    assert auth.login("1.2.3.4", PW["manager"]) is None  # blocked even with the right password
+    assert auth.login("5.6.7.8", PW["manager"]) == "manager"
+    cookie = auth.make_cookie("kitchen").split(";")[0]
+    assert auth.role_from(cookie) == "kitchen"
+    forged = cookie.replace("kitchen.", "manager.", 1)
+    assert auth.role_from(forged) is None
+    assert Auth(PW).role_from(cookie) is None  # another server run doesn't accept it
 
 
 def test_demo_seek_back_replays_actions_and_upload():

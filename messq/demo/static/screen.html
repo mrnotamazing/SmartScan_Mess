@@ -155,7 +155,7 @@ function render(s) {
 }
 
 async function poll() {
-  try { render(await (await fetch("/api/state")).json()); }
+  try { render(await (await fetch("/api/public")).json()); }
   catch (e) { document.getElementById("foot").textContent = "Reconnecting…"; }
 }
 poll(); setInterval(poll, 1500);

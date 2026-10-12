@@ -36,11 +36,41 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
    python3 -m messq.demo         # Mac / Linux
    ```
 
-4. **Open** <http://localhost:8000> in a browser. Ctrl+C in the terminal stops it.
+4. **Open** <http://localhost:8000/manager> in a browser and log in with the **manager password
+   printed in the terminal**. Ctrl+C in the terminal stops the demo.
+
+### Who can open what
+
+| | Pages | Login |
+|---|---|---|
+| **Students / anyone** | `/` (phone page: which mess is quicker right now), `/screen?at=A` (outside Central Mess), `/screen?at=B` (outside Munch Mess) | none |
+| **Kitchen staff** | `/kitchen` (tray Low / Out / Refilled) | kitchen password |
+| **Managers** | `/manager` (dashboard), `/sheet` (live spreadsheet), `/kitchen`, uploads, downloads | manager password |
+
+Students can't reach the dashboard, the spreadsheet (names, logs) or the kitchen buttons: those
+pages redirect to a login, and their data feeds refuse requests without a staff session. A kitchen
+login can only open the kitchen page.
+
+**Passwords** are never stored in the code. Each run, the terminal prints a made-up password for any
+role you haven't set. To choose your own (so it doesn't change every run), set them before starting:
+
+```bash
+export MESSQ_MANAGER_PASSWORD='pick-something-long'      # Mac / Linux
+export MESSQ_KITCHEN_PASSWORD='another-different-one'
+python3 -m messq.demo
+
+set MESSQ_MANAGER_PASSWORD=pick-something-long           # Windows (Command Prompt)
+set MESSQ_KITCHEN_PASSWORD=another-different-one
+py -m messq.demo
+```
+
+Logins last 12 hours and end when the demo restarts. After 8 wrong passwords from one device,
+that device has to wait 5 minutes.
 
 | Page | Use it for |
 |---|---|
-| `localhost:8000/` | **Pitch dashboard**: the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
+| `localhost:8000/manager` | **Pitch dashboard** (manager login): the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
+| `localhost:8000/` | **Student phone page** (no login): which mess is quicker now. When both are close, each phone gets a suggestion drawn from the system's split, so phones don't all pile into one mess |
 | `localhost:8000/screen?at=A` | The screen **outside Central Mess** (use `?at=B` for Munch Mess). Full-screen it (F11) on a projector. Add `&dir=left` if the other mess is to the left |
 | `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray (Main course, Rice, Roti, Dal) |
 | `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts. Download as Excel or CSV |
@@ -57,7 +87,7 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
 
 ### Live spreadsheet
 
-`localhost:8000/sheet` records the meal as it happens:
+`localhost:8000/sheet` (manager login) records the meal as it happens:
 
 | Tab | Columns |
 |---|---|
@@ -97,8 +127,8 @@ the assumed speeds, so treat the minutes as estimates.
 * Start straight into a replay: `python -m messq.demo --log path/to/log.csv` (add `--show-names` to see the sample's made-up names).
 
 **Phones in the room.** Run `python -m messq.demo --lan` and the terminal prints an address like
-`http://192.168.1.23:8000/screen?at=A`. Anyone on the **same Wi-Fi** can open it on their phone. Hand
-someone `/kitchen` and let them tap "Out" during the pitch. (Windows may ask to allow Python
+`http://192.168.1.23:8000/`. Anyone on the **same Wi-Fi** can open the student page and the door
+screens on their phone. Hand someone `/kitchen` with the kitchen password and let them tap "Out" during the pitch. (Windows may ask to allow Python
 through the firewall: allow it on *private* networks. College Wi-Fi often blocks
 device-to-device traffic; a phone hotspot works.)
 
@@ -107,6 +137,7 @@ Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--
 
 ### A 3-minute pitch script
 
+0. Before you start: open `/manager` and log in. Have the student page (`/`) open on your phone.
 1. *"Same students, same lunch, two worlds. On the left is today. On the right, there's a screen outside each mess."*
 2. Drag the timeline to about **13:00**. The orange line climbs while Munch Mess sits half-empty on the left.
 3. Point at **"waited >10 min"** and at the line under the blue card: *"only about 1 in 10 students
@@ -124,7 +155,7 @@ Be upfront that it is a simulation with assumed numbers. The pilot exists to mea
 
 ```bash
 pip install pytest                 # only needed for the tests
-python -m pytest                   # 35 tests
+python -m pytest                   # 37 tests
 
 python -m messq.simulate --trace   # one simulated lunch, as the screen would show it, in the terminal
 python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilibrium routing

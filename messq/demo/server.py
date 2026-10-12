@@ -3,10 +3,13 @@
     python -m messq.demo                 # then open http://localhost:8000
     python -m messq.demo --lan           # also reachable from phones on the same Wi-Fi
 
-Pages:  /                  pitch dashboard (both worlds, chart, timeline, upload)
-        /screen?at=A       the screen outside Mess A (what students see)
-        /kitchen?mess=A    kitchen staff: tray low / out / refilled, per tray
-        /sheet             live spreadsheet: scan log per mess + counts per 30 min, with charts
+Who sees what (see auth.py):
+  anyone           /                 student page for phones: which mess is faster right now
+                   /screen?at=A      the display outside a mess (A = Central, B = Munch)
+  kitchen login    /kitchen?mess=A   tray low / out / refilled, per tray
+  manager login    /manager          pitch dashboard (both worlds, chart, timeline, upload)
+                   /sheet            live spreadsheet: scan log per mess + counts per 30 min
+                   /kitchen          (managers can use the kitchen page too)
 
 The meal is either simulated or replayed from an uploaded scanner log (CSV).
 Uploaded files are parsed in memory and never written to disk; raw IDs are
@@ -35,9 +38,24 @@ from ..events import FoodSignal, FoodState
 from ..logs import LogError, ParsedLog, parse_log, replay_slot
 from ..sheets import LOG_HEADER, log_rows, summary_rows, to_csv, workbook
 from ..simulation import Simulation
+from .auth import ENV as AUTH_ENV
+from .auth import Auth
 
 STATIC = Path(__file__).resolve().parent / "static"
-PAGES = {"/": "index.html", "/screen": "screen.html", "/kitchen": "kitchen.html", "/sheet": "sheet.html"}
+PUBLIC, KITCHEN, MANAGER = frozenset(), frozenset({"kitchen", "manager"}), frozenset({"manager"})
+PAGES = {  # path -> (file, roles allowed; empty = anyone)
+    "/": ("student.html", PUBLIC),
+    "/screen": ("screen.html", PUBLIC),
+    "/login": ("login.html", PUBLIC),
+    "/kitchen": ("kitchen.html", KITCHEN),
+    "/manager": ("index.html", MANAGER),
+    "/sheet": ("sheet.html", MANAGER),
+}
+GET_APIS = {"/api/public": PUBLIC, "/api/me": PUBLIC, "/api/kitchen-state": KITCHEN, "/api/state": MANAGER,
+            "/api/sheet": MANAGER, "/api/export.xlsx": MANAGER, "/api/export.csv": MANAGER}
+POST_APIS = {"/api/login": PUBLIC, "/api/logout": PUBLIC, "/api/kitchen": KITCHEN, "/api/upload": MANAGER,
+             "/api/control": MANAGER, "/api/source": MANAGER, "/api/runout": MANAGER}
+HOME = {"manager": "/manager", "kitchen": "/kitchen"}
 INTERVALS = (5, 10, 15, 30, 60)
 HISTORY_EVERY_S = 30  # simulated seconds between chart points
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
@@ -260,6 +278,28 @@ class Demo:
                 pass  # open in Excel on Windows (locked); the next minute's write catches up
 
     # ---- view -------------------------------------------------------------
+    def public_state(self) -> dict:
+        """What anyone may see: aggregate busyness per mess and the screen advice.
+        No names, no logs, no controls."""
+        s = self.state()
+        return {
+            "clock": s["clock"],
+            "mode": s["mode"],
+            "switch_walk_s": s["switch_walk_s"],
+            "min_saving_min": self.cfg.layout.min_saving_min,
+            "doors": s["doors"],
+            "advice": s["advice"],
+        }
+
+    def kitchen_state(self) -> dict:
+        s = self.state()
+        return {
+            "clock": s["clock"],
+            "advice": {"halls": [{"id": h["id"], "name": h["name"], "food": h["food"]} for h in s["advice"]["halls"]]},
+            "kitchen": s["kitchen"],
+            "kitchen_feed": s["kitchen_feed"],
+        }
+
     def clock(self, t_s: float) -> str:
         hh, mm = map(int, self.slot.start.split(":"))
         minutes = hh * 60 + mm + int(t_s // 60)
@@ -387,39 +427,67 @@ def _world(w: Simulation, history: list) -> dict:
     }
 
 
-def make_handler(demo: Demo):
+def make_handler(demo: Demo, auth: Auth):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):  # keep the terminal quiet during a pitch
             pass
 
-        def _send(self, code: int, body: bytes, ctype: str) -> None:
+        def _headers(self, code: int, ctype: str, length: int, extra: dict | None = None) -> None:
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Referrer-Policy", "same-origin")
+            for k, v in (extra or {}).items():
+                self.send_header(k, v)
+            self.send_header("Content-Length", str(length))
             self.end_headers()
+
+        def _send(self, code: int, body: bytes, ctype: str, extra: dict | None = None) -> None:
+            self._headers(code, ctype, len(body), extra)
             self.wfile.write(body)
 
         def _download(self, body: bytes, filename: str, ctype: str) -> None:
-            self.send_response(200)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
-            self.send_header("Cache-Control", "no-store")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self._send(200, body, ctype, {"Content-Disposition": f'attachment; filename="{filename}"'})
 
-        def _json(self, obj, code: int = 200) -> None:
-            self._send(code, json.dumps(obj).encode(), "application/json")
+        def _json(self, obj, code: int = 200, extra: dict | None = None) -> None:
+            self._send(code, json.dumps(obj).encode(), "application/json", extra)
+
+        def _redirect(self, to: str, extra: dict | None = None) -> None:
+            self._send(303, b"", "text/plain", {"Location": to, **(extra or {})})
+
+        @property
+        def role(self) -> str | None:
+            return auth.role_from(self.headers.get("Cookie"))
+
+        def _allowed(self, roles: frozenset) -> bool:
+            return not roles or self.role in roles
 
         def do_GET(self):
             url = urlparse(self.path)
             path, q = url.path, {k: v[0] for k, v in parse_qs(url.query).items()}
+            if path == "/logout":
+                return self._redirect("/login", {"Set-Cookie": auth.clear_cookie()})
+            if path in PAGES:
+                fname, roles = PAGES[path]
+                if not self._allowed(roles):
+                    if self.role is None:
+                        return self._redirect(f"/login?next={path}")
+                    return self._send(403, _forbidden_page(self.role), "text/html; charset=utf-8")
+                return self._send(200, (STATIC / fname).read_bytes(), "text/html; charset=utf-8")
+            if path not in GET_APIS:
+                return self._send(404, b"not found", "text/plain")
+            if not self._allowed(GET_APIS[path]):
+                return self._json({"error": "login required"}, 401)
             interval = int(q.get("interval", 30)) if q.get("interval", "30").isdigit() else 30
             interval = interval if interval in INTERVALS else 30
             world = q.get("world")
-            if path in PAGES:
-                self._send(200, (STATIC / PAGES[path]).read_bytes(), "text/html; charset=utf-8")
+            if path == "/api/public":
+                self._json(demo.public_state())
+            elif path == "/api/me":
+                self._json({"role": self.role})
+            elif path == "/api/kitchen-state":
+                self._json(demo.kitchen_state())
             elif path == "/api/state":
                 self._json(demo.state())
             elif path == "/api/sheet":
@@ -430,11 +498,17 @@ def make_handler(demo: Demo):
             elif path == "/api/export.csv":
                 title, text = demo.export_csv(world, interval, q.get("sheet", "summary"))
                 self._download(text.encode("utf-8-sig"), title.lower().replace(" ", "_") + ".csv", "text/csv; charset=utf-8")
-            else:
-                self._send(404, b"not found", "text/plain")
 
         def do_POST(self):
             path = urlparse(self.path).path
+            if path not in POST_APIS:
+                return self._json({"error": "not found"}, 404)
+            # Our pages send this header; another website can't make a browser add it
+            # without permission we never give, which blocks cross-site requests.
+            if self.headers.get("X-Messq") != "1":
+                return self._json({"error": "missing X-Messq header"}, 403)
+            if not self._allowed(POST_APIS[path]):
+                return self._json({"error": "login required"}, 401)
             length = int(self.headers.get("Content-Length") or 0)
             if length > MAX_UPLOAD_BYTES:
                 return self._json({"error": "File is larger than 20 MB. Export a single day."}, 413)
@@ -448,6 +522,19 @@ def make_handler(demo: Demo):
                 body = json.loads(raw or b"{}")
             except json.JSONDecodeError:
                 return self._json({"error": "bad json"}, 400)
+            if path == "/api/login":
+                addr = self.client_address[0]
+                if auth.blocked(addr):
+                    return self._json({"error": "Too many attempts. Wait 5 minutes."}, 429)
+                role = auth.login(addr, str(body.get("password", "")))
+                if role is None:
+                    return self._json({"error": "Wrong password."}, 401)
+                nxt = str(body.get("next") or "")
+                if nxt not in PAGES or role not in PAGES[nxt][1]:
+                    nxt = HOME[role]
+                return self._json({"ok": True, "role": role, "next": nxt}, extra={"Set-Cookie": auth.make_cookie(role)})
+            if path == "/api/logout":
+                return self._json({"ok": True}, extra={"Set-Cookie": auth.clear_cookie()})
             ids = {m.id for m in demo.cfg.messes}
             try:
                 if path == "/api/control":
@@ -484,6 +571,20 @@ def make_handler(demo: Demo):
             self._json({"ok": True})
 
     return Handler
+
+
+def _forbidden_page(role: str) -> bytes:
+    home = HOME.get(role, "/")
+    return (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1"><title>Not Allowed</title>'
+        "<style>body{font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:12vh auto;padding:0 16px;"
+        "background:#f4f3f0;color:#0b0b0b}@media(prefers-color-scheme:dark){body{background:#111110;color:#f0efec}}"
+        "a{color:#2a78d6}</style></head><body>"
+        f"<h1>This page is for managers</h1><p>You're logged in as <b>{role}</b> staff, which can only open "
+        f'the kitchen page.</p><p><a href="{home}">Back to the {role} page</a> · <a href="/logout">Log in as someone else</a></p>'
+        "</body></html>"
+    ).encode()
 
 
 def _lan_ip() -> str | None:
@@ -527,6 +628,7 @@ def main(argv: list[str] | None = None) -> None:
             demo.tick(now - last)
             last = now
 
+    auth = Auth()
     threading.Thread(target=clock, daemon=True).start()
     if args.save_sheets:
         folder = Path(args.save_sheets)
@@ -541,18 +643,28 @@ def main(argv: list[str] | None = None) -> None:
 
         threading.Thread(target=saver, daemon=True).start()
     host = "0.0.0.0" if args.lan else "127.0.0.1"
-    server = ThreadingHTTPServer((host, args.port), make_handler(demo))
-    first = cfg.messes[0].id
-    print(f"Mess queue demo running ({cfg.layout.mode} layout, {args.speed:g}x speed). Open:")
-    print(f"  Pitch dashboard          http://localhost:{args.port}/")
-    print(f"  Screen outside {cfg.messes[0].name:9s} http://localhost:{args.port}/screen?at={first}")
-    print(f"  Kitchen buttons          http://localhost:{args.port}/kitchen")
-    print(f"  Live spreadsheet         http://localhost:{args.port}/sheet")
-    if args.save_sheets:
-        print(f"  Sheet files (every minute): {Path(args.save_sheets).resolve()}")
+    server = ThreadingHTTPServer((host, args.port), make_handler(demo, auth))
+    base = f"http://localhost:{args.port}"
+    print(f"Mess queue demo running ({cfg.layout.mode} layout, {args.speed:g}x speed).\n")
+    print("For students (no login):")
+    print(f"  Phone page                {base}/")
+    for m in cfg.messes:
+        print(f"  {'Screen outside ' + m.name:26s}{base}/screen?at={m.id}")
+    print("\nFor staff (login):")
+    print(f"  Manager dashboard         {base}/manager")
+    print(f"  Live spreadsheet          {base}/sheet")
+    print(f"  Kitchen trays             {base}/kitchen")
+    print("\nPasswords:")
+    for role in ("manager", "kitchen"):
+        if role in auth.generated:
+            print(f"  {role:8s} {auth.generated[role]}   (made up for this run; set {AUTH_ENV[role]} to choose your own)")
+        else:
+            print(f"  {role:8s} from {AUTH_ENV[role]}")
     if args.lan and (ip := _lan_ip()):
-        print(f"  From a phone on the same Wi-Fi: http://{ip}:{args.port}/screen?at={first}")
-    print("Ctrl+C to stop.")
+        print(f"\nFrom phones on the same Wi-Fi: http://{ip}:{args.port}/")
+    if args.save_sheets:
+        print(f"\nSheet files (every minute): {Path(args.save_sheets).resolve()}")
+    print("\nCtrl+C to stop.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

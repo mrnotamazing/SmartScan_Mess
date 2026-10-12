@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Mess Now</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f3f0; --surface: #fcfcfb; --border: #e3e2de; --track: #e6e5e1;
+  --text: #0b0b0b; --text-2: #52514e; --text-3: #7a7974;
+  --good: #0ca30c; --warning: #fab219; --critical: #d03b3b; --go: #2a78d6;
+  --tint-go: rgb(42 120 214 / .10); --tint-good: rgb(12 163 12 / .10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111110; --surface: #1a1a19; --border: #2e2e2c; --track: #2a2a28;
+    --text: #f0efec; --text-2: #c3c2b7; --text-3: #8f8e88; --go: #3987e5;
+    --tint-go: rgb(57 135 229 / .18); --tint-good: rgb(12 163 12 / .16);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111110; --surface: #1a1a19; --border: #2e2e2c; --track: #2a2a28;
+  --text: #f0efec; --text-2: #c3c2b7; --text-3: #8f8e88; --go: #3987e5;
+  --tint-go: rgb(57 135 229 / .18); --tint-good: rgb(12 163 12 / .16);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 640px; margin: 0 auto; padding: 18px 16px 32px; display: grid; gap: 14px; }
+.top { display: flex; justify-content: space-between; align-items: baseline; color: var(--text-2); font-size: 14px; }
+.top b { color: var(--text); font-size: 17px; }
+.hero { border-radius: 18px; padding: 20px; border: 1px solid var(--border); background: var(--surface); }
+.hero.go { background: var(--tint-go); } .hero.good { background: var(--tint-good); }
+.eyebrow { font-size: 13px; font-weight: 650; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+.say { font-size: clamp(28px, 8vw, 40px); font-weight: 800; line-height: 1.08; letter-spacing: -0.01em; margin: 4px 0 8px; }
+.why { color: var(--text-2); font-size: 16px; }
+.why b { color: var(--text); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; }
+.card.pick { outline: 3px solid var(--go); outline-offset: -1px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.name { font-size: 22px; font-weight: 700; }
+.food { font-size: 26px; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.food small { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.meter { height: 12px; background: var(--track); border-radius: 6px; overflow: hidden; margin: 10px 0 6px; }
+.meter div { height: 100%; border-radius: 0 6px 6px 0; transition: width .6s; }
+.mrow { display: flex; justify-content: space-between; color: var(--text-2); font-size: 14px; font-variant-numeric: tabular-nums; }
+.status { margin-top: 8px; font-weight: 650; display: flex; gap: 12px; flex-wrap: wrap; font-size: 15px; }
+.status i { font-style: normal; margin-right: 5px; }
+.badge { color: var(--text-2); font-weight: 600; }
+.doors { font-size: 14px; color: var(--text-2); }
+.doors a { color: var(--go); }
+footer { color: var(--text-3); font-size: 12px; text-align: center; }
+footer a { color: var(--text-3); }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><b>Which mess now?</b><span id="clock">--:--</span></div>
+  <div class="hero" id="hero"><div class="say">Loading…</div></div>
+  <div id="cards" style="display:grid;gap:12px"></div>
+  <div class="doors" id="doors"></div>
+  <footer>Times are estimates from people who have scanned in, updated every few seconds. No login needed.
+    <br><a href="/login">Staff login</a></footer>
+</main>
+<script>
+const STATUS = { green: ["good", "●", "Short wait"], amber: ["warning", "▲", "Busy"], red: ["critical", "■", "Very busy"] };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const mins = m => m < 1 ? "&lt;1" : "~" + Math.round(m);
+const PICK_KEY = "messq-pick", PICK_MIN = 5;
+
+// When both messes are about as quick, phones get a personal suggestion drawn
+// from the system's target split, kept for a few minutes. Telling every phone
+// "go to the same one" would just move the queue there (herding).
+function personalPick(halls) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PICK_KEY) || "null");
+    if (saved && Date.now() - saved.at < PICK_MIN * 60000 && halls.some(h => h.id === saved.id)) return saved.id;
+  } catch (e) {}
+  const total = halls.reduce((a, h) => a + h.share, 0) || 1;
+  let r = Math.random() * total, id = halls[0].id;
+  for (const h of halls) { r -= h.share; if (r <= 0) { id = h.id; break; } }
+  try { localStorage.setItem(PICK_KEY, JSON.stringify({ id, at: Date.now() })); } catch (e) {}
+  return id;
+}
+
+function card(h, pick) {
+  const [cls, icon, label] = STATUS[h.status];
+  let badge = "";
+  if (h.food === "out") badge = "🍲 Food being refilled";
+  else if (h.food === "low") badge = "🍲 A tray is running low";
+  else if (h.fresh) badge = "✨ Fresh batch just out";
+  return `<div class="card ${pick ? "pick" : ""}">
+    <div class="row"><span class="name">${esc(h.name)}</span><span class="food">${mins(h.to_food_min)} <small>min to food</small></span></div>
+    <div class="meter" role="img" aria-label="${Math.min(100, Math.round(100 * h.load))}% full"><div style="width:${Math.min(100, 100 * h.load)}%;background:var(--${cls})"></div></div>
+    <div class="mrow"><span>${h.load >= 1 ? "Full" : `${Math.round(100 * h.load)}% full`}</span><span>${h.space > 0 ? `space for ~${h.space}` : `seats freeing up, ~${h.seats_free_per_min}/min`}</span></div>
+    <div class="status"><span><i style="color:var(--${cls})">${icon}</i>${label}</span>${badge ? `<span class="badge">${badge}</span>` : ""}</div>
+  </div>`;
+}
+
+function render(s) {
+  document.getElementById("clock").textContent = s.clock;
+  const halls = [...s.advice.halls].sort((a, b) => a.to_food_min - b.to_food_min);
+  const best = halls[0], gap = halls.length > 1 ? halls[1].to_food_min - best.to_food_min : 0;
+  let pickId, cls, eyebrow, say, why;
+  if (gap >= s.min_saving_min) {
+    pickId = best.id; cls = "go"; eyebrow = "Go to";
+    say = esc(best.name);
+    why = `Food in about <b>${mins(best.to_food_min)} min</b>, vs ${mins(halls[1].to_food_min)} min at ${esc(halls[1].name)}.`;
+  } else {
+    const close = halls.filter(h => h.to_food_min - best.to_food_min < s.min_saving_min);
+    pickId = personalPick(close); cls = "good"; eyebrow = "Both are quick right now";
+    const pick = halls.find(h => h.id === pickId);
+    say = `Try ${esc(pick.name)}`;
+    why = `Waits are within a couple of minutes. Spreading out keeps both lines short. Food in about <b>${mins(pick.to_food_min)} min</b>.`;
+  }
+  document.getElementById("hero").className = `hero ${cls}`;
+  document.getElementById("hero").innerHTML = `<div class="eyebrow">${eyebrow}</div><div class="say">${say}</div><div class="why">${why}</div>`;
+  document.getElementById("cards").innerHTML = s.advice.halls.map(h => card(h, h.id === pickId)).join("");
+  document.getElementById("doors").innerHTML = "Standing outside a mess? Open its screen: " +
+    s.advice.halls.map(h => `<a href="/screen?at=${h.id}">${esc(h.name)}</a>`).join(" · ");
+}
+
+async function poll() {
+  try { render(await (await fetch("/api/public")).json()); }
+  catch (e) { document.getElementById("clock").textContent = "reconnecting…"; }
+}
+poll(); setInterval(poll, 5000);
+</script>
+</body>
+</html>
