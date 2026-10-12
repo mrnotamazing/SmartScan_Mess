@@ -10,21 +10,63 @@ simulated data. Nothing connects to a real scanner yet.**
 | Phase | What | State |
 |---|---|---|
 | 1 | Scanner adapter interface, fake-event simulator, occupancy/wait estimation, probabilistic routing, food-stock input, tests | ✅ done |
-| 2 | Student display (kiosk + phone), kitchen "tray low / refilled" page, manager dashboard | next |
+| 2 | Student display (kiosk + phone), kitchen "tray low / refilled" page, manager dashboard | demo versions running on simulated data (`python -m messq.demo`); production version next |
 | 3 | Surge alerts (1-/5-min counts, learned baselines, cooldown, Telegram/WhatsApp) | |
 | 4 | Real COSEC adapter (pycosec / official API) + CSV-export fallback | needs credentials + permission |
 | 5 | A/B logging, metrics, report notebook | |
 | 6 | Peak prediction, food forecasting, rewards | |
 
-## Quick start
+## Run the live demo on your laptop (for a pitch)
 
-Requires Python 3.11+. The core has no third-party dependencies.
+Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet during the demo.
+
+1. **Get Python.** On Windows, install it from [python.org](https://www.python.org/downloads/) and tick
+   *"Add python.exe to PATH"* in the installer. On a Mac, use python.org or `brew install python`.
+   Check with `python --version` (or `python3 --version` on Mac). It must print 3.11 or higher.
+2. **Get the code.** On GitHub, switch to this branch, then *Code → Download ZIP* and unzip it.
+   Or: `git clone -b claude/laughing-bell-r2ub69 https://github.com/mrnotamazing/SmartScan_Mess`
+3. **Start it.** Open a terminal (Windows: *Command Prompt* or *PowerShell*) in the unzipped folder:
+
+   ```bash
+   python -m messq.demo          # Windows   (use: py -m messq.demo  if "python" isn't found)
+   python3 -m messq.demo         # Mac / Linux
+   ```
+
+4. **Open** <http://localhost:8000> in a browser. Ctrl+C in the terminal stops it.
+
+| Page | Use it for |
+|---|---|
+| `localhost:8000/` | **Pitch dashboard**: the same lunch run twice with identical students, *without* vs *with* the system, a live chart, and controls |
+| `localhost:8000/screen` | What students would see on the hallway TV or phone. Put it full-screen (F11) on a second monitor or projector |
+| `localhost:8000/kitchen` | The kitchen staff's "tray low / out / refilled" buttons |
+
+**Phones in the room.** Run `python -m messq.demo --lan` and the terminal prints an address like
+`http://192.168.1.23:8000/screen`. Anyone on the **same Wi-Fi** can open it on their phone. Hand
+someone `/kitchen` and let them tap "Out" during the pitch. (Windows may ask to allow Python
+through the firewall: allow it on *private* networks. College Wi-Fi often blocks
+device-to-device traffic; a phone hotspot works.)
+
+Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--slot dinner`,
+`--compliance 0.4` (share of students who follow advice), `--seed 5` (a different "day"), `--port 8080`.
+
+### A 3-minute pitch script
+
+1. *"Same students, same lunch, two worlds. On the left is today. On the right, students check a screen first."*
+2. Let the rush build (around 13:00 on the clock). The orange line climbs while Mess B sits half-empty on the left.
+3. Point at **"waited >10 min"**: that's the number students feel.
+4. Click **Make food run out → Mess A**. The student screen switches to *Go to Mess B* within seconds.
+5. Open `/screen`: *"This is all a student sees: where to go and roughly how long it'll take."*
+6. Close with what you need: permission to read scan counts (not faces), and one pilot meal slot.
+
+Be upfront that it is a simulation with assumed numbers. The pilot exists to measure the real ones.
+
+## Developer quick start
 
 ```bash
 pip install pytest                 # only needed for the tests
-python -m pytest                   # 23 tests
+python -m pytest                   # 24 tests
 
-python -m messq.simulate --trace   # one simulated lunch, as the screen would show it
+python -m messq.simulate --trace   # one simulated lunch, as the screen would show it, in the terminal
 python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilibrium routing
 python -m messq.simulate --slot dinner --runs 50 --compliance 0.2 0.4 0.6 0.8 1.0
 ```
@@ -65,31 +107,31 @@ over-corrects so that the *realised* split is balanced.
 
 ## Phase 1 results (simulated lunch, 1,600 students, default config)
 
-30 runs per row, ±95% CI. Wait = minutes from scanning in at the hall to sitting down with food.
+30 runs per row, ±95% CI. Every policy sees the same simulated students (paired comparison). Wait = minutes from scanning in at the hall to sitting down with food.
 
 | Policy | Compliance | Avg wait | p90 wait | Peak queue | Food run-outs | Occupancy est. error |
 |---|---|---|---|---|---|---|
-| No advice (habit 65/35) | – | 5.4 ± 0.3 | 14.8 ± 0.9 | 192 ± 11 | 1.1 | 35 people |
-| Greedy ("go to emptier") | 60% | 2.0 ± 0.2 | 4.7 ± 0.5 | 72 ± 8 | 1.3 | 12 |
-| Equilibrium split | 30% | 2.3 ± 0.2 | 6.2 ± 0.7 | 88 ± 9 | 1.3 | 14 |
-| Equilibrium split | 60% | 1.9 ± 0.2 | 4.6 ± 0.6 | 70 ± 8 | 1.4 | 12 |
-| Equilibrium split | 100% | 1.9 ± 0.2 | 4.6 ± 0.5 | 65 ± 7 | 1.2 | 12 |
+| No advice (habit 65/35) | – | 5.6 ± 0.4 | 15.3 ± 1.0 | 198 ± 13 | 1.3 | 36 people |
+| Greedy ("go to emptier") | 60% | 2.0 ± 0.2 | 4.4 ± 0.5 | 67 ± 6 | 1.4 | 12 |
+| Equilibrium split | 30% | 2.3 ± 0.2 | 6.3 ± 0.7 | 89 ± 9 | 1.5 | 14 |
+| Equilibrium split | 60% | 2.0 ± 0.2 | 4.8 ± 0.6 | 71 ± 8 | 1.6 | 12 |
+| Equilibrium split | 100% | 1.9 ± 0.2 | 4.4 ± 0.5 | 64 ± 6 | 1.4 | 12 |
 
 Same thing, but with students reading the advice **5 minutes before they
 arrive** (e.g. on their phone in the hostel), so feedback lags:
 
 | Policy | Compliance | Avg wait | p90 wait | Peak queue |
 |---|---|---|---|---|
-| No advice | – | 5.5 ± 0.4 | 15.1 ± 1.1 | 194 ± 13 |
-| Greedy | 60% | 3.3 ± 0.3 | 7.2 ± 0.6 | 116 ± 9 |
-| Greedy | 100% | **4.4 ± 0.3** | 8.9 ± 0.5 | 144 ± 9 |
-| Equilibrium split | 60% | 2.0 ± 0.3 | 5.3 ± 0.7 | 78 ± 10 |
-| Equilibrium split | 100% | **1.9 ± 0.2** | 4.5 ± 0.6 | 69 ± 8 |
+| No advice | – | 5.6 ± 0.5 | 15.5 ± 1.3 | 200 ± 17 |
+| Greedy | 60% | 3.0 ± 0.3 | 6.9 ± 0.5 | 111 ± 10 |
+| Greedy | 100% | **4.3 ± 0.3** | 8.8 ± 0.5 | 141 ± 8 |
+| Equilibrium split | 60% | 2.0 ± 0.2 | 5.4 ± 0.5 | 79 ± 7 |
+| Equilibrium split | 100% | **1.9 ± 0.3** | 4.5 ± 0.9 | 67 ± 12 |
 
 What this says (under the ASSUMED parameters):
 
-1. With these parameters, balancing cuts the average wait from about 5.4 to about 2 minutes and the p90 wait from about 15 to about 5 minutes. Much of that comes from students who switch away from their habitual hall.
-2. Greedy advice herds when the advice lags. In the 5-minute table it gets *worse* as more students obey it (3.3 → 4.4 min). The equilibrium split doesn't have this problem.
+1. With these parameters, balancing cuts the average wait from about 5.6 to about 2 minutes and the p90 wait from about 15 to about 5 minutes. Much of that comes from students who switch away from their habitual hall.
+2. Greedy advice herds when the advice lags. In the 5-minute table it gets *worse* as more students obey it (3.0 → 4.3 min). The equilibrium split doesn't have this problem.
 3. Balancing alone did **not** reduce food run-outs in this model. Total consumption is unchanged, and refills are triggered by stock level. Fewer run-outs need kitchen-side changes (earlier refill triggers, forecasting: Phase 6). Don't promise the vendor fewer run-outs from routing alone.
 4. A missed "refilled" tap is dangerous. Before tap expiry was added, one missed tap kept a hall marked empty, sent every student to the other hall, and pushed one run to a 9-minute average wait. Taps now expire, and that case is a regression test.
 
@@ -153,7 +195,7 @@ and whether push/webhooks exist.
 
 1. **"Occupancy = entries in last N min" breaks down in long queues.**
    Someone stuck in a 25-minute queue drops out of a 22-minute window. That
-   is why the no-advice case shows a 35-person estimation error. The
+   is why the no-advice case shows a 36-person estimation error. The
    backlog estimate partly fixes this, but only if the serving rate is
    measured.
 2. **Seats are probably not the bottleneck; serving counters are.**

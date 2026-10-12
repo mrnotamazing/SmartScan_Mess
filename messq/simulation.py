@@ -101,6 +101,16 @@ class Hall:
             self.out_since = None
         self._tap(eta, FoodState.OK)
 
+    def force_run_out(self, now: float) -> None:
+        if self.stock <= 0:
+            return
+        self.stock = 0
+        self.out_since = now
+        self.outages += 1
+        if self.refill_eta is None:
+            self.refill_eta = now + self.cfg.food_refill_time_min * 60
+        self.signal(FoodSignal(now, self.cfg.id, FoodState.OUT))  # demo: staff always tap this one
+
     def true_in_hall(self) -> int:
         return len(self.queue) + len(self.serving) + len(self.seated) + len(self.seat_queue)
 
@@ -175,6 +185,117 @@ class SimResult:
     snapshots: list[Snapshot] = field(default_factory=list)
 
 
+class Simulation:
+    """One simulated meal, advanced step by step (the live demo drives this;
+    `simulate` runs it to the end). Arrivals and habits use their own random
+    stream, so two policies run with the same seed see identical students."""
+
+    def __init__(
+        self,
+        cfg: AppConfig,
+        slot: MealSlot,
+        policy: Policy,
+        compliance: float | None = None,
+        seed: int = 0,
+    ):
+        self.cfg, self.slot, self.policy, self.seed = cfg, slot, policy, seed
+        sim = cfg.simulation
+        self.compliance = sim.compliance if compliance is None else compliance
+        self._arrivals = random.Random(seed)
+        self._choices = random.Random(f"choices-{seed}")
+        self._salt = self._arrivals.randbytes(16)
+        self.engine = Engine(cfg, policy)
+        self.scanner = SimulatedScanner()
+        self._signals: list[FoodSignal] = []
+        hall_seed = random.Random(f"halls-{seed}")
+        self.halls = {m.id: Hall(m, sim, random.Random(hall_seed.random()), self._signals.append) for m in cfg.messes}
+        self._walk = {m.id: m.walk_time_s for m in cfg.messes}
+        self._habit_ids, self._habit_w = list(sim.habit_share), list(sim.habit_share.values())
+        self.students: list[Student] = []
+        self._in_transit: list[tuple[float, int, Student]] = []
+        self._abs_err: list[float] = []
+        self.t = 0.0
+        self.end = slot.duration_min * 60
+        self._hard_stop = self.end + 90 * 60
+        self._n_events = 0
+        self.engine.update(0.0)
+
+    @property
+    def finished(self) -> bool:
+        if self.t >= self._hard_stop:
+            return True
+        return self.t >= self.end and not self._in_transit and all(
+            not h.queue and not h.serving and not h.seat_queue for h in self.halls.values()
+        )
+
+    def step(self) -> None:
+        dt = self.cfg.simulation.step_s
+        t, t1 = self.t, self.t + dt
+        engine = self.engine
+        # New students reach the decision point (screen) and pick a hall.
+        for _ in range(poisson(self._arrivals, arrival_rate_per_min(self.slot, (t + dt / 2) / 60) * dt / 60)):
+            ts = t + self._arrivals.random() * dt
+            habit = self._arrivals.choices(self._habit_ids, self._habit_w)[0]
+            follows = self._arrivals.random() < self.compliance
+            advised = None if self.policy is Policy.NONE else engine.recommend(self._choices)
+            hall = advised if advised is not None and follows else habit
+            s = Student(pseudonymise(f"S{len(self.students)}", self._salt), ts, habit, advised, hall)
+            self.students.append(s)
+            s.arrived_at = ts + self._walk[hall]
+            heapq.heappush(self._in_transit, (s.arrived_at, len(self.students), s))
+        # Arrivals at halls: scanned at the entrance, then join the serving queue.
+        while self._in_transit and self._in_transit[0][0] <= t1:
+            _, _, s = heapq.heappop(self._in_transit)
+            self._n_events += 1
+            self.scanner.emit(ScanEvent(s.arrived_at, s.hall, s.key, event_id=f"e{self._n_events}"))
+            self.halls[s.hall].queue.append(s)
+        for h in self.halls.values():
+            h.advance(t1)
+        # The engine sees only polled scans and kitchen taps.
+        engine.ingest(self.scanner.poll())
+        for sig in self._signals:
+            engine.food_signal(sig)
+        self._signals.clear()
+        engine.update(t1)
+        if t1 <= self.end:
+            for m in self.cfg.messes:
+                truth = self.halls[m.id].true_in_hall()
+                self._abs_err.append(abs(engine._est[m.id].occupancy(t1) - truth))
+        self.t = t1
+
+    def force_run_out(self, mess_id: str) -> None:
+        """Demo control: the hall's food runs out right now."""
+        self.halls[mess_id].force_run_out(self.t)
+        for sig in self._signals:  # the kitchen's "out" tap reaches the engine immediately
+            self.engine.food_signal(sig)
+        self._signals.clear()
+
+    def result(self, snapshots: list[Snapshot] | None = None) -> SimResult:
+        students = self.students
+        done = [s for s in students if s.seated_at is not None]
+        waits = sorted((s.seated_at - s.arrived_at) / 60 for s in done)
+        advised = [s for s in students if s.advised is not None]
+        halls = self.halls
+        return SimResult(
+            policy=self.policy.value,
+            compliance=self.compliance if self.policy is not Policy.NONE else 0.0,
+            seed=self.seed,
+            students=len(students),
+            mean_wait_min=mean(waits) if waits else 0.0,
+            p90_wait_min=waits[int(0.9 * (len(waits) - 1))] if waits else 0.0,
+            mean_trip_min=mean((s.seated_at - s.decided_at) / 60 for s in done) if done else 0.0,
+            peak_queue=max(h.peak_queue for h in halls.values()),
+            outages=sum(h.outages for h in halls.values()),
+            outage_minutes=sum(h.outage_minutes for h in halls.values()),
+            compliance_rate=(sum(s.hall == s.advised for s in advised) / len(advised)) if advised else math.nan,
+            switch_rate=sum(s.hall != s.habit for s in students) / max(1, len(students)),
+            occupancy_mae=mean(self._abs_err) if self._abs_err else 0.0,
+            hall_counts={m.id: sum(s.hall == m.id for s in students) for m in self.cfg.messes},
+            unfinished=len(students) - len(done),
+            snapshots=snapshots or [],
+        )
+
+
 def simulate(
     cfg: AppConfig,
     slot: MealSlot,
@@ -183,80 +304,10 @@ def simulate(
     seed: int = 0,
     snapshot_every_s: float | None = None,
 ) -> SimResult:
-    sim = cfg.simulation
-    compliance = sim.compliance if compliance is None else compliance
-    rng = random.Random(seed)
-    salt = rng.randbytes(16)
-    engine = Engine(cfg, policy)
-    scanner = SimulatedScanner()
-    signals: list[FoodSignal] = []
-    halls = {m.id: Hall(m, sim, random.Random(rng.random()), signals.append) for m in cfg.messes}
-    walk = {m.id: m.walk_time_s for m in cfg.messes}
-    habit_ids, habit_w = list(sim.habit_share), list(sim.habit_share.values())
-
-    students: list[Student] = []
-    in_transit: list[tuple[float, int, Student]] = []
-    abs_err: list[float] = []
+    sim = Simulation(cfg, slot, policy, compliance, seed)
     snapshots: list[Snapshot] = []
-    dt = sim.step_s
-    end = slot.duration_min * 60
-    hard_stop = end + 90 * 60
-    t, n_events = 0.0, 0
-    engine.update(0.0)
-    while t < hard_stop:
-        t1 = t + dt
-        # New students reach the decision point (screen) and pick a hall.
-        for _ in range(poisson(rng, arrival_rate_per_min(slot, (t + dt / 2) / 60) * dt / 60)):
-            ts = t + rng.random() * dt
-            habit = rng.choices(habit_ids, habit_w)[0]
-            advised = None if policy is Policy.NONE else engine.recommend(rng)
-            hall = advised if advised is not None and rng.random() < compliance else habit
-            s = Student(pseudonymise(f"S{len(students)}", salt), ts, habit, advised, hall)
-            students.append(s)
-            s.arrived_at = ts + walk[hall]
-            heapq.heappush(in_transit, (s.arrived_at, len(students), s))
-        # Arrivals at halls: scanned at the entrance, then join the serving queue.
-        while in_transit and in_transit[0][0] <= t1:
-            _, _, s = heapq.heappop(in_transit)
-            n_events += 1
-            scanner.emit(ScanEvent(s.arrived_at, s.hall, s.key, event_id=f"e{n_events}"))
-            halls[s.hall].queue.append(s)
-        for h in halls.values():
-            h.advance(t1)
-        # The engine sees only polled scans and kitchen taps.
-        engine.ingest(scanner.poll())
-        for sig in signals:
-            engine.food_signal(sig)
-        signals.clear()
-        engine.update(t1)
-        if t1 <= end:
-            for m in cfg.messes:
-                truth = halls[m.id].true_in_hall()
-                abs_err.append(abs(engine._est[m.id].occupancy(t1) - truth))
-        if snapshot_every_s and int(t1) % int(snapshot_every_s) == 0 and t1 <= end:
-            snapshots.append(engine.snapshot())
-        t = t1
-        if t >= end and not in_transit and all(not h.queue and not h.serving and not h.seat_queue for h in halls.values()):
-            break
-
-    done = [s for s in students if s.seated_at is not None]
-    waits = sorted((s.seated_at - s.arrived_at) / 60 for s in done)
-    advised = [s for s in students if s.advised is not None]
-    return SimResult(
-        policy=policy.value,
-        compliance=compliance if policy is not Policy.NONE else 0.0,
-        seed=seed,
-        students=len(students),
-        mean_wait_min=mean(waits) if waits else 0.0,
-        p90_wait_min=waits[int(0.9 * (len(waits) - 1))] if waits else 0.0,
-        mean_trip_min=mean((s.seated_at - s.decided_at) / 60 for s in done) if done else 0.0,
-        peak_queue=max(h.peak_queue for h in halls.values()),
-        outages=sum(h.outages for h in halls.values()),
-        outage_minutes=sum(h.outage_minutes for h in halls.values()),
-        compliance_rate=(sum(s.hall == s.advised for s in advised) / len(advised)) if advised else math.nan,
-        switch_rate=sum(s.hall != s.habit for s in students) / max(1, len(students)),
-        occupancy_mae=mean(abs_err) if abs_err else 0.0,
-        hall_counts={m.id: sum(s.hall == m.id for s in students) for m in cfg.messes},
-        unfinished=len(students) - len(done),
-        snapshots=snapshots,
-    )
+    while not sim.finished:
+        sim.step()
+        if snapshot_every_s and int(sim.t) % int(snapshot_every_s) == 0 and sim.t <= sim.end:
+            snapshots.append(sim.engine.snapshot())
+    return sim.result(snapshots)

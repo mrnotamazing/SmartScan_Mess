@@ -59,7 +59,7 @@ class Snapshot:
         saying "Go to A" there would be noise that costs trust."""
         head = self.headline
         if head.share < 0.6:
-            return "Both halls OK - go to either"
+            return "Both halls OK, go to either"
         return f"Go to {head.name}"
 
     def hall(self, mess_id: str) -> HallView:
