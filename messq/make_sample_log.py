@@ -4,7 +4,7 @@ so the upload/replay feature can be tried before real logs exist.
     python -m messq.make_sample_log                 # -> samples/sample_day_log.csv
     python -m messq.make_sample_log --date 2026-10-12 --out my_log.csv
 
-The data is simulated (no-advice behaviour from the default config); the IDs are made up.
+The data is simulated (no-advice behaviour from the default config); IDs and names are made up.
 """
 
 from __future__ import annotations
@@ -38,17 +38,18 @@ def main(argv: list[str] | None = None) -> None:
         start = day.replace(hour=hh, minute=mm)
         result = simulate(cfg, slot, Policy.NONE, seed=args.seed + i, keep_students=True)
         eaters = rng.sample(roll_numbers, min(len(roll_numbers), len(result.students_list)))
+        devices = {m.id: m.name.upper().replace(" ", "-") + "-ENTRY" for m in cfg.messes}
         for s, roll in zip(result.students_list, eaters):
             ts = start + timedelta(seconds=s.arrived_at)
-            rows.append((ts, roll, f"MESS-{s.hall}-ENTRY"))
+            rows.append((ts, roll, s.name, devices[s.hall]))
     rows.sort()
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["Date", "Time", "User ID", "Device Name", "Direction"])
-        for ts, roll, device in rows:
-            w.writerow([ts.strftime("%d/%m/%Y"), ts.strftime("%H:%M:%S"), roll, device, "IN"])
+        w.writerow(["Date", "Time", "User ID", "User Name", "Device Name", "Direction"])
+        for ts, roll, name, device in rows:
+            w.writerow([ts.strftime("%d/%m/%Y"), ts.strftime("%H:%M:%S"), roll, name, device, "IN"])
     print(f"Wrote {len(rows)} fake scans to {out}")
 
 

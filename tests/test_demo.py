@@ -63,3 +63,43 @@ def test_demo_seek_back_replays_actions_and_upload():
     demo.kitchen("B", "Rice", __import__("messq.events", fromlist=["FoodState"]).FoodState.LOW)
     trays = {t["item"]: t["state"] for t in demo.state()["kitchen"]["B"]}
     assert trays["Rice"] == "low"
+
+
+def test_sheet_api_exports_and_saved_files(tmp_path):
+    import io
+    import zipfile
+
+    demo = Demo(load_config(), "lunch", 0.6, seed=3, speed=60)
+    demo.seek(70 * 60)
+    sheet = demo.sheet(None, 30)
+    names = [m["name"] for m in sheet["messes"]]
+    assert names == ["Central Mess", "Munch Mess"]
+    total_logged = sum(len(v) for v in sheet["logs"].values())
+    assert total_logged == sum(r[3] for r in sheet["summary"])  # every scan is in exactly one slot
+    first = sheet["logs"]["A"][0]
+    assert first[0].count(":") == 2 and first[1] and first[2].startswith("ID ")
+    xlsx = demo.export_xlsx(None, 15)
+    z = zipfile.ZipFile(io.BytesIO(xlsx))
+    assert "xl/charts/chart1.xml" in z.namelist() and "xl/charts/chart2.xml" in z.namelist()
+    title, text = demo.export_csv(None, 30, "B")
+    assert title == "Munch Mess log" and text.splitlines()[0] == "Time,Name,ID,Wait (min),Note"
+    demo.write_files(tmp_path, 30)
+    assert {p.name for p in tmp_path.iterdir()} == {
+        "central_mess_log.csv", "munch_mess_log.csv", "every_30_min.csv", "mess_logs.xlsx"}
+
+
+def test_uploaded_names_hidden_unless_enabled():
+    import dataclasses
+
+    rows = "\n".join(f"2026-10-12 12:{m:02d}:00,Central Mess,R{m},Real Person {m}" for m in range(30))
+    text = "timestamp,device,roll no,student name\n" + rows
+    cfg = load_config()
+    demo = Demo(cfg, "lunch", 0.6, seed=1, speed=60)
+    demo.upload(text)
+    demo.seek(60 * 60)
+    assert all(r[1] == "(hidden)" for r in demo.sheet(None, 30)["logs"]["A"])
+    cfg2 = dataclasses.replace(cfg, privacy=dataclasses.replace(cfg.privacy, show_names=True))
+    demo2 = Demo(cfg2, "lunch", 0.6, seed=1, speed=60)
+    demo2.upload(text)
+    demo2.seek(60 * 60)
+    assert demo2.sheet(None, 30)["logs"]["A"][0][1] == "Real Person 0"

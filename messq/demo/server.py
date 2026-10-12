@@ -6,6 +6,7 @@
 Pages:  /                  pitch dashboard (both worlds, chart, timeline, upload)
         /screen?at=A       the screen outside Mess A (what students see)
         /kitchen?mess=A    kitchen staff: tray low / out / refilled, per tray
+        /sheet             live spreadsheet: scan log per mess + counts per 30 min, with charts
 
 The meal is either simulated or replayed from an uploaded scanner log (CSV).
 Uploaded files are parsed in memory and never written to disk; raw IDs are
@@ -15,6 +16,7 @@ hashed as rows are read. Standard library only.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import os
 import secrets
@@ -31,10 +33,12 @@ from ..config import AppConfig, load_config
 from ..engine import Policy
 from ..events import FoodSignal, FoodState
 from ..logs import LogError, ParsedLog, parse_log, replay_slot
+from ..sheets import LOG_HEADER, log_rows, summary_rows, to_csv, workbook
 from ..simulation import Simulation
 
 STATIC = Path(__file__).resolve().parent / "static"
-PAGES = {"/": "index.html", "/screen": "screen.html", "/kitchen": "kitchen.html"}
+PAGES = {"/": "index.html", "/screen": "screen.html", "/kitchen": "kitchen.html", "/sheet": "sheet.html"}
+INTERVALS = (5, 10, 15, 30, 60)
 HISTORY_EVERY_S = 30  # simulated seconds between chart points
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 TAIL_MIN = 30  # the timeline runs this long past the meal so queues can drain
@@ -183,7 +187,7 @@ class Demo:
             self._build()
 
     def upload(self, text: str) -> dict:
-        log = parse_log(text, self.cfg.messes, self._salt)
+        log = parse_log(text, self.cfg.messes, self._salt, keep_names=self.cfg.privacy.show_names)
         with self.lock:
             self.log = log
             busiest = max(log.sessions, key=lambda s: s.total)
@@ -203,6 +207,57 @@ class Demo:
             "warnings": self.log.warnings,
             "scans": len(self.log.scans),
         }
+
+    # ---- spreadsheet --------------------------------------------------------
+    def default_world(self) -> str:
+        return "none" if self.source["type"] == "replay" else "advised"
+
+    def _world_for(self, world: str | None) -> Simulation:
+        return self.worlds[world if world in self.worlds else self.default_world()]
+
+    def sheet(self, world: str | None, interval: int) -> dict:
+        with self.lock:
+            sim = self._world_for(world)
+            header, rows = summary_rows(sim, interval)
+            return {
+                "clock": self.clock(self.t),
+                "source": self.source_label,
+                "world": world if world in self.worlds else self.default_world(),
+                "titles": {"none": "As it happened" if self.source["type"] == "replay" else "Without screens",
+                           "advised": "With screens"},
+                "messes": [{"id": m.id, "name": m.name} for m in self.cfg.messes],
+                "log_header": LOG_HEADER,
+                "logs": {m.id: log_rows(sim, m.id) for m in self.cfg.messes},
+                "summary_header": header,
+                "summary": rows,
+                "interval": interval,
+            }
+
+    def export_xlsx(self, world: str | None, interval: int) -> bytes:
+        with self.lock:
+            return workbook(self._world_for(world), interval)
+
+    def export_csv(self, world: str | None, interval: int, which: str) -> tuple[str, str]:
+        with self.lock:
+            sim = self._world_for(world)
+            if which in {m.id for m in self.cfg.messes}:
+                name = self.cfg.mess(which).name
+                return f"{name} log", to_csv(LOG_HEADER, log_rows(sim, which))
+            header, rows = summary_rows(sim, interval)
+            return f"Every {interval} min", to_csv(header, rows)
+
+    def write_files(self, folder: Path, interval: int) -> None:
+        """Keep spreadsheet files on disk up to date (for people who'd rather open Excel)."""
+        folder.mkdir(parents=True, exist_ok=True)
+        files = {f"{m.name.lower().replace(' ', '_')}_log.csv": self.export_csv(None, interval, m.id)[1] for m in self.cfg.messes}
+        files[f"every_{interval}_min.csv"] = self.export_csv(None, interval, "summary")[1]
+        files_b = {k: v.encode("utf-8-sig") for k, v in files.items()}
+        files_b["mess_logs.xlsx"] = self.export_xlsx(None, interval)
+        for fname, data in files_b.items():
+            try:
+                _write_atomic(folder / fname, data)
+            except PermissionError:
+                pass  # open in Excel on Windows (locked); the next minute's write catches up
 
     # ---- view -------------------------------------------------------------
     def clock(self, t_s: float) -> str:
@@ -292,6 +347,16 @@ class Demo:
             }
 
 
+def _write_atomic(path: Path, data: bytes) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_bytes(data)
+    try:
+        os.replace(tmp, path)
+    except PermissionError:  # target open in another program (Windows)
+        tmp.unlink(missing_ok=True)
+        raise
+
+
 def _waiting(w: Simulation) -> int:
     return sum(len(h.queue) + len(h.seat_queue) for h in w.halls.values())
 
@@ -335,15 +400,36 @@ def make_handler(demo: Demo):
             self.end_headers()
             self.wfile.write(body)
 
+        def _download(self, body: bytes, filename: str, ctype: str) -> None:
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
         def _json(self, obj, code: int = 200) -> None:
             self._send(code, json.dumps(obj).encode(), "application/json")
 
         def do_GET(self):
-            path = urlparse(self.path).path
+            url = urlparse(self.path)
+            path, q = url.path, {k: v[0] for k, v in parse_qs(url.query).items()}
+            interval = int(q.get("interval", 30)) if q.get("interval", "30").isdigit() else 30
+            interval = interval if interval in INTERVALS else 30
+            world = q.get("world")
             if path in PAGES:
                 self._send(200, (STATIC / PAGES[path]).read_bytes(), "text/html; charset=utf-8")
             elif path == "/api/state":
                 self._json(demo.state())
+            elif path == "/api/sheet":
+                self._json(demo.sheet(world, interval))
+            elif path == "/api/export.xlsx":
+                self._download(demo.export_xlsx(world, interval), "mess_logs.xlsx",
+                               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            elif path == "/api/export.csv":
+                title, text = demo.export_csv(world, interval, q.get("sheet", "summary"))
+                self._download(text.encode("utf-8-sig"), title.lower().replace(" ", "_") + ".csv", "text/csv; charset=utf-8")
             else:
                 self._send(404, b"not found", "text/plain")
 
@@ -419,9 +505,15 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--compliance", type=float, help="share of students who follow advice (default from config)")
     p.add_argument("--seed", type=int, default=2)
     p.add_argument("--log", help="start by replaying this scanner log (CSV)")
+    p.add_argument("--show-names", action="store_true",
+                   help="show names from uploaded logs in the live sheet (same as privacy.show_names = true)")
+    p.add_argument("--save-sheets", metavar="FOLDER", nargs="?", const="live_sheets",
+                   help="keep Excel/CSV copies of the live sheets in FOLDER, rewritten every minute (default folder: live_sheets)")
     args = p.parse_args(argv)
 
     cfg = load_config(args.config)
+    if args.show_names:
+        cfg = dataclasses.replace(cfg, privacy=dataclasses.replace(cfg.privacy, show_names=True))
     demo = Demo(cfg, args.slot, args.compliance if args.compliance is not None else cfg.simulation.compliance, args.seed, args.speed)
     if args.log:
         info = demo.upload(Path(args.log).read_text(encoding="utf-8-sig", errors="replace"))
@@ -436,6 +528,18 @@ def main(argv: list[str] | None = None) -> None:
             last = now
 
     threading.Thread(target=clock, daemon=True).start()
+    if args.save_sheets:
+        folder = Path(args.save_sheets)
+
+        def saver():
+            while True:
+                try:
+                    demo.write_files(folder, 30)
+                except OSError as e:
+                    print(f"Couldn't update the sheet files: {e}")
+                time.sleep(60)
+
+        threading.Thread(target=saver, daemon=True).start()
     host = "0.0.0.0" if args.lan else "127.0.0.1"
     server = ThreadingHTTPServer((host, args.port), make_handler(demo))
     first = cfg.messes[0].id
@@ -443,6 +547,9 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Pitch dashboard          http://localhost:{args.port}/")
     print(f"  Screen outside {cfg.messes[0].name:9s} http://localhost:{args.port}/screen?at={first}")
     print(f"  Kitchen buttons          http://localhost:{args.port}/kitchen")
+    print(f"  Live spreadsheet         http://localhost:{args.port}/sheet")
+    if args.save_sheets:
+        print(f"  Sheet files (every minute): {Path(args.save_sheets).resolve()}")
     if args.lan and (ip := _lan_ip()):
         print(f"  From a phone on the same Wi-Fi: http://{ip}:{args.port}/screen?at={first}")
     print("Ctrl+C to stop.")

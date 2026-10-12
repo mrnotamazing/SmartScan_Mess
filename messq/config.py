@@ -69,6 +69,7 @@ class LayoutConfig:
 class PrivacyConfig:
     salt_env: str = "MESSQ_ID_SALT"
     retention_days: int = 30
+    show_names: bool = False
 
 
 @dataclass(frozen=True)

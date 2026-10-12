@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mess Logs Live</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f3f0; --surface: #fcfcfb; --border: #e3e2de; --grid: #ecebe7; --head: #f0efeb;
+  --text: #0b0b0b; --text-2: #52514e; --text-3: #7a7974;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
+  --new: rgb(42 120 214 / .14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111110; --surface: #1a1a19; --border: #2e2e2c; --grid: #262624; --head: #222220;
+    --text: #f0efec; --text-2: #c3c2b7; --text-3: #8f8e88;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+    --new: rgb(57 135 229 / .22);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111110; --surface: #1a1a19; --border: #2e2e2c; --grid: #262624; --head: #222220;
+  --text: #f0efec; --text-2: #c3c2b7; --text-3: #8f8e88;
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+  --new: rgb(57 135 229 / .22);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 40px; }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 8px 20px; margin-bottom: 12px; }
+h1 { font-size: 21px; margin: 0; }
+.sub { color: var(--text-2); margin: 2px 0 0; font-size: 13px; }
+.updated { text-align: right; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.updated b { display: block; font-size: 24px; color: var(--text); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
+.bar label { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13px; }
+select, button, input[type=search] { font: inherit; font-size: 13px; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 8px; padding: 6px 10px; }
+button { cursor: pointer; }
+button:hover, select:hover { border-color: var(--text-3); }
+button.primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+.spacer { flex: 1; }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.tab { border: 1px solid var(--border); border-bottom: none; border-radius: 10px 10px 0 0; padding: 8px 14px; background: var(--head); color: var(--text-2); cursor: pointer; font-weight: 600; font-size: 13px; }
+.tab.on { background: var(--surface); color: var(--text); position: relative; top: 1px; }
+.tab .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 12px 12px; padding: 12px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; color: var(--text-2); font-size: 13px; }
+.scroll { overflow: auto; max-height: 68vh; border: 1px solid var(--grid); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid); padding: 5px 9px; text-align: left; white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--head); font-weight: 650; font-size: 12px; z-index: 1; }
+td.rn, th.rn { color: var(--text-3); text-align: right; width: 44px; background: var(--head); font-size: 12px; }
+td.num, th.num { text-align: right; }
+td.note { color: var(--text-2); white-space: normal; min-width: 180px; }
+tr.new td:not(.rn) { background: var(--new); transition: background 2.5s; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.kpi { border: 1px solid var(--grid); border-radius: 10px; padding: 10px 12px; }
+.kpi .v { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: 12px; color: var(--text-2); }
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.chart { border: 1px solid var(--grid); border-radius: 10px; padding: 12px; position: relative; }
+.chart h2 { font-size: 14px; margin: 0 0 4px; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-2); margin-bottom: 4px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.legend i.ln { height: 2px; width: 14px; border-radius: 1px; vertical-align: 3px; }
+svg { display: block; width: 100%; height: auto; }
+svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; box-shadow: 0 4px 14px rgb(0 0 0 / .12); display: none; white-space: nowrap; z-index: 2; }
+.note2 { color: var(--text-3); font-size: 12px; margin-top: 14px; }
+@media (max-width: 760px) { .charts { grid-template-columns: 1fr; } .updated { text-align: left; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Mess logs: live sheet</h1>
+      <p class="sub" id="sub">Every scan, per mess, plus counts per time slot.</p>
+    </div>
+    <div class="updated"><b id="clock">--:--</b><span id="upd">connecting…</span></div>
+  </header>
+
+  <div class="bar">
+    <label>Showing <select id="world"></select></label>
+    <label>Group by <select id="interval">
+      <option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option>
+      <option value="30" selected>30 min</option><option value="60">1 hour</option></select></label>
+    <label>Updates <select id="refresh"><option value="3">Live (every 3 s)</option><option value="60">Every 1 minute</option></select></label>
+    <span class="spacer"></span>
+    <button id="csv">Download this tab (CSV)</button>
+    <button id="xlsx" class="primary">Download Excel (.xlsx)</button>
+  </div>
+
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="panel" id="panel"></div>
+
+  <p class="note2">Times are scan times at each mess entrance. "Wait" is from scanning in to sitting down with food (simulated).
+    Names are made up for simulated students; for an uploaded log they're shown only if <code>privacy.show_names</code> is on,
+    otherwise just a pseudonymised ID. The Excel download includes all rows and native charts.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const COLORS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
+const MAX_ROWS = 500;
+let data = null, tab = null, timer = null, seen = {}, search = "", newestFirst = true, lastFetch = 0;
+
+function params() { return `world=${$("world").value || ""}&interval=${$("interval").value}`; }
+$("xlsx").onclick = () => location.href = `/api/export.xlsx?${params()}`;
+$("csv").onclick = () => location.href = `/api/export.csv?${params()}&sheet=${tab === "summary" ? "summary" : tab}`;
+$("world").onchange = () => { seen = {}; load(); };
+$("interval").onchange = load;
+$("refresh").onchange = schedule;
+
+function schedule() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    const every = +$("refresh").value;
+    const left = Math.max(0, Math.ceil(every - (Date.now() - lastFetch) / 1000));
+    if (left === 0) load();
+    else if (every >= 60) $("upd").textContent = `next update in ${left} s`;
+  }, 1000);
+}
+
+async function load() {
+  lastFetch = Date.now();
+  try {
+    const r = await fetch(`/api/sheet?${params()}`);
+    data = await r.json();
+  } catch (e) { $("upd").textContent = "lost connection to the demo"; return; }
+  $("clock").textContent = data.clock;
+  $("upd").textContent = `updated ${new Date().toLocaleTimeString()}`;
+  $("sub").textContent = `${data.source}. Showing: ${data.titles[data.world]}.`;
+  if (!$("world").options.length) {
+    $("world").innerHTML = Object.entries(data.titles).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+  }
+  $("world").value = data.world;
+  if (!tab) tab = data.messes[0].id;
+  renderTabs(); render();
+}
+
+function renderTabs() {
+  const tabs = data.messes.map((m, i) =>
+    `<button class="tab ${tab === m.id ? "on" : ""}" data-t="${m.id}" role="tab"><span class="sw" style="background:${COLORS[i % 4]}"></span>${esc(m.name)} log (${data.logs[m.id].length.toLocaleString()})</button>`
+  ).join("") + `<button class="tab ${tab === "summary" ? "on" : ""}" data-t="summary" role="tab">Every ${data.interval >= 60 ? "hour" : data.interval + " min"}</button>`;
+  $("tabs").innerHTML = tabs;
+  $("tabs").querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.t; renderTabs(); render(); });
+}
+
+function render() { tab === "summary" ? renderSummary() : renderLog(tab); }
+
+function renderLog(id) {
+  const rows = data.logs[id];
+  const before = seen[id] ?? rows.length;
+  seen[id] = rows.length;
+  let idx = rows.map((r, i) => i);
+  if (search) idx = idx.filter(i => rows[i][1].toLowerCase().includes(search) || rows[i][2].toLowerCase().includes(search));
+  if (newestFirst) idx.reverse();
+  const shown = idx.slice(0, MAX_ROWS);
+  const keep = document.activeElement && document.activeElement.id === "q";
+  $("panel").innerHTML = `
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search name or ID" value="${esc(search)}" aria-label="Search">
+      <label><input type="checkbox" id="newest" ${newestFirst ? "checked" : ""}> Newest first</label>
+      <span>${rows.length.toLocaleString()} scans${idx.length > MAX_ROWS ? ` · showing ${MAX_ROWS}; download for all` : ""}</span>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th class="rn">#</th>${data.log_header.map(h => `<th class="${h.startsWith("Wait") ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
+      <tbody>${shown.map(i => `<tr class="${i >= before ? "new" : ""}"><td class="rn">${i + 1}</td>
+        <td>${esc(rows[i][0])}</td><td>${esc(rows[i][1])}</td><td>${esc(rows[i][2])}</td>
+        <td class="num">${rows[i][3] === "" ? "" : rows[i][3]}</td><td class="note">${esc(rows[i][4])}</td></tr>`).join("")
+        || `<tr><td class="rn"></td><td colspan="5">No scans yet</td></tr>`}</tbody>
+    </table></div>`;
+  $("q").oninput = e => { search = e.target.value.trim().toLowerCase(); renderLog(id); };
+  $("newest").onchange = e => { newestFirst = e.target.checked; renderLog(id); };
+  if (keep) { const q = $("q"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  setTimeout(() => document.querySelectorAll("tr.new").forEach(tr => tr.classList.remove("new")), 50);
+}
+
+function renderSummary() {
+  const H = data.summary_header, R = data.summary, n = data.messes.length;
+  const totals = data.messes.map((m, i) => R.reduce((a, r) => a + r[1 + i], 0));
+  const all = totals.reduce((a, b) => a + b, 0);
+  const busiest = R.reduce((b, r) => (!b || r[n + 1] > b[n + 1] ? r : b), null);
+  $("panel").innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="v">${all.toLocaleString()}</div><div class="l">students so far</div></div>
+      ${data.messes.map((m, i) => `<div class="kpi"><div class="v">${totals[i].toLocaleString()} <small style="font-size:13px;color:var(--text-2)">${all ? Math.round(100 * totals[i] / all) : 0}%</small></div><div class="l">${esc(m.name)}</div></div>`).join("")}
+      <div class="kpi"><div class="v">${busiest ? esc(busiest[0].replace(" (so far)", "")) : "–"}</div><div class="l">busiest slot${busiest ? ` (${busiest[n + 1]} students)` : ""}</div></div>
+    </div>
+    <div class="scroll" style="max-height:none"><table>
+      <thead><tr>${H.map((h, i) => `<th class="${i ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
+      <tbody>${R.map(r => `<tr>${r.map((v, i) => `<td class="${i ? "num" : ""}">${v === "" ? "" : esc(v)}</td>`).join("")}</tr>`).join("")
+        || `<tr><td colspan="${H.length}">No scans yet</td></tr>`}</tbody>
+    </table></div>
+    <div class="charts">
+      <div class="chart" id="ch1"><h2>Students per ${data.interval >= 60 ? "hour" : data.interval + " min"}</h2>${legend(false)}<svg viewBox="0 0 520 240" role="img" aria-label="Students per time slot, by mess"></svg><div class="tip"></div></div>
+      <div class="chart" id="ch2"><h2>Average wait (min)</h2>${legend(true)}<svg viewBox="0 0 520 240" role="img" aria-label="Average wait per time slot, by mess"></svg><div class="tip"></div></div>
+    </div>`;
+  const labels = R.map(r => r[0].replace(" (so far)", "*"));
+  const counts = data.messes.map((m, i) => R.map(r => r[1 + i]));
+  const waits = data.messes.map((m, i) => R.map(r => r[n + 3 + i] === "" ? null : r[n + 3 + i]));
+  drawChart("ch1", labels, counts, "bar", "students");
+  drawChart("ch2", labels, waits, "line", "min");
+}
+
+function legend(line) {
+  return `<div class="legend">${data.messes.map((m, i) => `<span><i class="${line ? "ln" : ""}" style="background:${COLORS[i % 4]}"></i>${esc(m.name)}</span>`).join("")}</div>`;
+}
+
+// Axis top = 4 round steps (1, 2, 2.5 or 5 × 10^k), so every gridline label is a clean number.
+function nice(v) { const raw = (v || 1) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return 4 * m * p; return 40 * p; }
+function drawChart(id, labels, series, kind, unit) {
+  const box = $(id), svg = box.querySelector("svg"), tip = box.querySelector(".tip");
+  const W = 520, H = 240, M = { l: 38, r: 10, t: 8, b: 30 };
+  const vals = series.flat().filter(v => v != null);
+  const yMax = nice(Math.max(kind === "bar" ? 10 : 2, ...vals) * 1.05);
+  const n = labels.length, bw = (W - M.l - M.r) / Math.max(1, n);
+  const y = v => H - M.b - (H - M.t - M.b) * v / yMax;
+  const xc = i => M.l + bw * (i + 0.5);
+  let g = `<g class="hv"></g>`;  // hover band sits behind the marks
+  for (let k = 0; k <= 4; k++) {
+    const v = yMax * k / 4;
+    g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${M.l - 6}" y="${y(v) + 4}" text-anchor="end">${+v.toFixed(2)}</text>`;
+  }
+  const every = Math.ceil(n / 8);
+  labels.forEach((l, i) => { if (i % every === 0) g += `<text x="${xc(i)}" y="${H - 10}" text-anchor="middle">${esc(l.split("–")[0])}${l.endsWith("*") ? "*" : ""}</text>`; });
+  if (kind === "bar") {
+    const k = series.length, inner = Math.min(28, (bw * 0.8 - 2 * (k - 1)) / k);
+    series.forEach((s, j) => s.forEach((v, i) => {
+      if (!v) return;
+      const x0 = xc(i) - (k * inner + 2 * (k - 1)) / 2 + j * (inner + 2), top = y(v), base = y(0);
+      const r = Math.min(4, inner / 2, base - top);
+      g += `<path d="M${x0},${base}V${top + r}Q${x0},${top} ${x0 + r},${top}H${x0 + inner - r}Q${x0 + inner},${top} ${x0 + inner},${top + r}V${base}Z" fill="${COLORS[j % 4]}"/>`;
+    }));
+  } else {
+    series.forEach((s, j) => {
+      let d = "", pen = false;
+      s.forEach((v, i) => { if (v == null) { pen = false; return; } d += `${pen ? "L" : "M"}${xc(i)},${y(v)}`; pen = true; });
+      g += `<path d="${d}" fill="none" stroke="${COLORS[j % 4]}" stroke-width="2" stroke-linejoin="round"/>`;
+      s.forEach((v, i) => { if (v != null && n <= 30) g += `<circle cx="${xc(i)}" cy="${y(v)}" r="4" fill="${COLORS[j % 4]}" stroke="var(--surface)" stroke-width="2"/>`; });
+    });
+  }
+  g += labels.map((l, i) => `<rect x="${M.l + bw * i}" y="${M.t}" width="${bw}" height="${H - M.t - M.b}" fill="transparent" data-i="${i}"/>`).join("");
+  svg.innerHTML = g;
+  svg.querySelectorAll("rect[data-i]").forEach(rc => {
+    rc.onmouseenter = () => {
+      const i = +rc.dataset.i;
+      svg.querySelector(".hv").innerHTML = `<rect x="${M.l + bw * i}" y="${M.t}" width="${bw}" height="${H - M.t - M.b}" fill="var(--grid)" opacity=".6"/>`;
+      tip.innerHTML = `<b>${esc(labels[i].replace("*", " (so far)"))}</b>` + data.messes.map((m, j) =>
+        `<br><span style="color:${COLORS[j % 4]}">●</span> ${esc(m.name)}: ${series[j][i] == null ? "–" : series[j][i] + " " + unit}`).join("");
+      tip.style.display = "block";
+      const r = svg.getBoundingClientRect(), px = (M.l + bw * (i + 1)) * r.width / W;
+      tip.style.left = Math.min(px + 16, r.width - 180) + "px"; tip.style.top = "44px";
+    };
+    rc.onmouseleave = () => { tip.style.display = "none"; svg.querySelector(".hv").innerHTML = ""; };
+  });
+}
+
+load(); schedule();
+</script>
+</body>
+</html>

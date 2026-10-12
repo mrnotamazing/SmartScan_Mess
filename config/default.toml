@@ -35,10 +35,13 @@ min_saving_min = 2            # only suggest switching if it saves at least this
 [privacy]
 salt_env = "MESSQ_ID_SALT"    # env var holding the secret used to pseudonymise student IDs
 retention_days = 30           # delete scan logs older than this (DPDP Act: minimise + limit)
+show_names = false            # uploaded real logs: show the name column in the live sheet? Keep false until
+                              # the college has approved it; IDs are then shown pseudonymised. Simulated
+                              # students always get made-up names.
 
 [[mess]]
 id = "A"
-name = "Mess A"
+name = "Central Mess"
 seats = 300                   # ASSUMED
 counters = 3                  # ASSUMED: serving lines running in parallel
 service_rate_per_counter_per_min = 4.0   # ASSUMED: ~15 s to serve one student
@@ -50,7 +53,7 @@ items = ["Main course", "Rice", "Roti", "Dal"]   # trays on the kitchen page; th
 
 [[mess]]
 id = "B"
-name = "Mess B"
+name = "Munch Mess"
 seats = 250
 counters = 3
 service_rate_per_counter_per_min = 4.0

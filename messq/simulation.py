@@ -21,6 +21,7 @@ from .adapters import SimulatedScanner
 from .config import AppConfig, MealSlot, MessConfig, SimConfig
 from .engine import Engine, Policy, Snapshot
 from .events import FoodSignal, FoodState, ScanEvent
+from .names import NameMaker
 from .privacy import pseudonymise
 
 
@@ -34,6 +35,7 @@ class Student:
     arrived_at: float = 0.0
     service_start: float | None = None
     seated_at: float | None = None
+    name: str | None = None  # made-up for simulated students; from the log only if privacy.show_names
 
 
 def arrival_rate_per_min(slot: MealSlot, t_min: float) -> float:
@@ -198,13 +200,14 @@ class Simulation:
         policy: Policy,
         compliance: float | None = None,
         seed: int = 0,
-        arrivals: list[tuple[float, str]] | None = None,
+        arrivals: list[tuple] | None = None,
     ):
-        """`arrivals`: replay mode. (seconds since slot start, mess id) for each
-        scan in a real log. The mess in the log is taken as where that student
+        """`arrivals`: replay mode. (seconds since slot start, mess id[, name]) for
+        each scan in a real log. The mess in the log is taken as where that student
         was heading (their habit); policies may then redirect them."""
         self.cfg, self.slot, self.policy, self.seed = cfg, slot, policy, seed
-        self._replay = deque(sorted(arrivals)) if arrivals is not None else None
+        self._replay = deque(sorted(arrivals, key=lambda a: a[0])) if arrivals is not None else None
+        self._names = NameMaker(seed)
         sim = cfg.simulation
         self.compliance = sim.compliance if compliance is None else compliance
         self._arrivals = random.Random(seed)
@@ -248,10 +251,10 @@ class Simulation:
         else:
             n = poisson(self._arrivals, arrival_rate_per_min(self.slot, (t + dt / 2) / 60) * dt / 60)
             new = [
-                (t + self._arrivals.random() * dt, self._arrivals.choices(self._habit_ids, self._habit_w)[0])
+                (t + self._arrivals.random() * dt, self._arrivals.choices(self._habit_ids, self._habit_w)[0], self._names.next())
                 for _ in range(n)
             ]
-        for ts, habit in new:
+        for ts, habit, *label in new:
             follows = self._arrivals.random() < self.compliance
             if self.policy is Policy.NONE:
                 advised = None
@@ -266,6 +269,7 @@ class Simulation:
                 decided = ts - self._walk[habit] if self._replay is not None else ts
                 arrive = decided + self._walk[hall]
             s = Student(pseudonymise(f"S{len(self.students)}", self._salt), decided, habit, advised, hall)
+            s.name = label[0] if label else None
             self.students.append(s)
             s.arrived_at = max(arrive, t)
             heapq.heappush(self._in_transit, (s.arrived_at, len(self.students), s))

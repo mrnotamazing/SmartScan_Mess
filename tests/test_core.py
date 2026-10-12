@@ -159,7 +159,7 @@ def test_engine_steers_away_from_busy_hall(cfg):
     snap = eng.snapshot()
     assert snap.hall("B").share > snap.hall("A").share
     assert snap.hall("A").status in (Status.AMBER, Status.RED)
-    assert snap.advice == "Go to Mess B"
+    assert snap.advice == f"Go to {cfg.mess("B").name}"
     assert snap.hall("A").wait.wait > snap.hall("B").wait.wait
 
 

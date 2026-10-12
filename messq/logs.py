@@ -35,6 +35,7 @@ TIME_FORMATS = ["%H:%M:%S", "%H:%M", "%I:%M:%S %p", "%I:%M %p", "%H:%M:%S.%f"]
 TIME_KEYS = ("timestamp", "datetime", "date time", "date_time", "punch time", "event time", "log time", "scan time")
 MESS_KEYS = ("mess", "device", "door", "terminal", "reader", "location", "hall", "gate", "site", "controller", "zone")
 ID_KEYS = ("user", "employee", "emp", "student", "roll", "card", "person", "member", "id")
+NAME_KEYS = ("name", "student name", "full name", "user name", "employee name", "person name")
 DIR_KEYS = ("direction", "in/out", "inout", "entry/exit", "event", "type", "status")
 EXIT_WORDS = ("out", "exit", "check-out", "checkout")
 
@@ -65,16 +66,17 @@ class Session:
 @dataclass
 class ParsedLog:
     scans: list[tuple[datetime, str, str]]  # (time, mess id, hashed key), sorted
-    mapping: dict[str, str]  # value in the file -> mess id
-    columns: dict[str, str]  # role -> column name used
+    names: dict[str, str] = field(default_factory=dict)  # hashed key -> name, only if show_names
+    mapping: dict[str, str] = field(default_factory=dict)  # value in the file -> mess id
+    columns: dict[str, str] = field(default_factory=dict)  # role -> column name used
     skipped: int = 0
     warnings: list[str] = field(default_factory=list)
     sessions: list[Session] = field(default_factory=list)
 
-    def arrivals(self, session: Session, slot_start: datetime) -> list[tuple[float, str]]:
+    def arrivals(self, session: Session, slot_start: datetime) -> list[tuple[float, str, str | None]]:
         return [
-            ((ts - slot_start).total_seconds(), mess)
-            for ts, mess, _ in self.scans
+            ((ts - slot_start).total_seconds(), mess, self.names.get(key))
+            for ts, mess, key in self.scans
             if session.start <= ts <= session.end
         ]
 
@@ -126,7 +128,7 @@ def _parse_time(value: str) -> time | None:
 def _map_messes(values: set[str], messes: tuple[MessConfig, ...]) -> dict[str, str]:
     mapping: dict[str, str] = {}
     for v in values:
-        low = v.strip().lower()
+        low = " ".join(v.strip().lower().replace("-", " ").replace("_", " ").split())
         for m in messes:
             if low in (m.id.lower(), m.name.lower()) or m.name.lower() in low:
                 mapping[v] = m.id
@@ -196,7 +198,8 @@ def find_sessions(scans: list[tuple[datetime, str, str]], mess_ids: list[str]) -
     return sessions
 
 
-def parse_log(text: str, messes: tuple[MessConfig, ...], salt: bytes) -> ParsedLog:
+def parse_log(text: str, messes: tuple[MessConfig, ...], salt: bytes, keep_names: bool = False) -> ParsedLog:
+    """keep_names: also keep a name column (privacy.show_names). Off by default."""
     text = text.lstrip("﻿")
     if not text.strip():
         raise LogError("The file is empty.")
@@ -224,11 +227,14 @@ def parse_log(text: str, messes: tuple[MessConfig, ...], salt: bytes) -> ParsedL
         else:
             raise LogError(f"Couldn't find a mess/device column. Columns found: {', '.join(headers)}")
     used |= {m_col} if m_col else set()
+    name_col = _find(headers, NAME_KEYS, exclude=used)
+    used |= {name_col} if name_col else set()
     id_col = _find(headers, ID_KEYS, exclude=used)
     used |= {id_col} if id_col else set()
     dir_col = _find(headers, DIR_KEYS, exclude=used)
 
     rows: list[tuple[datetime, str, str]] = []
+    names: dict[str, str] = {}
     raw_mess: set[str] = set()
     skipped = exits = 0
     today = date.today()
@@ -248,6 +254,8 @@ def parse_log(text: str, messes: tuple[MessConfig, ...], salt: bytes) -> ParsedL
             continue
         raw_id = (row.get(id_col) or "").strip() if id_col else ""
         key = pseudonymise(raw_id or f"row{n}", salt)  # the raw ID is dropped here
+        if keep_names and name_col and (nm := (row.get(name_col) or "").strip()):
+            names[key] = nm
         rows.append((ts, mess_raw, key))
         raw_mess.add(mess_raw)
     if not rows:
@@ -267,7 +275,9 @@ def parse_log(text: str, messes: tuple[MessConfig, ...], salt: bytes) -> ParsedL
         columns["person"] = id_col
     if dir_col:
         columns["in/out"] = dir_col
-    parsed = ParsedLog(scans=scans, mapping=mapping, columns=columns, skipped=skipped, warnings=warnings)
+    if name_col:
+        columns["name"] = name_col + ("" if keep_names else " (hidden: privacy.show_names is off)")
+    parsed = ParsedLog(scans=scans, names=names, mapping=mapping, columns=columns, skipped=skipped, warnings=warnings)
     parsed.sessions = find_sessions(scans, [m.id for m in messes])
     if not parsed.sessions:
         raise LogError(f"Found {len(scans)} scans but no meal with at least {MIN_SESSION_SCANS} scans.")

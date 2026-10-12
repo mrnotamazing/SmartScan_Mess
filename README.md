@@ -41,8 +41,9 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
 | Page | Use it for |
 |---|---|
 | `localhost:8000/` | **Pitch dashboard**: the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
-| `localhost:8000/screen?at=A` | The screen **outside Mess A** (use `?at=B` for Mess B). Full-screen it (F11) on a projector. Add `&dir=left` if Mess B is to the left |
-| `localhost:8000/kitchen?mess=A` | Mess A kitchen managers' page: tap *Low / Out / Refilled* per tray (Main course, Rice, Roti, Dal) |
+| `localhost:8000/screen?at=A` | The screen **outside Central Mess** (use `?at=B` for Munch Mess). Full-screen it (F11) on a projector. Add `&dir=left` if the other mess is to the left |
+| `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray (Main course, Rice, Roti, Dal) |
+| `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts. Download as Excel or CSV |
 
 **Dashboard controls**
 
@@ -54,6 +55,27 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
 * **Upload a day's log (CSV)**: see below.
 * **Make food run out**: simulates a real shortage at a mess. The kitchen page is different: it's what managers *report*.
 
+### Live spreadsheet
+
+`localhost:8000/sheet` records the meal as it happens:
+
+| Tab | Columns |
+|---|---|
+| **Central Mess log**, **Munch Mess log** | one row per scan: Time, Name, ID (pseudonymised), Wait (min), Note (e.g. "walked over from Munch Mess (screen)") |
+| **Every 30 min** | per time slot: students at each mess, total, Central's share, average wait per mess, students who walked over. Totals, the busiest slot, and two charts (students per slot, average wait) |
+
+* **Updates:** *Live* (every 3 s) or *Every 1 minute* (with a countdown). Group by 5/10/15/30/60 minutes.
+* **Showing:** *With screens* or *Without screens*. For an uploaded log, choose *As it happened* (the real scans).
+* **Download Excel (.xlsx):** three sheets with every row, plus native Excel charts. **Download this tab (CSV)** for one tab.
+* **Files that keep themselves up to date:** start the demo with `--save-sheets` and it rewrites
+  `live_sheets/central_mess_log.csv`, `munch_mess_log.csv`, `every_30_min.csv` and `mess_logs.xlsx`
+  every minute. Re-open the file to see new rows (Excel doesn't reload files on its own; on
+  Windows, a file that's open in Excel is skipped until you close it).
+* **Names:** simulated students get made-up names. For an uploaded real log, names are hidden
+  (only a pseudonymised ID is shown) unless you set `privacy.show_names = true` in the config or start
+  with `--show-names`. Turn that on only with the college's approval: names plus meal times are personal data
+  under the DPDP Act.
+
 ### Replaying a real day from a log file
 
 Click **Upload a day's log (CSV)** and pick an export from the scanner software. The app:
@@ -61,7 +83,7 @@ Click **Upload a day's log (CSV)** and pick an export from the scanner software.
 1. finds the columns by name: a time (`Timestamp`, `Punch Time`, or separate `Date` + `Time`), a
    device or mess (`Device Name`, `Terminal`, `Door`, `Mess`…), and optionally a person ID and an
    IN/OUT column (exit rows are ignored),
-2. matches device names to messes (`MESS-A-ENTRY` → Mess A; unknown names are assigned in order),
+2. matches device names to messes (`CENTRAL-MESS-ENTRY` → Central Mess; unknown names are assigned in order),
 3. splits the day into meals wherever there's a 45-minute gap, and shows the busiest one.
 
 The left side then shows **what happened** (real arrival times and messes). The right side shows
@@ -72,7 +94,7 @@ the assumed speeds, so treat the minutes as estimates.
   Make another with `python -m messq.make_sample_log`.
 * The file is read in memory and never saved; raw IDs are hashed as each row is read.
 * Excel files: *File → Save As → CSV* first. Limit 20 MB (export one day).
-* Start straight into a replay: `python -m messq.demo --log path/to/log.csv`.
+* Start straight into a replay: `python -m messq.demo --log path/to/log.csv` (add `--show-names` to see the sample's made-up names).
 
 **Phones in the room.** Run `python -m messq.demo --lan` and the terminal prints an address like
 `http://192.168.1.23:8000/screen?at=A`. Anyone on the **same Wi-Fi** can open it on their phone. Hand
@@ -86,14 +108,15 @@ Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--
 ### A 3-minute pitch script
 
 1. *"Same students, same lunch, two worlds. On the left is today. On the right, there's a screen outside each mess."*
-2. Drag the timeline to about **13:00**. The orange line climbs while Mess B sits half-empty on the left.
+2. Drag the timeline to about **13:00**. The orange line climbs while Munch Mess sits half-empty on the left.
 3. Point at **"waited >10 min"** and at the line under the blue card: *"only about 1 in 10 students
    had to walk 30 seconds to the other mess."*
-4. Open `/screen?at=A`: *"This is what you'd see outside Mess A: how full each mess is and when you'd get food."*
-5. Hand someone the kitchen page and have them tap **Out** on Mess A's main course. Mess A's
-   screen starts pointing to Mess B within seconds.
-6. If you have a real log, upload it: *"This is last Tuesday's lunch, replayed."*
-7. Close with what you need: permission to read scan counts (not faces), and one pilot meal slot.
+4. Open `/screen?at=A`: *"This is what you'd see outside Central Mess: how full each mess is and when you'd get food."*
+5. Hand someone the kitchen page and have them tap **Out** on Central Mess's main course. Its
+   screen starts pointing to Munch Mess within seconds.
+6. Open `/sheet` → *Every 30 min*: *"And the mess manager gets this, live: who came when, per mess, every half hour."*
+7. If you have a real log, upload it: *"This is last Tuesday's lunch, replayed."*
+8. Close with what you need: permission to read scan counts (not faces), and one pilot meal slot.
 
 Be upfront that it is a simulation with assumed numbers. The pilot exists to measure the real ones.
 
@@ -101,7 +124,7 @@ Be upfront that it is a simulation with assumed numbers. The pilot exists to mea
 
 ```bash
 pip install pytest                 # only needed for the tests
-python -m pytest                   # 33 tests
+python -m pytest                   # 35 tests
 
 python -m messq.simulate --trace   # one simulated lunch, as the screen would show it, in the terminal
 python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilibrium routing
@@ -116,7 +139,7 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
 
 ```
  scanner adapter ──► engine ───────────────────────────────► recommendation
- (simulator now,     ├ dedupe events                          "Go to Mess B"
+ (simulator now,     ├ dedupe events                          "Go to Munch Mess"
   COSEC API later)   ├ occupancy  = entries in last N min      + per-hall wait,
                      ├ arrival rate = entries in last 5 min      status, split %
  kitchen taps ──────►├ backlog    = fluid queue estimate
@@ -138,8 +161,8 @@ waits equal (a Wardrop equilibrium).
 
 **Door screens** (`layout.mode = "doors"`, the default). Students arrive at their usual mess, so the
 engine works out what share of the people at the busier door should walk over to reach that
-split. The screen turns that share into a message: a *strong* "Mess B is faster right now →",
-a *soft* "In a hurry? Mess B is ~4 min faster", or "come on in". It never suggests switching
+split. The screen turns that share into a message: a *strong* "Munch Mess is faster right now →",
+a *soft* "In a hurry? Munch Mess is ~4 min faster", or "come on in". It never suggests switching
 unless it saves at least `layout.min_saving_min` (2 min) after the walk. The older single
 shared screen is still available as `layout.mode = "hallway"`.
 
