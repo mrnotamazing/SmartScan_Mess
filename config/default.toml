@@ -1,0 +1,91 @@
+# Smart Mess Queue Balancer - default configuration.
+#
+# Every number tagged ASSUMED is a placeholder chosen to be plausible for a
+# college mess. Replace it with a measured value before trusting results.
+# Credentials (scanner IP, API user/password, ID salt) NEVER go in this file:
+# they are read from environment variables (see README).
+
+[engine]
+occupancy_window_min = 22     # ASSUMED: "entries in the last N minutes" = people inside. Tune per slot.
+rate_window_min = 5           # window for the arrival-rate estimate (scans/min)
+horizon_min = 5               # how far ahead a recommendation is assumed to apply
+stay_mean_min = 20            # ASSUMED: mean time a student stays seated
+routing_update_s = 30         # how often the recommended split is recomputed
+routing_smoothing = 0.5       # EMA weight on the newest split (1 = no smoothing)
+min_share = 0.05              # never send less than 5% to any open hall (keeps estimates alive)
+amber_wait_min = 5            # status thresholds on predicted wait (excluding walk)
+red_wait_min = 10
+food_low_penalty_min = 2      # ASSUMED: extra expected delay when kitchen tapped "tray low"
+food_out_grace_min = 5        # an "out" tap expires this long after the expected refill time
+food_low_expiry_min = 20      # a "low" tap expires after this long (staff forget to tap "refilled")
+assumed_compliance = 1.0      # set < 1 to over-correct for students who ignore advice
+                              # (needs [engine.natural_share], e.g. from a no-screen baseline day)
+
+[engine.natural_share]
+A = 0.65
+B = 0.35
+
+[privacy]
+salt_env = "MESSQ_ID_SALT"    # env var holding the secret used to pseudonymise student IDs
+retention_days = 30           # delete scan logs older than this (DPDP Act: minimise + limit)
+
+[[mess]]
+id = "A"
+name = "Mess A"
+seats = 300                   # ASSUMED
+counters = 3                  # ASSUMED: serving lines running in parallel
+service_rate_per_counter_per_min = 4.0   # ASSUMED: ~15 s to serve one student
+walk_time_s = 30              # from the decision point (screen) to the hall
+food_batch = 350              # ASSUMED: portions of the main item per batch
+food_refill_trigger = 120     # ASSUMED: kitchen starts the next batch at this stock
+food_refill_time_min = 10     # ASSUMED: minutes to bring the next batch out
+
+[[mess]]
+id = "B"
+name = "Mess B"
+seats = 250
+counters = 3
+service_rate_per_counter_per_min = 4.0
+walk_time_s = 30
+food_batch = 350
+food_refill_trigger = 120
+food_refill_time_min = 10
+
+# ---------------------------------------------------------------------------
+# Simulation only (fake data). Nothing here touches a real scanner.
+# ---------------------------------------------------------------------------
+[simulation]
+step_s = 5                    # simulation tick = scanner poll interval
+compliance = 0.6              # ASSUMED: share of students who follow the advice
+staff_signal_prob = 0.9       # chance kitchen staff actually tap "tray low"/"out"/"refilled"
+stay_mean_min = 20            # true stay-time distribution (lognormal)
+stay_sd_min = 6
+service_cv = 0.6              # variability of serving time (1.0 = exponential, as M/M/c assumes)
+
+[simulation.habit_share]      # ASSUMED: where students go by habit without advice
+A = 0.65
+B = 0.35
+
+[[simulation.slot]]
+name = "breakfast"
+start = "07:30"
+duration_min = 120
+expected_students = 1100
+peak_offset_min = 50
+spread_min = 25
+
+[[simulation.slot]]
+name = "lunch"
+start = "12:30"
+duration_min = 120
+expected_students = 1600
+peak_offset_min = 35
+spread_min = 25
+
+[[simulation.slot]]
+name = "dinner"
+start = "19:30"
+duration_min = 150
+expected_students = 1500
+peak_offset_min = 45
+spread_min = 30

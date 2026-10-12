@@ -1,0 +1,12 @@
+[project]
+name = "messq"
+version = "0.1.0"
+description = "Smart Mess Queue Balancer: balance dining-hall queues using entry-scan events"
+requires-python = ">=3.11"
+dependencies = []  # Phase 1 core is standard-library only
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
