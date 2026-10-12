@@ -277,6 +277,13 @@ Secrets are never put in the config file. They come from environment variables:
 
 ## Plugging in the real scanner (Phase 4, not built yet)
 
+**The device: COSEC ARGO FACE210M.** From Matrix's product page: a face-based time-attendance
+terminal (face + Mifare/DESFire card; "M" = Mifare), 3.5" touchscreen, **Ethernet 10/100 and PoE
+only (no Wi-Fi)**, USB-C, 50,000 users, 200,000 face templates, **500,000 stored events**. The
+time-attendance variant lists **no Wiegand, relay, door-lock or external-reader interface**, which
+rules out tapping it with extra hardware. The integration has to be over the network. The product
+page doesn't mention an API or event push for this model, so the API details must come from Matrix or IT.
+
 Every event source implements `messq.adapters.ScannerAdapter.poll() -> list[ScanEvent]`.
 Swapping the simulator for a real source does not touch the engine. The plan:
 
@@ -299,7 +306,8 @@ and whether push/webhooks exist.
 - [ ] Written permission from the college admin **and** the mess vendor to read scan events
 - [ ] Confirm one scanner per mess entrance, and where each screen can be mounted (power + network)
 - [ ] One day's attendance export (CSV) to replay in the demo
-- [ ] Exact device model (ARGO FACE210?) and firmware version
+- [x] Device model: **COSEC ARGO FACE210M** (confirmed). Still needed: firmware version
+- [ ] Is each FACE210M registered to a COSEC server (CENTRA / VYOM)? If yes, read events from the server, not the devices
 - [ ] Whether events are read from the device or from the COSEC server (VYOM/CENTRA), plus its IP
 - [ ] API username/password with **read-only** access to events
 - [ ] Official Matrix COSEC API documentation (usually given to customers/integrators)
