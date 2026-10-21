@@ -163,6 +163,12 @@ input[type=file] { display: none; }
         <svg id="chart" viewBox="0 0 700 260" role="img" aria-label="People waiting in line over the meal, with and without the screens"></svg>
         <div class="tip" id="tip"></div>
       </div>
+      <h2 style="margin-top:18px">Wait time (minutes)</h2>
+      <div class="msg" style="margin-bottom:6px">Average wait from reaching the door to getting food, for students served in the last 5 minutes</div>
+      <div class="chartwrap">
+        <svg id="chart-wait" viewBox="0 0 700 260" role="img" aria-label="Average wait in minutes over the meal, with and without the screens"></svg>
+        <div class="tip" id="tip-wait"></div>
+      </div>
     </section>
     <section class="card">
       <h2>What the door screens say now</h2>
@@ -337,21 +343,27 @@ function controls(s) {
   if (document.activeElement !== $("comp")) { $("comp").value = Math.round(s.compliance * 100); $("compv").textContent = Math.round(s.compliance * 100) + "%"; }
 }
 
-// ---- chart ---------------------------------------------------------------
+// ---- charts --------------------------------------------------------------
 const W = 700, H = 260, M = { l: 40, r: 16, t: 10, b: 28 };
-let scale = null, lastHover = null;
-function niceMax(v) { const s = [40, 80, 120, 160, 200, 240, 320, 400, 600, 800, 1000]; return s.find(x => x >= v) || Math.ceil(v / 400) * 400; }
-function chart(s) {
-  const hn = s.worlds.none.history, ha = s.worlds.advised.history;
+const CHARTS = [
+  { svg: "chart", tip: "tip", i: 1, steps: [40, 80, 120, 160, 200, 240, 320, 400, 600, 800, 1000], fmt: v => `${v} in line` },
+  { svg: "chart-wait", tip: "tip-wait", i: 2, steps: [4, 8, 12, 16, 20, 24, 32, 40, 60, 80], fmt: v => `${(+v).toFixed(1)} min wait` },
+];
+const hovers = {};
+function niceMax(v, steps) { return steps.find(x => x >= v) || Math.ceil(v / steps[steps.length - 1]) * steps[steps.length - 1]; }
+function chart(s) { CHARTS.forEach(c => drawChart(s, c)); }
+function drawChart(s, c) {
+  const pick = h => h.filter(p => p.length > c.i).map(p => [p[0], p[c.i]]);
+  const hn = pick(s.worlds.none.history), ha = pick(s.worlds.advised.history);
   const xMax = s.max_t_min;
-  const yMax = niceMax(Math.max(10, ...hn.map(p => p[1]), ...ha.map(p => p[1])));
+  const yMax = niceMax(Math.max(c.steps[0] / 4, ...hn.map(p => p[1]), ...ha.map(p => p[1])), c.steps);
   const x = v => M.l + (W - M.l - M.r) * v / xMax, y = v => H - M.b - (H - M.t - M.b) * v / yMax;
-  scale = { x, y, xMax, hn, ha };
+  c.scale = { x, y, xMax, hn, ha };
   let g = "";
   for (let i = 0; i <= 4; i++) {
     const v = yMax * i / 4;
     g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
-    g += `<text x="${M.l - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    g += `<text x="${M.l - 6}" y="${y(v) + 4}" text-anchor="end">${+v.toFixed(1)}</text>`;
   }
   const stepMin = xMax > 200 ? 60 : 30;
   for (let m = 0; m <= xMax; m += stepMin) g += `<text x="${x(m)}" y="${H - 8}" text-anchor="middle">${clockAt(m)}</text>`;
@@ -359,26 +371,26 @@ function chart(s) {
   const path = pts => pts.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
   g += `<path d="${path(hn)}" fill="none" stroke="var(--without)" stroke-width="2" stroke-linejoin="round"/>`;
   g += `<path d="${path(ha)}" fill="none" stroke="var(--with)" stroke-width="2" stroke-linejoin="round"/>`;
-  g += `<g id="hover"></g><rect id="hit" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}" fill="transparent"/>`;
-  const svg = $("chart");
+  g += `<g class="hover"></g><rect class="hit" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}" fill="transparent"/>`;
+  const svg = $(c.svg);
   svg.innerHTML = g;
-  svg.querySelector("#hit").onmousemove = e => { lastHover = e; hover(e); };
-  svg.querySelector("#hit").onmouseleave = () => { lastHover = null; $("tip").style.display = "none"; svg.querySelector("#hover").innerHTML = ""; };
-  if (lastHover) hover(lastHover);
+  svg.querySelector(".hit").onmousemove = e => { hovers[c.svg] = e; hover(c, e); };
+  svg.querySelector(".hit").onmouseleave = () => { hovers[c.svg] = null; $(c.tip).style.display = "none"; svg.querySelector(".hover").innerHTML = ""; };
+  if (hovers[c.svg]) hover(c, hovers[c.svg]);
 }
-function hover(e) {
-  const svg = $("chart"), r = svg.getBoundingClientRect();
-  const { x, y, xMax, hn, ha } = scale;
+function hover(c, e) {
+  const svg = $(c.svg), r = svg.getBoundingClientRect();
+  const { x, y, xMax, hn, ha } = c.scale;
   if (!hn.length) return;
   const tm = ((e.clientX - r.left) * W / r.width - M.l) / (W - M.l - M.r) * xMax;
   let i = 0; while (i < hn.length - 1 && Math.abs(hn[i + 1][0] - tm) < Math.abs(hn[i][0] - tm)) i++;
   const pn = hn[i], pa = ha[Math.min(i, ha.length - 1)];
-  svg.querySelector("#hover").innerHTML =
+  svg.querySelector(".hover").innerHTML =
     `<line x1="${x(pn[0])}" x2="${x(pn[0])}" y1="${M.t}" y2="${H - M.b}" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="3 3"/>` +
     `<circle cx="${x(pn[0])}" cy="${y(pn[1])}" r="4" fill="var(--without)" stroke="var(--surface)" stroke-width="2"/>` +
     `<circle cx="${x(pa[0])}" cy="${y(pa[1])}" r="4" fill="var(--with)" stroke="var(--surface)" stroke-width="2"/>`;
-  const tip = $("tip");
-  tip.innerHTML = `<b>${clockAt(pn[0])}</b><br>${esc(last.titles.none.split(" (")[0])}: ${pn[1]} in line<br>With the screens: ${pa[1]} in line`;
+  const tip = $(c.tip);
+  tip.innerHTML = `<b>${clockAt(pn[0])}</b><br>${esc(last.titles.none.split(" (")[0])}: ${c.fmt(pn[1])}<br>With the screens: ${c.fmt(pa[1])}`;
   tip.style.display = "block";
   tip.style.left = Math.min(x(pn[0]) * r.width / W + 12, r.width - 220) + "px";
   tip.style.top = "8px";

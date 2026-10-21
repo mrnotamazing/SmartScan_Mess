@@ -142,7 +142,7 @@ class Demo:
                 w.t += self.cfg.simulation.step_s  # keep both clocks together
         if int(self.t) % HISTORY_EVERY_S == 0:
             for k, w in self.worlds.items():
-                self.history[k].append([round(self.t / 60, 2), _waiting(w)])
+                self.history[k].append([round(self.t / 60, 2), _waiting(w), _recent_wait(w)])
 
     def _record(self, action: Action) -> None:
         """Store a live action at the current time (dropping any 'future' ones
@@ -408,6 +408,17 @@ def _write_atomic(path: Path, data: bytes) -> None:
     except PermissionError:  # target open in another program (Windows)
         tmp.unlink(missing_ok=True)
         raise
+
+
+WAIT_WINDOW_S = 300  # the wait chart averages over students who got food in the last 5 min
+
+
+def _recent_wait(w: Simulation) -> float:
+    """Average wait (door to food) of students who got food in the last 5 minutes."""
+    lo = w.t - WAIT_WINDOW_S
+    waits = [(s.seated_at - s.arrived_at) / 60 for s in reversed(w.students)
+             if s.seated_at is not None and lo < s.seated_at <= w.t]
+    return round(mean(waits), 1) if waits else 0.0
 
 
 def _waiting(w: Simulation) -> int:
