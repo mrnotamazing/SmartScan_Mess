@@ -50,6 +50,7 @@ class HallView:
     status: Status
     share: float  # fraction of students the system wants in this hall
     visit_min: float  # expected scan-to-leaving time for someone arriving now (normal ~18 min)
+    scanner_load: float  # scans/min ÷ scanner capacity; near 1 means a hidden queue may be forming outside
 
     @property
     def space(self) -> int:
@@ -261,6 +262,7 @@ class Engine:
                     status=status,
                     share=shares[m.id],
                     visit_min=wb.wait + wb.service + e.stay_mean_min,
+                    scanner_load=rate / m.scan_capacity_per_min,
                 )
             )
         by_id = {v.mess_id: v for v in views}

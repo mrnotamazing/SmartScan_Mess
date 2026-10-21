@@ -32,7 +32,8 @@ class Student:
     habit: str
     advised: str | None
     hall: str
-    arrived_at: float = 0.0
+    arrived_at: float = 0.0  # reached the mess door (joins the scanner queue)
+    scanned_at: float | None = None  # scanned in: the time the biometric log records
     service_start: float | None = None
     seated_at: float | None = None
     left_at: float | None = None
@@ -64,8 +65,15 @@ def poisson(rng: random.Random, lam: float) -> int:
 
 
 class Hall:
-    def __init__(self, cfg: MessConfig, sim: SimConfig, rng: random.Random, signal):
+    def __init__(self, cfg: MessConfig, sim: SimConfig, rng: random.Random, signal, on_scan=None):
         self.cfg, self.sim, self.rng, self.signal = cfg, sim, rng, signal
+        self.on_scan = on_scan or (lambda s: None)
+        # Entrance: a queue for the face scanner(s). It is outside the hall and the
+        # system cannot see it: a student only exists for the engine once scanned.
+        self.scan_queue: deque[Student] = deque()
+        self.scan_free_at = [0.0] * cfg.scanners
+        self._scanning: list[tuple[float, int, Student]] = []
+        self.peak_scan_queue = 0
         self.queue: deque[Student] = deque()
         self.free_at = [0.0] * cfg.counters
         self.serving: list[tuple[float, int, Student]] = []  # (finish, tiebreak, student)
@@ -115,13 +123,39 @@ class Hall:
         self.signal(FoodSignal(now, self.cfg.id, FoodState.OUT))  # demo: staff always tap this one
 
     def true_in_hall(self) -> int:
+        """People inside (scanned in): what the engine tries to estimate."""
         return len(self.queue) + len(self.serving) + len(self.seated) + len(self.seat_queue)
 
+    def outside_queue(self) -> int:
+        return len(self.scan_queue) + len(self._scanning)
+
+    def _scan_time(self) -> float:
+        k = 1 / 0.3**2  # scans are fairly regular (cv 0.3)
+        return self.rng.gammavariate(k, self.cfg.scan_time_s / k)
+
     def advance(self, t1: float) -> None:
+        # 0. Entrance scanner(s): one student at a time per scanner.
+        while self.scan_queue:
+            k = min(range(len(self.scan_free_at)), key=self.scan_free_at.__getitem__)
+            start = max(self.scan_free_at[k], self.scan_queue[0].arrived_at)
+            if start >= t1:
+                break
+            s = self.scan_queue.popleft()
+            finish = start + self._scan_time()
+            self.scan_free_at[k] = finish
+            self._tie += 1
+            heapq.heappush(self._scanning, (finish, self._tie, s))
+        while self._scanning and self._scanning[0][0] <= t1:
+            finish, _, s = heapq.heappop(self._scanning)
+            s.scanned_at = finish
+            self.queue.append(s)
+            self.on_scan(s)
+        self.peak_scan_queue = max(self.peak_scan_queue, self.outside_queue())
+
         # 1. Serving, one service start at a time on the earliest-free counter.
         while True:
             k = min(range(len(self.free_at)), key=self.free_at.__getitem__)
-            start = max(self.free_at[k], self.queue[0].arrived_at) if self.queue else math.inf
+            start = max(self.free_at[k], self.queue[0].scanned_at) if self.queue else math.inf
             if self.stock <= 0:
                 start = max(start, self.refill_eta if self.refill_eta is not None else math.inf)
             if self.refill_eta is not None and self.refill_eta <= min(start, t1):
@@ -184,6 +218,7 @@ class SimResult:
     compliance_rate: float  # of students advised to go somewhere new, share who did (nan without advice)
     switch_rate: float  # went somewhere other than their habit
     occupancy_mae: float  # |estimated - true people in hall|, averaged
+    peak_scan_queue: int = 0  # largest queue outside, waiting to scan in (invisible to the system)
     hall_counts: dict[str, int] = field(default_factory=dict)
     unfinished: int = 0
     snapshots: list[Snapshot] = field(default_factory=list)
@@ -219,7 +254,9 @@ class Simulation:
         self.scanner = SimulatedScanner()
         self._signals: list[FoodSignal] = []
         hall_seed = random.Random(f"halls-{seed}")
-        self.halls = {m.id: Hall(m, sim, random.Random(hall_seed.random()), self._signals.append) for m in cfg.messes}
+        self.halls = {
+            m.id: Hall(m, sim, random.Random(hall_seed.random()), self._signals.append, self._emit_scan) for m in cfg.messes
+        }
         self._walk = {m.id: m.walk_time_s for m in cfg.messes}
         self._doors = cfg.layout.mode == "doors"
         self._habit_ids, self._habit_w = list(sim.habit_share), list(sim.habit_share.values())
@@ -237,8 +274,12 @@ class Simulation:
         if self.t >= self._hard_stop:
             return True
         return self.t >= self.end and not self._replay and not self._in_transit and all(
-            not h.queue and not h.serving and not h.seat_queue for h in self.halls.values()
+            not h.queue and not h.serving and not h.seat_queue and not h.outside_queue() for h in self.halls.values()
         )
+
+    def _emit_scan(self, s: Student) -> None:
+        self._n_events += 1
+        self.scanner.emit(ScanEvent(s.scanned_at, s.hall, s.key, event_id=f"e{self._n_events}"))
 
     def step(self) -> None:
         dt = self.cfg.simulation.step_s
@@ -275,12 +316,10 @@ class Simulation:
             self.students.append(s)
             s.arrived_at = max(arrive, t)
             heapq.heappush(self._in_transit, (s.arrived_at, len(self.students), s))
-        # Arrivals at halls: scanned at the entrance, then join the serving queue.
+        # Arrivals at the mess door: queue for the scanner; the hall emits the scan.
         while self._in_transit and self._in_transit[0][0] <= t1:
             _, _, s = heapq.heappop(self._in_transit)
-            self._n_events += 1
-            self.scanner.emit(ScanEvent(s.arrived_at, s.hall, s.key, event_id=f"e{self._n_events}"))
-            self.halls[s.hall].queue.append(s)
+            self.halls[s.hall].scan_queue.append(s)
         for h in self.halls.values():
             h.advance(t1)
         # The engine sees only polled scans and kitchen taps.
@@ -317,6 +356,7 @@ class Simulation:
             p90_wait_min=waits[int(0.9 * (len(waits) - 1))] if waits else 0.0,
             mean_trip_min=mean((s.seated_at - s.decided_at) / 60 for s in done) if done else 0.0,
             peak_queue=max(h.peak_queue for h in halls.values()),
+            peak_scan_queue=max(h.peak_scan_queue for h in halls.values()),
             outages=sum(h.outages for h in halls.values()),
             outage_minutes=sum(h.outage_minutes for h in halls.values()),
             compliance_rate=(sum(s.hall == s.advised for s in redirected) / len(redirected)) if redirected else math.nan,

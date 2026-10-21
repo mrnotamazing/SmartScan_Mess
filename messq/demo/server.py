@@ -320,6 +320,7 @@ class Demo:
                         "wait_min": round(h.wait.wait, 1),
                         "to_food_min": round(h.wait.wait + h.wait.service, 1),
                         "visit_min": round(h.visit_min, 1),
+                        "scanner_load": round(h.scanner_load, 3),
                         "status": h.status.value,
                         "share": round(h.share, 3),
                         "occupancy": h.occupancy,
@@ -400,7 +401,8 @@ def _write_atomic(path: Path, data: bytes) -> None:
 
 
 def _waiting(w: Simulation) -> int:
-    return sum(len(h.queue) + len(h.seat_queue) for h in w.halls.values())
+    """Everyone waiting: outside for the scanner, for food, or for a seat."""
+    return sum(h.outside_queue() + len(h.queue) + len(h.seat_queue) for h in w.halls.values())
 
 
 def _world(w: Simulation, history: list) -> dict:
@@ -417,7 +419,8 @@ def _world(w: Simulation, history: list) -> dict:
             {
                 "id": h.cfg.id,
                 "name": h.cfg.name,
-                "queue": len(h.queue) + len(h.seat_queue),
+                "queue": h.outside_queue() + len(h.queue) + len(h.seat_queue),
+                "outside": h.outside_queue(),
                 "inside": h.true_in_hall(),
                 "seats": h.cfg.seats,
                 "food": "out" if h.stock <= 0 else ("low" if h.stock <= h.cfg.food_refill_trigger else "ok"),

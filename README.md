@@ -143,7 +143,7 @@ Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--
 0. Before you start: open `/manager` and log in. Have the student page (`/`) open on your phone.
 1. *"Same students, same lunch, two worlds. On the left is today. On the right, there's a screen outside each mess."*
 2. Drag the timeline to about **13:00**. The orange line climbs while Munch Mess sits half-empty on the left.
-3. Point at **"waited >10 min"** and at the line under the blue card: *"only about 1 in 10 students
+3. Point at **"waited >10 min"** and at the line under the blue card: *"only about 1 in 5 students
    had to walk 30 seconds to the other mess."*
 4. Open `/screen?at=A`: *"This is what you'd see outside Central Mess: how full each mess is and when you'd get food."*
 5. Hand someone the kitchen page and have them tap **Out** on Central Mess's main course. Its
@@ -212,28 +212,33 @@ over-corrects so that the *realised* split is balanced.
 
 ## Results (default config)
 
-Measured inputs: seating (Central CT 900, Munch Mess 500) and time from scan to leaving on a normal
-day (~18 min; in the simulator, a normal visit comes out at ~17.5 min and a peak visit at ~24 min
-without screens vs ~20 min with them).
-Everything else (serving speed, food batches, arrival pattern, habits) is still ASSUMED.
+**Measured inputs:** lunch 11:30–14:30; 2,960 students (= plates served) across Central CT and Munch Mess;
+seats 900 / 500; 2 serving stations and 1 face scanner per mess; ~18 min scan-to-leaving on a normal day;
+35 min to restock (25–30 prep + 7–8 delivery).
+**Assumed:** 85% go to Central by habit; ~10 students/min per serving station (~6 s each; it must be about
+this fast for 2 stations to serve ~2,500 Central students in 3 hours); 2 s per face scan; the arrival curve's
+shape; food batch sizes.
 
 Every policy sees the same students (paired comparison), ±95% CI.
-Wait = minutes from scanning in at the hall to sitting down with food.
+Wait = minutes from reaching the mess door (including any queue at the scanner) to sitting down with food.
 
-### Door screens (the default layout), simulated lunch, 30 runs per row
+### Door screens (the default layout), simulated lunch, 20 runs per row
 
-| Policy | Students who follow | Avg wait | p90 wait | Peak queue | Students who walked to the other mess |
-|---|---|---|---|---|---|
-| No screens (habit 65/35) | – | 5.4 ± 0.4 | 14.8 ± 1.2 | 192 ± 14 | 0% |
-| "Switch if it saves ≥2 min" (greedy) | 60% | 2.1 ± 0.3 | 5.2 ± 0.8 | 76 ± 10 | 11% |
-| Equilibrium split | 30% | 2.4 ± 0.2 | 6.3 ± 0.7 | 88 ± 7 | 9% |
-| Equilibrium split | 60% | 2.2 ± 0.3 | 5.5 ± 0.8 | 79 ± 9 | 10% |
-| Equilibrium split | 100% | 2.2 ± 0.3 | 5.4 ± 0.8 | 78 ± 10 | 11% |
+| Policy | Students who follow | Avg wait | p90 wait | Peak queue | Food run-outs | Walked to the other mess |
+|---|---|---|---|---|---|---|
+| No screens (habit 85/15) | – | 7.0 ± 0.4 | 17.2 ± 0.7 | 495 ± 15 | 2.0 | 0% |
+| "Switch if it saves ≥2 min" (greedy) | 60% | 1.1 ± 0.3 | 3.8 ± 1.1 | 202 ± 29 | 2.9 | 20% |
+| Equilibrium split | 30% | 1.5 ± 0.2 | 4.5 ± 0.5 | 235 ± 10 | 3.0 | 15% |
+| Equilibrium split | 60% | 1.1 ± 0.2 | 3.7 ± 0.8 | 190 ± 28 | 3.0 | 20% |
+| Equilibrium split | 100% | 1.5 ± 0.2 | 4.5 ± 0.7 | 187 ± 26 | 3.2 | 23% |
 
-**Replaying the sample log's lunch** (1,604 real-shaped arrivals, 20 runs): no screens 6.0 ± 0.3 min
-average (p90 16.0); equilibrium split at 60% follow 1.9 ± 0.2 min (p90 4.5), with 11% of students switching.
+Without screens the simulated p90 wait (~17 min) is close to the ~15 min delay observed in Phase 1,
+which suggests the assumed numbers are in the right range.
 
-### One shared hallway screen (`layout.mode = "hallway"`), simulated lunch
+### One shared hallway screen (`layout.mode = "hallway"`): earlier inputs
+
+These two tables were run with the earlier placeholder inputs (1,600 students, 3 lines at 4/min, habit
+65/35, 12:30–14:30). They are kept because the herding comparison still holds.
 
 | Policy | Compliance | Avg wait | p90 wait | Peak queue | Food run-outs | Occupancy est. error |
 |---|---|---|---|---|---|---|
@@ -256,15 +261,23 @@ arrive** (e.g. on their phone in the hostel), so feedback lags:
 
 What this says (under the ASSUMED parameters):
 
-1. With these parameters, balancing cuts the average wait from about 5.5 to about 2 minutes and the p90 wait from about 15 to about 5 minutes.
-2. **Door screens need far fewer people to move.** About 1 in 10 students walks to the other mess,
-   against 30–50% with one shared screen, for the same benefit. That's the pitch line.
+1. With the corrected inputs, door screens cut the average wait from about 7 to about 1–1.5 minutes,
+   and the p90 wait from about 17 to about 4 minutes.
+2. **About 1 in 5 students walks to the other mess** (15–24%). Because 85% start at Central, rebalancing
+   needs more movement than the earlier 65/35 guess did.
 3. At the doors, a simple "switch if it saves ≥2 min" rule does as well as the equilibrium split.
    Feedback is fast (30 s walk) and the threshold stops herding. The equilibrium split matters
-   when advice is read early, e.g. on phones (next table).
-4. Greedy advice herds when the advice lags. In the 5-minute table it gets *worse* as more students obey it (3.0 → 4.3 min). The equilibrium split doesn't have this problem.
-5. Balancing alone did **not** reduce food run-outs in this model. Total consumption is unchanged, and refills are triggered by stock level. Fewer run-outs need kitchen-side changes (earlier refill triggers, forecasting: Phase 6). Don't promise the vendor fewer run-outs from routing alone.
-6. A missed "refilled" tap is dangerous. Before tap expiry was added, one missed tap kept a hall marked empty, sent every student to the other hall, and pushed one run to a 9-minute average wait. Taps now expire, and that case is a regression test.
+   when advice is read early, e.g. on phones.
+4. Greedy advice herds when the advice lags (hallway tables): it gets *worse* as more students obey it.
+5. **Moving students moves the run-outs.** Food run-outs rise slightly with screens (about 2 → 3 per
+   lunch) because Munch now feeds more students and a restock takes 35 minutes. Student routing and food
+   allocation have to be planned together (see the LP allocation in `docs/MDS_Decision_Workbook.xlsx`).
+6. **The single face scanner is close to its limit at peak.** At an assumed 2 s per scan it handles about
+   30 students/min; peak arrivals at Central are close to that, so a queue of 20–25 people can form
+   *outside* the scanner, which the system cannot see. The dashboard shows each scanner's load. Time the
+   scan with a stopwatch.
+7. A missed "refilled" tap is dangerous. Before tap expiry was added, one missed tap kept a hall marked
+   empty and sent every student to the other hall. Taps now expire, and that case is a regression test.
 
 ## Configuration
 

@@ -191,7 +191,7 @@ def _feed(engine, mess_id, n, t0, t1, prefix):
 def test_engine_steers_away_from_busy_hall(cfg):
     eng = Engine(cfg)
     eng.update(0)
-    _feed(eng, "A", 150, 0, 300, "a")  # 30/min into A, far above its 12/min capacity
+    _feed(eng, "A", 300, 0, 300, "a")  # 60/min into A, far above its 20/min capacity
     _feed(eng, "B", 20, 0, 300, "b")
     eng.update(300)
     snap = eng.snapshot()

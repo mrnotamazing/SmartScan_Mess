@@ -31,11 +31,12 @@ def log_rows(sim: Simulation, mess_id: str) -> list[list]:
     """Everyone who has scanned in at `mess_id` so far, in scan order."""
     names = {m.id: m.name for m in sim.cfg.messes}
     rows = []
-    for s in sorted((s for s in sim.students if s.hall == mess_id and s.arrived_at <= sim.t), key=lambda s: s.arrived_at):
+    scanned = (s for s in sim.students if s.hall == mess_id and s.scanned_at is not None and s.scanned_at <= sim.t)
+    for s in sorted(scanned, key=lambda s: s.scanned_at):
         wait = round((s.seated_at - s.arrived_at) / 60, 1) if s.seated_at is not None and s.seated_at <= sim.t else ""
         note = f"walked over from {names[s.habit]} (screen)" if s.hall != s.habit else ""
-        inside = round((s.left_at - s.arrived_at) / 60, 1) if s.left_at is not None and s.left_at <= sim.t else ""
-        rows.append([_clock(sim.slot.start, s.arrived_at), s.name or "(hidden)", f"ID {s.key[:6]}", wait, inside, note])
+        inside = round((s.left_at - s.scanned_at) / 60, 1) if s.left_at is not None and s.left_at <= sim.t else ""
+        rows.append([_clock(sim.slot.start, s.scanned_at), s.name or "(hidden)", f"ID {s.key[:6]}", wait, inside, note])
     return rows
 
 
@@ -53,9 +54,9 @@ def summary_rows(sim: Simulation, interval_min: int) -> tuple[list[str], list[li
               *[f"Avg wait {m.name} (min)" for m in cfg.messes], "Walked over (screen)"]
     buckets: dict[int, list] = {}
     for s in sim.students:
-        if s.arrived_at > sim.t:
+        if s.scanned_at is None or s.scanned_at > sim.t:
             continue
-        b = int((start_min + s.arrived_at / 60 - first) // step)
+        b = int((start_min + s.scanned_at / 60 - first) // step)
         buckets.setdefault(b, []).append(s)
     rows = []
     b = 0

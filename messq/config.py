@@ -26,6 +26,12 @@ class MessConfig:
     food_refill_trigger: int = 120
     food_refill_time_min: float = 10.0
     items: tuple[str, ...] = ("Main course", "Rice", "Roti", "Dal")  # trays the kitchen page shows; first = main
+    scanners: int = 1  # face-scan terminals at the entrance
+    scan_time_s: float = 2.0  # time for one student to scan in
+
+    @property
+    def scan_capacity_per_min(self) -> float:
+        return self.scanners * 60.0 / self.scan_time_s
 
     @property
     def capacity_per_min(self) -> float:

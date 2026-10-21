@@ -281,7 +281,9 @@ function doors(s) {
       `<div class="door"><div class="where">Outside ${esc(halls[d.at].name)}</div><div class="say">${doorSay(d, halls[d.at])}</div></div>`
     ).join("") + `<div class="door">${fills}</div>` +
       `<div class="door"><div class="where">Expected time inside for someone arriving now (scan to leaving; about ${Math.round(s.normal_visit_min)} min on a normal day)</div>` +
-      `<div class="say" style="font-size:15px">${s.advice.halls.map(h => `${esc(h.name)} ~${Math.round(h.visit_min)} min`).join(" · ")}</div></div>`;
+      `<div class="say" style="font-size:15px">${s.advice.halls.map(h => `${esc(h.name)} ~${Math.round(h.visit_min)} min`).join(" · ")}</div></div>` +
+      `<div class="door"><div class="where">Scanner at the entrance (one per mess): share of its capacity in use. Near 100% means a queue may be building outside, which the system cannot see.</div>` +
+      `<div class="say" style="font-size:15px">${s.advice.halls.map(h => `${esc(h.name)} ${Math.min(100, Math.round(100 * h.scanner_load))}%${h.scanner_load >= 0.9 ? " ⚠" : ""}`).join(" · ")}</div></div>`;
   }
   $("screenlinks").innerHTML = "Open full screen: " + s.advice.halls.map(h => `<a href="/screen?at=${h.id}" target="_blank">outside ${esc(h.name)}</a>`).join(" · ") +
     ` · <a href="/" target="_blank">student phone page</a>`;
