@@ -184,7 +184,7 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
 | Quantity | Measured or estimated? | How |
 |---|---|---|
 | Scans per minute per hall | **measured** | count of entry scans |
-| People inside a hall | *estimated* | entries in the last N minutes (N = 22 by default). There are no exit scans |
+| People inside a hall | *estimated* | entries in the last N minutes (N = 18, the measured scan-to-leaving time). There are no exit scans |
 | People waiting to be served | *estimated* | fluid queue: grows with scans, shrinks at the hall's configured serving rate |
 | Wait time | *estimated* | backlog ÷ capacity + M/M/c (Erlang C) wait + seat wait + food delay, projected forward by the walk time |
 | Food state | reported by staff | kitchen taps; taps expire if staff forget to tap "refilled" |
@@ -209,7 +209,10 @@ students go by habit and roughly what fraction follow advice, set
 `engine.assumed_compliance` and `engine.natural_share`. The engine then
 over-corrects so that the *realised* split is balanced.
 
-## Results (default config, ASSUMED numbers)
+## Results (default config)
+
+Measured inputs: seating (Central CT 900, Munch Mess 500) and time from scan to leaving (~18 min).
+Everything else (serving speed, food batches, arrival pattern, habits) is still ASSUMED.
 
 Every policy sees the same students (paired comparison), ±95% CI.
 Wait = minutes from scanning in at the hall to sitting down with food.
@@ -219,10 +222,10 @@ Wait = minutes from scanning in at the hall to sitting down with food.
 | Policy | Students who follow | Avg wait | p90 wait | Peak queue | Students who walked to the other mess |
 |---|---|---|---|---|---|
 | No screens (habit 65/35) | – | 5.4 ± 0.4 | 14.8 ± 1.2 | 192 ± 14 | 0% |
-| "Switch if it saves ≥2 min" (greedy) | 60% | 2.1 ± 0.3 | 5.3 ± 0.8 | 76 ± 10 | 11% |
+| "Switch if it saves ≥2 min" (greedy) | 60% | 2.1 ± 0.3 | 5.2 ± 0.8 | 76 ± 10 | 11% |
 | Equilibrium split | 30% | 2.4 ± 0.2 | 6.3 ± 0.7 | 88 ± 7 | 9% |
 | Equilibrium split | 60% | 2.2 ± 0.3 | 5.5 ± 0.8 | 79 ± 9 | 10% |
-| Equilibrium split | 100% | 2.2 ± 0.3 | 5.5 ± 0.8 | 79 ± 10 | 11% |
+| Equilibrium split | 100% | 2.2 ± 0.3 | 5.4 ± 0.8 | 78 ± 10 | 11% |
 
 **Replaying the sample log's lunch** (1,604 real-shaped arrivals, 20 runs): no screens 6.0 ± 0.3 min
 average (p90 16.0); equilibrium split at 60% follow 1.9 ± 0.2 min (p90 4.5), with 11% of students switching.
@@ -328,13 +331,15 @@ and whether push/webhooks exist.
 ## Assumptions in the brief I'd question
 
 1. **"Occupancy = entries in last N min" breaks down in long queues.**
-   Someone stuck in a 25-minute queue drops out of a 22-minute window. That
-   is why the no-advice case shows a 36-person estimation error. The
+   Someone stuck in a 20-minute queue drops out of an 18-minute window. That
+   is why the no-advice case shows a ~34-person estimation error. The
    backlog estimate partly fixes this, but only if the serving rate is
    measured.
-2. **Seats are probably not the bottleneck; serving counters are.**
+2. **Seats are not the bottleneck; serving counters are.** With the measured
+   1,400 seats (900 + 500), the simulated waits barely changed from the earlier
+   guesses of 550 seats, and the deck's field notes point the same way.
    `load = occupancy / seats` is shown, but the wait estimate is driven by
-   counter throughput.
+   counter throughput. Measure the serving rate next.
 3. **Herding matters less than expected for screens 30 s apart.** Feedback is fast,
    so even simple advice works there. Probabilistic routing matters once advice is
    read earlier (on phones).

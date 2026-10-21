@@ -100,8 +100,9 @@ def test_food_out_adds_refill_delay(cfg):
 
 def test_seat_wait_when_full(cfg):
     m, e = cfg.messes[0], cfg.engine
-    full = HallState(backlog=0, occupancy=m.seats + 50, food=FoodState.OK)
-    assert predict_wait(m, e, full, 5).seat > 0
+    # Twice as many people as seats: even with seats turning over, newcomers wait.
+    full = HallState(backlog=0, occupancy=2 * m.seats, food=FoodState.OK)
+    assert predict_wait(m, e, full, m.capacity_per_min).seat > 0
     assert predict_wait(m, e, HallState(0, 10, FoodState.OK), 5).seat == 0
 
 

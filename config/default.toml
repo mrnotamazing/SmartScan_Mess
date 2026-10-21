@@ -6,10 +6,11 @@
 # they are read from environment variables (see README).
 
 [engine]
-occupancy_window_min = 22     # ASSUMED: "entries in the last N minutes" = people inside. Tune per slot.
+occupancy_window_min = 18     # MEASURED (approx.): a student spends ~18 min from scan to leaving, so
+                              # "entries in the last 18 min" = people inside
 rate_window_min = 5           # window for the arrival-rate estimate (scans/min)
 horizon_min = 5               # how far ahead a recommendation is assumed to apply
-stay_mean_min = 20            # ASSUMED: mean time a student stays seated
+stay_mean_min = 15            # derived: ~18 min scan-to-leaving minus ~3 min queue and serving
 routing_update_s = 30         # how often the recommended split is recomputed
 routing_smoothing = 0.5       # EMA weight on the newest split (1 = no smoothing)
 min_share = 0.05              # never send less than 5% to any open hall (keeps estimates alive)
@@ -42,7 +43,7 @@ show_names = false            # uploaded real logs: show the name column in the 
 [[mess]]
 id = "A"
 name = "Central Mess"
-seats = 300                   # ASSUMED
+seats = 900                   # MEASURED: Central CT seating capacity
 counters = 3                  # ASSUMED: serving lines running in parallel
 service_rate_per_counter_per_min = 4.0   # ASSUMED: ~15 s to serve one student
 walk_time_s = 30              # hallway layout only: from the shared screen to this hall
@@ -54,7 +55,7 @@ items = ["Main course", "Rice", "Roti", "Dal"]   # trays on the kitchen page; th
 [[mess]]
 id = "B"
 name = "Munch Mess"
-seats = 250
+seats = 500                   # MEASURED: Munch Mess seating capacity
 counters = 3
 service_rate_per_counter_per_min = 4.0
 walk_time_s = 30
@@ -69,8 +70,8 @@ food_refill_time_min = 10
 step_s = 5                    # simulation tick = scanner poll interval
 compliance = 0.6              # ASSUMED: share of students who follow the advice
 staff_signal_prob = 0.9       # chance kitchen staff actually tap "tray low"/"out"/"refilled"
-stay_mean_min = 20            # true stay-time distribution (lognormal)
-stay_sd_min = 6
+stay_mean_min = 15            # true seated time (lognormal); with queueing, ~18 min scan-to-leaving
+stay_sd_min = 5
 service_cv = 0.6              # variability of serving time (1.0 = exponential, as M/M/c assumes)
 
 [simulation.habit_share]      # ASSUMED: where students go by habit without advice
