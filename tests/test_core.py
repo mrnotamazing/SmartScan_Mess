@@ -132,7 +132,7 @@ def test_food_out_adds_refill_delay(cfg):
     out = predict_wait(m, e, HallState(0, 0, FoodState.OUT, food_out_for_min=2), 5)
     low = predict_wait(m, e, HallState(0, 0, FoodState.LOW), 5)
     assert out.total > low.total > ok.total
-    assert out.food == pytest.approx(m.food_refill_time_min - 2 - m.walk_time_s / 60)
+    assert out.food == pytest.approx(m.expected_refill_min - 2 - m.walk_time_s / 60)
 
 
 def test_seat_wait_when_full(cfg):

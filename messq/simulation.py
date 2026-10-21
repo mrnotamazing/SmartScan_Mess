@@ -103,6 +103,12 @@ class Hall:
     def _stay_time(self) -> float:
         return 60.0 * self.rng.lognormvariate(self._stay_mu, self._stay_sigma)
 
+    def _lead_time_s(self) -> float:
+        """Minutes from the call to the kitchen until the refill arrives, in seconds."""
+        if self.rng.random() < self.cfg.food_ready_prob:
+            return 60.0 * self.rng.uniform(*self.cfg.food_ready_refill_min)  # already made: just sent
+        return 60.0 * self.cfg.food_refill_time_min  # has to be made, then sent
+
     def _refill(self) -> None:
         eta = self.refill_eta
         self.stock += self.cfg.food_batch
@@ -119,7 +125,7 @@ class Hall:
         self.out_since = now
         self.outages += 1
         if self.refill_eta is None:
-            self.refill_eta = now + self.cfg.food_refill_time_min * 60
+            self.refill_eta = now + self._lead_time_s()
         self.signal(FoodSignal(now, self.cfg.id, FoodState.OUT))  # demo: staff always tap this one
 
     def true_in_hall(self) -> int:
@@ -171,7 +177,7 @@ class Hall:
             self._tie += 1
             heapq.heappush(self.serving, (finish, self._tie, s))
             if self.stock <= self.cfg.food_refill_trigger and self.refill_eta is None:
-                self.refill_eta = start + self.cfg.food_refill_time_min * 60
+                self.refill_eta = start + self._lead_time_s()
                 self._tap(start, FoodState.LOW)
             if self.stock == 0:
                 self.out_since = start

@@ -24,7 +24,9 @@ class MessConfig:
     walk_time_s: float = 30.0
     food_batch: int = 350
     food_refill_trigger: int = 120
-    food_refill_time_min: float = 10.0
+    food_refill_time_min: float = 30.0  # call-back when running low: kitchen makes it and sends it (total)
+    food_ready_refill_min: tuple[float, float] = (10.0, 14.0)  # when the food is already made: just sent
+    food_ready_prob: float = 0.5  # chance the kitchen already has the next batch made when called
     items: tuple[str, ...] = ("Main course", "Rice", "Roti", "Dal")  # trays the kitchen page shows; first = main
     scanners: int = 1  # face-scan terminals at the entrance
     scan_time_s: float = 2.0  # time for one student to scan in
@@ -32,6 +34,12 @@ class MessConfig:
     @property
     def scan_capacity_per_min(self) -> float:
         return self.scanners * 60.0 / self.scan_time_s
+
+    @property
+    def expected_refill_min(self) -> float:
+        """Average minutes from the 'running low' call to the refill arriving."""
+        ready = sum(self.food_ready_refill_min) / 2
+        return self.food_ready_prob * ready + (1 - self.food_ready_prob) * self.food_refill_time_min
 
     @property
     def capacity_per_min(self) -> float:
@@ -130,7 +138,8 @@ def load_config(path: str | os.PathLike | None = None) -> AppConfig:
 
 
 def config_from_dict(raw: dict) -> AppConfig:
-    messes = tuple(MessConfig(**{**m, "items": tuple(m.get("items", MessConfig.items))}) for m in raw["mess"])
+    messes = tuple(MessConfig(**{**m, "items": tuple(m.get("items", MessConfig.items)),
+                                       "food_ready_refill_min": tuple(m.get("food_ready_refill_min", MessConfig.food_ready_refill_min))}) for m in raw["mess"])
     if len({m.id for m in messes}) != len(messes):
         raise ValueError("mess ids must be unique")
     sim_raw = dict(raw.get("simulation", {}))

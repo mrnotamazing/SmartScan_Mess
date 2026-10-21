@@ -60,7 +60,7 @@ def predict_wait(
 
     food_delay = 0.0
     if state.food is FoodState.OUT:
-        remaining = max(1.0, mess.food_refill_time_min - state.food_out_for_min)
+        remaining = max(1.0, mess.expected_refill_min - state.food_out_for_min)
         # Nobody is served until the refill: the queue keeps growing meanwhile.
         backlog = state.backlog + lam * remaining
         food_delay = max(0.0, remaining - walk)

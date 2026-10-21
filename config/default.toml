@@ -52,8 +52,10 @@ scanners = 1                  # MEASURED: one face-scan terminal at the entrance
 scan_time_s = 2               # ASSUMED: seconds per scan (step up, recognise, move on). Time it.
 walk_time_s = 30              # hallway layout only: from the shared screen to this hall
 food_batch = 900              # ASSUMED: portions of the main item per batch
-food_refill_trigger = 500     # ASSUMED: kitchen starts the next batch at this stock
-food_refill_time_min = 35     # MEASURED (Phase 1): 25–30 min preparation + 7–8 min delivery
+food_refill_trigger = 500     # ASSUMED: the mess calls the kitchen ("running low") at this stock
+food_refill_time_min = 30     # MEASURED: "running low" call-back -> kitchen makes it and sends it, 30 min in total
+food_ready_refill_min = [10, 14]  # MEASURED: if the food is already made, it only has to be sent: 10-14 min
+food_ready_prob = 0.5         # ASSUMED: chance the kitchen already has the next batch made when called
 items = ["Main course", "Rice", "Roti", "Dal"]   # trays on the kitchen page; the first is the main one
 
 [[mess]]
@@ -67,7 +69,9 @@ scan_time_s = 2               # ASSUMED
 walk_time_s = 30
 food_batch = 500              # ASSUMED (sized for Munch's share when the screens rebalance)
 food_refill_trigger = 300     # ASSUMED
-food_refill_time_min = 35     # MEASURED (Phase 1): 25–30 min preparation + 7–8 min delivery
+food_refill_time_min = 30     # MEASURED: "running low" call-back -> kitchen makes it and sends it, 30 min in total
+food_ready_refill_min = [10, 14]  # MEASURED: if the food is already made, it only has to be sent: 10-14 min
+food_ready_prob = 0.5         # ASSUMED: chance the kitchen already has the next batch made when called
 
 # ---------------------------------------------------------------------------
 # Simulation only (fake data). Nothing here touches a real scanner.
