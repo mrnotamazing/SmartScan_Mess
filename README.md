@@ -218,7 +218,8 @@ restocking after the mess calls the kitchen ("running low"): 30 min in total if 
 and send it, 10–14 min if it is already made and only has to be sent.
 **Assumed:** 85% go to Central by habit; ~10 students/min per serving station (~6 s each; it must be about
 this fast for 2 stations to serve ~2,500 Central students in 3 hours); 2 s per face scan; the arrival curve's
-shape; food batch sizes and call levels; a 50% chance that the next batch is already made when the mess calls.
+shape; food batch sizes and call levels.
+**Group estimate:** the next batch is already made about 70% of the time when the mess calls.
 
 Every policy sees the same students (paired comparison), ±95% CI.
 Wait = minutes from reaching the mess door (including any queue at the scanner) to sitting down with food.
@@ -227,19 +228,20 @@ Wait = minutes from reaching the mess door (including any queue at the scanner) 
 
 | Policy | Students who follow | Avg wait | p90 wait | Peak queue | Food run-outs | Walked to the other mess |
 |---|---|---|---|---|---|---|
-| No screens (habit 85/15) | – | 7.1 ± 0.4 | 17.4 ± 0.8 | 406 ± 18 | 1.3 | 0% |
-| "Switch if it saves ≥2 min" (greedy) | 60% | 0.8 ± 0.1 | 2.3 ± 0.4 | 95 ± 9 | 1.6 | 14% |
-| Equilibrium split | 30% | 1.3 ± 0.2 | 4.0 ± 0.8 | 133 ± 13 | 1.9 | 13% |
-| Equilibrium split | 60% | 0.8 ± 0.2 | 2.4 ± 0.5 | 97 ± 10 | 1.6 | 14% |
-| Equilibrium split | 100% | 1.1 ± 0.2 | 3.2 ± 0.8 | 98 ± 23 | 1.9 | 18% |
+| No screens (habit 85/15) | – | 7.2 ± 0.4 | 17.6 ± 0.9 | 405 ± 16 | 0.8 | 0% |
+| "Switch if it saves ≥2 min" (greedy) | 60% | 0.8 ± 0.1 | 2.5 ± 0.4 | 83 ± 7 | 0.7 | 13% |
+| Equilibrium split | 30% | 1.4 ± 0.2 | 4.3 ± 0.6 | 119 ± 12 | 1.1 | 12% |
+| Equilibrium split | 60% | 0.8 ± 0.1 | 2.5 ± 0.4 | 84 ± 10 | 0.9 | 13% |
+| Equilibrium split | 100% | 0.9 ± 0.3 | 2.7 ± 0.8 | 80 ± 18 | 0.9 | 16% |
 
-How much the restock matters (`food_ready_prob`, the assumed chance the next batch is already made
-when the mess calls), equilibrium split at 60%:
+How much the restock matters (`food_ready_prob`, the chance the next batch is already made
+when the mess calls; group estimate 70%), equilibrium split at 60%:
 
 | Next batch already made? | Restock time | Run-outs, no screens | Run-outs, screens | Avg wait, no screens → screens |
 |---|---|---|---|---|
 | Never | 30 min | 2.0 | 3.0 | 7.0 → 0.9 |
-| Half the time (default) | 30 or 10–14 min | 1.3 | 1.6 | 7.1 → 0.8 |
+| Half the time | 30 or 10–14 min | 1.3 | 1.6 | 7.1 → 0.8 |
+| 70% of the time (default) | 30 or 10–14 min | 0.8 | 0.9 | 7.2 → 0.8 |
 | Always | 10–14 min | 0 | 0 | 7.2 → 0.9 |
 
 Without screens the simulated p90 wait (~17 min) is close to the ~15 min delay observed in Phase 1,
@@ -273,7 +275,7 @@ What this says (under the ASSUMED parameters):
 
 1. With the corrected inputs, door screens cut the average wait from about 7 to about 1–1.5 minutes,
    and the p90 wait from about 17 to about 4 minutes.
-2. **About 1 in 7 students walks to the other mess** (13–18%). Because 85% start at Central, rebalancing
+2. **About 1 in 8 students walks to the other mess** (12–17%). Because 85% start at Central, rebalancing
    needs more movement than the earlier 65/35 guess did.
 3. At the doors, a simple "switch if it saves ≥2 min" rule does as well as the equilibrium split.
    Feedback is fast (30 s walk) and the threshold stops herding. The equilibrium split matters

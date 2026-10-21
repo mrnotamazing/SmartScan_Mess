@@ -55,7 +55,7 @@ food_batch = 900              # ASSUMED: portions of the main item per batch
 food_refill_trigger = 500     # ASSUMED: the mess calls the kitchen ("running low") at this stock
 food_refill_time_min = 30     # MEASURED: "running low" call-back -> kitchen makes it and sends it, 30 min in total
 food_ready_refill_min = [10, 14]  # MEASURED: if the food is already made, it only has to be sent: 10-14 min
-food_ready_prob = 0.5         # ASSUMED: chance the kitchen already has the next batch made when called
+food_ready_prob = 0.7         # GROUP ESTIMATE: food is already made about 70% of the time when the mess calls
 items = ["Main course", "Rice", "Roti", "Dal"]   # trays on the kitchen page; the first is the main one
 
 [[mess]]
@@ -71,7 +71,7 @@ food_batch = 500              # ASSUMED (sized for Munch's share when the screen
 food_refill_trigger = 300     # ASSUMED
 food_refill_time_min = 30     # MEASURED: "running low" call-back -> kitchen makes it and sends it, 30 min in total
 food_ready_refill_min = [10, 14]  # MEASURED: if the food is already made, it only has to be sent: 10-14 min
-food_ready_prob = 0.5         # ASSUMED: chance the kitchen already has the next batch made when called
+food_ready_prob = 0.7         # GROUP ESTIMATE: food is already made about 70% of the time when the mess calls
 
 # ---------------------------------------------------------------------------
 # Simulation only (fake data). Nothing here touches a real scanner.
