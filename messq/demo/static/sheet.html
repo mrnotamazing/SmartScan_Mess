@@ -106,6 +106,7 @@ svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const COLORS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"];
+window.COLORS_MESS = COLORS;
 const MAX_ROWS = 500;
 let data = null, tab = null, timer = null, seen = {}, search = "", newestFirst = true, lastFetch = 0;
 
@@ -201,12 +202,30 @@ function renderSummary() {
     <div class="charts">
       <div class="chart" id="ch1"><h2>Students per ${data.interval >= 60 ? "hour" : data.interval + " min"}</h2>${legend(false)}<svg viewBox="0 0 520 240" role="img" aria-label="Students per time slot, by mess"></svg><div class="tip"></div></div>
       <div class="chart" id="ch2"><h2>Average wait (min)</h2>${legend(true)}<svg viewBox="0 0 520 240" role="img" aria-label="Average wait per time slot, by mess"></svg><div class="tip"></div></div>
+      ${data.compare ? `<div class="chart" id="ch3" style="grid-column:1/-1"><h2>Wait time (min): without vs with the system</h2>
+        <div class="legend"><span><i class="ln" style="background:${CMP_COLORS[0]}"></i>${esc(CMP_NAMES[0]())}</span><span><i class="ln" style="background:${CMP_COLORS[1]}"></i>${esc(CMP_NAMES[1]())}</span></div>
+        <div class="msg" style="font-size:12px;color:var(--text-2)">Both messes together, by when students scanned in. Same students in both runs. ${cmpNote()}</div>
+        <svg viewBox="0 0 1060 240" role="img" aria-label="Average wait per time slot, without versus with the screens"></svg><div class="tip"></div></div>` : ""}
     </div>`;
   const labels = R.map(r => r[0].replace(" (so far)", "*"));
   const counts = data.messes.map((m, i) => R.map(r => r[1 + i]));
   const waits = data.messes.map((m, i) => R.map(r => r[n + 3 + i] === "" ? null : r[n + 3 + i]));
   drawChart("ch1", labels, counts, "bar", "students");
   drawChart("ch2", labels, waits, "line", "min");
+  if (data.compare) {
+    const C = data.compare, cl = C.map(r => r[0].replace(" (so far)", "*"));
+    const col = k => C.map(r => r[k] === "" ? null : r[k]);
+    drawChart("ch3", cl, [col(1), col(2)], "line", "min", { names: CMP_NAMES.map(f => f()), colors: CMP_COLORS, W: 1060 });
+  }
+}
+const CMP_COLORS = ["var(--c2)", "var(--c1)"];  // orange = without, blue = with (as on the dashboard)
+const CMP_NAMES = [() => data.compare_header[1].split(":")[0], () => "With the screens"];
+function cmpNote() {
+  const pairs = data.compare.filter(r => r[1] !== "" && r[2] !== "");
+  if (!pairs.length) return "";
+  const avg = k => pairs.reduce((a, r) => a + r[k], 0) / pairs.length;
+  const worst = pairs.reduce((b, r) => (!b || r[1] > b[1] ? r : b), null);
+  return `Worst slot ${worst[0].replace(" (so far)", "")}: ${worst[1]} → ${worst[2]} min. Average over slots: ${avg(1).toFixed(1)} → ${avg(2).toFixed(1)} min.`;
 }
 
 function legend(line) {
@@ -215,9 +234,10 @@ function legend(line) {
 
 // Axis top = 4 round steps (1, 2, 2.5 or 5 × 10^k), so every gridline label is a clean number.
 function nice(v) { const raw = (v || 1) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return 4 * m * p; return 40 * p; }
-function drawChart(id, labels, series, kind, unit) {
+function drawChart(id, labels, series, kind, unit, opt = {}) {
   const box = $(id), svg = box.querySelector("svg"), tip = box.querySelector(".tip");
-  const W = 520, H = 240, M = { l: 38, r: 10, t: 8, b: 30 };
+  const W = opt.W || 520, H = 240, M = { l: 38, r: 10, t: 8, b: 30 };
+  const names = opt.names || data.messes.map(m => m.name), COLORS = opt.colors || window.COLORS_MESS;
   const vals = series.flat().filter(v => v != null);
   const yMax = nice(Math.max(kind === "bar" ? 10 : 2, ...vals) * 1.05);
   const n = labels.length, bw = (W - M.l - M.r) / Math.max(1, n);
@@ -228,7 +248,7 @@ function drawChart(id, labels, series, kind, unit) {
     const v = yMax * k / 4;
     g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${M.l - 6}" y="${y(v) + 4}" text-anchor="end">${+v.toFixed(2)}</text>`;
   }
-  const every = Math.ceil(n / 8);
+  const every = Math.ceil(n / (W > 600 ? 16 : 8));
   labels.forEach((l, i) => { if (i % every === 0) g += `<text x="${xc(i)}" y="${H - 10}" text-anchor="middle">${esc(l.split("–")[0])}${l.endsWith("*") ? "*" : ""}</text>`; });
   if (kind === "bar") {
     const k = series.length, inner = Math.min(28, (bw * 0.8 - 2 * (k - 1)) / k);
@@ -252,8 +272,8 @@ function drawChart(id, labels, series, kind, unit) {
     rc.onmouseenter = () => {
       const i = +rc.dataset.i;
       svg.querySelector(".hv").innerHTML = `<rect x="${M.l + bw * i}" y="${M.t}" width="${bw}" height="${H - M.t - M.b}" fill="var(--grid)" opacity=".6"/>`;
-      tip.innerHTML = `<b>${esc(labels[i].replace("*", " (so far)"))}</b>` + data.messes.map((m, j) =>
-        `<br><span style="color:${COLORS[j % 4]}">●</span> ${esc(m.name)}: ${series[j][i] == null ? "–" : series[j][i] + " " + unit}`).join("");
+      tip.innerHTML = `<b>${esc(labels[i].replace("*", " (so far)"))}</b>` + series.map((s, j) =>
+        `<br><span style="color:${COLORS[j % 4]}">●</span> ${esc(names[j])}: ${s[i] == null ? "–" : s[i] + " " + unit}`).join("");
       tip.style.display = "block";
       const r = svg.getBoundingClientRect(), px = (M.l + bw * (i + 1)) * r.width / W;
       tip.style.left = Math.min(px + 16, r.width - 180) + "px"; tip.style.top = "44px";

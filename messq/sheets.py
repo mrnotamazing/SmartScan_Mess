@@ -40,45 +40,64 @@ def log_rows(sim: Simulation, mess_id: str) -> list[list]:
     return rows
 
 
-def summary_rows(sim: Simulation, interval_min: int) -> tuple[list[str], list[list]]:
-    """Students per mess per time slot (aligned to the clock, e.g. 12:30-13:00)."""
-    cfg: AppConfig = sim.cfg
-    ids = [m.id for m in cfg.messes]
+def _slots(sim: Simulation, interval_min: int):
+    """(label, students who scanned in during the slot) for each clock-aligned slot so far."""
     hh, mm = map(int, sim.slot.start.split(":"))
     start_min = hh * 60 + mm
     step = interval_min
     first = (start_min // step) * step
     now_min = start_min + sim.t / 60
-    header = ["Time slot", *[m.name for m in cfg.messes], "Total",
-              f"{cfg.messes[0].name} share (%)",
-              *[f"Avg wait {m.name} (min)" for m in cfg.messes], "Walked over (screen)"]
     buckets: dict[int, list] = {}
     for s in sim.students:
         if s.scanned_at is None or s.scanned_at > sim.t:
             continue
         b = int((start_min + s.scanned_at / 60 - first) // step)
         buckets.setdefault(b, []).append(s)
-    rows = []
     b = 0
     while first + b * step <= now_min:
         lo = first + b * step
-        studs = buckets.get(b, [])
-        counts = [sum(s.hall == i for s in studs) for i in ids]
-        total = sum(counts)
-        waits = []
-        for i in ids:
-            w = [(s.seated_at - s.arrived_at) / 60 for s in studs if s.hall == i and s.seated_at is not None and s.seated_at <= sim.t]
-            waits.append(round(mean(w), 1) if w else "")
         label = f"{lo // 60 % 24:02d}:{lo % 60:02d}–{(lo + step) // 60 % 24:02d}:{(lo + step) % 60:02d}"
         if lo + step > now_min:
             label += " (so far)"
+        yield label, buckets.get(b, [])
+        b += 1
+
+
+def _avg_wait(studs, t: float) -> float | str:
+    w = [(s.seated_at - s.arrived_at) / 60 for s in studs if s.seated_at is not None and s.seated_at <= t]
+    return round(mean(w), 1) if w else ""
+
+
+def summary_rows(sim: Simulation, interval_min: int) -> tuple[list[str], list[list]]:
+    """Students per mess per time slot (aligned to the clock, e.g. 12:30-13:00)."""
+    cfg: AppConfig = sim.cfg
+    ids = [m.id for m in cfg.messes]
+    header = ["Time slot", *[m.name for m in cfg.messes], "Total",
+              f"{cfg.messes[0].name} share (%)",
+              *[f"Avg wait {m.name} (min)" for m in cfg.messes], "Walked over (screen)"]
+    rows = []
+    for label, studs in _slots(sim, interval_min):
+        counts = [sum(s.hall == i for s in studs) for i in ids]
+        total = sum(counts)
+        waits = [_avg_wait([s for s in studs if s.hall == i], sim.t) for i in ids]
         rows.append([label, *counts, total, round(100 * counts[0] / total) if total else "", *waits,
                      sum(s.hall != s.habit for s in studs)])
-        b += 1
     return header, rows
 
 
-def workbook(sim: Simulation, interval_min: int) -> bytes:
+def compare_wait_rows(without: Simulation, with_: Simulation, interval_min: int,
+                      without_title: str = "Without the system") -> tuple[list[str], list[list]]:
+    """Average wait per time slot, both messes together, without vs with the screens.
+    The two runs share the same students and clock, so their slots line up."""
+    header = ["Time slot", f"{without_title}: avg wait (min)", "With the screens: avg wait (min)", "Minutes saved"]
+    rows = []
+    for (label, a), (_, b) in zip(_slots(without, interval_min), _slots(with_, interval_min)):
+        wa, wb = _avg_wait(a, without.t), _avg_wait(b, with_.t)
+        rows.append([label, wa, wb, round(wa - wb, 1) if wa != "" and wb != "" else ""])
+    return header, rows
+
+
+def workbook(sim: Simulation, interval_min: int, compare: tuple[list[str], list[list]] | None = None) -> bytes:
     cfg = sim.cfg
     sheets = []
     for m in cfg.messes:
@@ -98,6 +117,13 @@ def workbook(sim: Simulation, interval_min: int) -> bytes:
                   (9, len(rows) + 3, 17, len(rows) + 3 + height), "Minutes"),
         ],
     ))
+    if compare:
+        c_header, c_rows = compare
+        sheets.append(Sheet(
+            name="Wait with vs without"[:31], header=c_header, rows=c_rows, widths=[20, 30, 30, 14],
+            charts=[Chart(f"Average wait per {interval_min} min: without vs with the system", "line", 0, [1, 2],
+                          [MESS_COLORS[1], MESS_COLORS[0]], (0, len(c_rows) + 3, 8, len(c_rows) + 3 + height), "Minutes")],
+        ))
     return build_xlsx(sheets)
 
 

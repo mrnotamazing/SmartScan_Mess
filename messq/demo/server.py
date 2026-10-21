@@ -37,7 +37,7 @@ from ..engine import Policy
 from ..events import FoodSignal, FoodState
 from ..menu import DayMenu, load_menu
 from ..logs import LogError, ParsedLog, parse_log, replay_slot
-from ..sheets import LOG_HEADER, log_rows, summary_rows, to_csv, workbook
+from ..sheets import LOG_HEADER, compare_wait_rows, log_rows, summary_rows, to_csv, workbook
 from ..simulation import Simulation
 from .auth import ENV as AUTH_ENV
 from .auth import Auth
@@ -251,11 +251,16 @@ class Demo:
                 "summary_header": header,
                 "summary": rows,
                 "interval": interval,
+                **dict(zip(("compare_header", "compare"), self._compare(interval))),
             }
+
+    def _compare(self, interval: int) -> tuple[list[str], list[list]]:
+        title = "As it happened" if self.source["type"] == "replay" else "Without the system"
+        return compare_wait_rows(self.worlds["none"], self.worlds["advised"], interval, title)
 
     def export_xlsx(self, world: str | None, interval: int) -> bytes:
         with self.lock:
-            return workbook(self._world_for(world), interval)
+            return workbook(self._world_for(world), interval, self._compare(interval))
 
     def export_csv(self, world: str | None, interval: int, which: str) -> tuple[str, str]:
         with self.lock:
@@ -263,6 +268,8 @@ class Demo:
             if which in {m.id for m in self.cfg.messes}:
                 name = self.cfg.mess(which).name
                 return f"{name} log", to_csv(LOG_HEADER, log_rows(sim, which))
+            if which == "compare":
+                return "Wait with vs without", to_csv(*self._compare(interval))
             header, rows = summary_rows(sim, interval)
             return f"Every {interval} min", to_csv(header, rows)
 
@@ -271,6 +278,7 @@ class Demo:
         folder.mkdir(parents=True, exist_ok=True)
         files = {f"{m.name.lower().replace(' ', '_')}_log.csv": self.export_csv(None, interval, m.id)[1] for m in self.cfg.messes}
         files[f"every_{interval}_min.csv"] = self.export_csv(None, interval, "summary")[1]
+        files["wait_with_vs_without.csv"] = self.export_csv(None, interval, "compare")[1]
         files_b = {k: v.encode("utf-8-sig") for k, v in files.items()}
         files_b["mess_logs.xlsx"] = self.export_xlsx(None, interval)
         for fname, data in files_b.items():

@@ -170,11 +170,15 @@ def test_sheet_api_exports_and_saved_files(tmp_path):
     xlsx = demo.export_xlsx(None, 15)
     z = zipfile.ZipFile(io.BytesIO(xlsx))
     assert "xl/charts/chart1.xml" in z.namelist() and "xl/charts/chart2.xml" in z.namelist()
+    assert "xl/charts/chart3.xml" in z.namelist()  # wait without vs with the system
+    cmp_header, cmp = sheet["compare_header"], sheet["compare"]
+    assert cmp_header[1].startswith("Without the system") and len(cmp) == len(sheet["summary"])
+    assert all(r[0] == s_[0] for r, s_ in zip(cmp, sheet["summary"]))  # same time slots
     title, text = demo.export_csv(None, 30, "B")
     assert title == "Munch Mess log" and text.splitlines()[0] == "Time,Name,ID,Wait (min),Time inside (min),Note"
     demo.write_files(tmp_path, 30)
     assert {p.name for p in tmp_path.iterdir()} == {
-        "central_mess_log.csv", "munch_mess_log.csv", "every_30_min.csv", "mess_logs.xlsx"}
+        "central_mess_log.csv", "munch_mess_log.csv", "every_30_min.csv", "wait_with_vs_without.csv", "mess_logs.xlsx"}
 
 
 def test_uploaded_names_hidden_unless_enabled():
