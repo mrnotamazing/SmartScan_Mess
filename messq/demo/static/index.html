@@ -172,7 +172,7 @@ input[type=file] { display: none; }
   </div>
 
   <section class="card" style="margin-top:16px">
-    <h2>Kitchen trays <span class="msg">(what managers have tapped)</span></h2>
+    <h2>Kitchen trays <span class="msg" id="menu-line">(what managers have tapped)</span></h2>
     <div class="kgrid" id="kitchen"></div>
     <div class="row" style="margin-top:12px;align-items:start">
       <div style="flex:1;min-width:240px"><div class="msg">Latest updates</div><ol class="feed" id="feed"></ol></div>
@@ -305,9 +305,10 @@ function doors(s) {
 
 function kitchen(s) {
   const names = Object.fromEntries(s.advice.halls.map(h => [h.id, h.name]));
+  $("menu-line").textContent = s.menu && s.menu.theme ? `(what managers have tapped · ${s.menu.day} lunch: ${s.menu.theme})` : "(what managers have tapped)";
   $("kitchen").innerHTML = Object.entries(s.kitchen).map(([id, trays]) => `<div><b>${esc(names[id])}</b>${trays.map(t => {
     const [cls, icon, label] = TRAY[t.state];
-    return `<div class="tray"><span>${esc(t.item)}</span><span class="chip ${cls}"><i>${icon}</i>${label}${t.since ? ` · ${t.since}` : ""}</span></div>`;
+    return `<div class="tray"><span>${esc(t.item)}${t.dish ? `<br><small style="color:var(--text-2)">${esc(t.dish)}</small>` : ""}</span><span class="chip ${cls}"><i>${icon}</i>${label}${t.since ? ` · ${t.since}` : ""}</span></div>`;
   }).join("")}</div>`).join("");
   $("feed").innerHTML = s.kitchen_feed.length
     ? s.kitchen_feed.map(f => `<li>${f.clock} · ${esc(f.mess)}: ${esc(f.item)} ${f.state === "ok" ? "refilled" : TRAY[f.state][2].toLowerCase()}</li>`).join("")

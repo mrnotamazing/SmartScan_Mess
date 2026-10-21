@@ -56,7 +56,9 @@ food_refill_trigger = 500     # ASSUMED: the mess calls the kitchen ("running lo
 food_refill_time_min = 30     # MEASURED: "running low" call-back -> kitchen makes it and sends it, 30 min in total
 food_ready_refill_min = [10, 14]  # MEASURED: if the food is already made, it only has to be sent: 10-14 min
 food_ready_prob = 0.7         # GROUP ESTIMATE: food is already made about 70% of the time when the mess calls
-items = ["Main course", "Rice", "Roti", "Dal"]   # trays on the kitchen page; the first is the main one
+# Trays on the kitchen page (today's dish in each comes from config/menu.toml). The FIRST is the main
+# tray: if it runs out, service stops. The others running out only slow service.
+items = ["Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sambar / rasam", "Curd / raita", "Dessert"]
 
 [[mess]]
 id = "B"
@@ -72,6 +74,7 @@ food_refill_trigger = 300     # ASSUMED
 food_refill_time_min = 30     # MEASURED: "running low" call-back -> kitchen makes it and sends it, 30 min in total
 food_ready_refill_min = [10, 14]  # MEASURED: if the food is already made, it only has to be sent: 10-14 min
 food_ready_prob = 0.7         # GROUP ESTIMATE: food is already made about 70% of the time when the mess calls
+items = ["Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sambar / rasam", "Curd / raita", "Dessert"]
 
 # ---------------------------------------------------------------------------
 # Simulation only (fake data). Nothing here touches a real scanner.

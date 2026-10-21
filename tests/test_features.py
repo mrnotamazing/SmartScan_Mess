@@ -106,3 +106,16 @@ def test_tray_aggregation_and_fresh_batch(cfg):
     assert all(st is FoodState.OK for _, st, _ in eng.trays("A", 61))
     eng.update(61)
     assert eng.snapshot().hall("A").fresh
+
+
+# ---- weekly menu ------------------------------------------------------------------
+def test_menu_names_todays_dish_and_hides_unserved_trays(cfg):
+    from messq.menu import load_menu
+
+    wed = load_menu("wednesday")
+    assert wed.theme == "Dussehra special"
+    assert wed.dish("Gravy sabji") == "Yennegai Masala"
+    assert all(wed.served(t) for t in cfg.mess("A").items)  # every tray key matches a config tray
+    sun = load_menu("sunday")
+    assert not sun.served("Roti")  # no chapati at Sunday lunch
+    assert set(sun.dishes) <= set(cfg.mess("A").items)

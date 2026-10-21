@@ -75,7 +75,7 @@ that device has to wait 5 minutes.
 | `localhost:8000/manager` | **Pitch dashboard** (manager login): the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
 | `localhost:8000/` | **Student phone page** (no login): which mess is quicker now. When both are close, each phone gets a suggestion drawn from the system's split, so phones don't all pile into one mess |
 | `localhost:8000/screen?at=A` | The screen **outside Central Mess** (use `?at=B` for Munch Mess). Full-screen it (F11) on a projector. Add `&dir=left` if the other mess is to the left |
-| `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray (Main course, Rice, Roti, Dal) |
+| `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray (gravy sabji, dry sabji, dal, rice, special rice, roti, sambar/rasam, curd/raita, dessert), each showing today's dish from `config/menu.toml`. Update that file each week; `--menu-day wednesday` shows another day's menu |
 | `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts. Download as Excel or CSV |
 
 **Dashboard controls**

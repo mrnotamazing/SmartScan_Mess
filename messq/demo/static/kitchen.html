@@ -28,6 +28,8 @@ p.lead { color: var(--text-2); margin: 4px 0 16px; }
 .mess { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
 .mhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
 .mname { font-size: 20px; font-weight: 700; }
+.dish { font-size: 13px; color: var(--text-2); margin-top: 1px; }
+.main { font-size: 11px; font-weight: 600; color: var(--text-2); border: 1px solid var(--border); border-radius: 99px; padding: 1px 7px; margin-left: 4px; white-space: nowrap; }
 .tray { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
 .tname { font-weight: 650; font-size: 17px; }
 .tstate { font-size: 13px; color: var(--text-2); }
@@ -51,6 +53,7 @@ button.all { min-width: 0; padding: 8px 12px; font-size: 14px; }
 <main>
   <div class="top"><h1>Kitchen: food trays</h1><span class="clock"><span id="clock"></span> · <a href="/logout" style="color:var(--text-2)">Log out</a></span></div>
   <p class="lead">Tap as soon as a tray runs low or out, and again when it's refilled. Screens outside the mess update within seconds.</p>
+  <p class="lead" id="menu" style="margin-top:-4px"></p>
   <div class="tabs" id="tabs"></div>
   <div id="messes"></div>
   <div class="mess"><b>Latest updates</b><ol class="feed" id="feed"></ol></div>
@@ -77,6 +80,7 @@ async function poll() {
   if (r.status === 401) { location.href = "/login?next=/kitchen"; return; }
   const s = await r.json();
   document.getElementById("clock").textContent = s.clock;
+  document.getElementById("menu").innerHTML = s.menu && s.menu.theme ? `Today's lunch: <b>${esc(s.menu.day)} · ${esc(s.menu.theme)}</b>` : "";
   const names = Object.fromEntries(s.advice.halls.map(h => [h.id, h.name]));
   document.getElementById("tabs").innerHTML = `<a href="/kitchen" class="${ONLY ? "" : "on"}">All</a>` +
     s.advice.halls.map(h => `<a href="?mess=${h.id}" class="${ONLY === h.id ? "on" : ""}">${esc(h.name)}</a>`).join("");
@@ -87,12 +91,13 @@ async function poll() {
         <button class="all ok" data-m="${id}" data-s="ok" data-l="${esc(names[id])}: all trays refilled"><i>●</i>All refilled</button></div>
       ${s.kitchen[id].map(t => `
         <div class="tray">
-          <div><div class="tname">${esc(t.item)}</div>
+          <div><div class="tname">${esc(t.item)}${t.main ? ` <span class="main">main · stops service if out</span>` : ""}</div>
+            ${t.dish ? `<div class="dish">${esc(t.dish)}</div>` : ""}
             <div class="tstate"><i style="color:var(--${t.state === "ok" ? "good" : t.state === "low" ? "warning" : "critical"})">${LABEL[t.state][0]}</i>${LABEL[t.state][1]}${t.since ? ` · since ${t.since} (${t.mins_ago} min ago)` : ""}</div></div>
           <div class="btns">
-            <button class="low ${t.state === "low" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="low" data-l="${esc(t.item)} running low"><i>▲</i>Low</button>
-            <button class="out ${t.state === "out" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="out" data-l="${esc(t.item)} out"><i>■</i>Out</button>
-            <button class="ok ${t.state === "ok" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="ok" data-l="${esc(t.item)} refilled"><i>●</i>Refilled</button>
+            <button class="low ${t.state === "low" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="low" data-l="${esc(t.dish || t.item)} running low"><i>▲</i>Low</button>
+            <button class="out ${t.state === "out" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="out" data-l="${esc(t.dish || t.item)} out"><i>■</i>Out</button>
+            <button class="ok ${t.state === "ok" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="ok" data-l="${esc(t.dish || t.item)} refilled"><i>●</i>Refilled</button>
           </div>
         </div>`).join("")}
     </div>`).join("");

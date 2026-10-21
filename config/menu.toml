@@ -1,0 +1,87 @@
+# Chef's Touch LUNCH menu, week of 19-25 October 2026 (from the CT menu sheet).
+# Update this file each week. Keys must match the tray names ("items") in default.toml.
+# Leave a tray out of a day if it isn't served that day; the kitchen page then hides it.
+# The menu says "subject to change".
+
+[lunch.monday]
+theme = "Tamil Nadu"
+"Gravy sabji" = "Uralai Patani Curry"
+"Dry sabji" = "Chow Chow Kootu"
+"Dal" = "Moolangi Dal Fry"
+"Rice" = "Steam rice / Boiled rice"
+"Special rice" = "Kothamalli Sadam"
+"Roti" = "Chapati"
+"Sambar / rasam" = "Kheera Sambar · Milagu Rasam"
+"Curd / raita" = "Curd"
+"Dessert" = "Semiya Payasam"
+
+[lunch.tuesday]
+theme = "Punjabi"
+"Gravy sabji" = "Punjabi Rajma Masala"
+"Dry sabji" = "Aloo Gobi Adraki"
+"Dal" = "Punjabi Dal Tadka"
+"Rice" = "Steam rice / Boiled rice"
+"Special rice" = "Jeera Rice"
+"Roti" = "Butter Chapati"
+"Sambar / rasam" = "Mangalore Cucumber Sambar · Mint Rasam"
+"Curd / raita" = "Curd"
+"Dessert" = "Besan Ladoo"
+
+[lunch.wednesday]
+theme = "Dussehra special"
+"Gravy sabji" = "Yennegai Masala"
+"Dry sabji" = "Soppu Pakoda"
+"Dal" = "Molake Kalu Saru"
+"Rice" = "Steam rice / Boiled rice"
+"Special rice" = "Mysore Pulao"
+"Roti" = "Butter Chapati"
+"Sambar / rasam" = "Majjige Huli · Red Rasam"
+"Curd / raita" = "Raita"
+"Dessert" = "Mysore Pak · Sabudhana Payasam"
+
+[lunch.thursday]
+theme = "Maharashtra"
+"Gravy sabji" = "Tendli Fry"
+"Dry sabji" = "Whole Masoor Dal Curry"
+"Dal" = "Amti Dal"
+"Rice" = "Steam rice / Boiled rice"
+"Special rice" = "Tawa Pulao"
+"Roti" = "Chapati"
+"Sambar / rasam" = "Knol Kohl Sambar · Pineapple Rasam"
+"Curd / raita" = "Raita"
+"Dessert" = "Fruit Custard"
+
+[lunch.friday]
+theme = "Odisha"
+"Gravy sabji" = "Ghanta Tarkari"
+"Dry sabji" = "Aloo Potala Bhaja"
+"Dal" = "Dal Ma"
+"Rice" = "Steam rice / Boiled rice"
+"Special rice" = "Ghee Rice"
+"Roti" = "Butter Chapati"
+"Sambar / rasam" = "Chow Chow Sambar · Dal Rasam"
+"Curd / raita" = "Curd"
+"Dessert" = "Kheeri"
+
+[lunch.saturday]
+theme = "Bihar"
+"Gravy sabji" = "Bihari Kadi"
+"Dry sabji" = "Aloo Padwal Bhujia"
+"Dal" = "Bihari Arhar Dal"
+"Rice" = "Steam rice / Boiled rice"
+"Special rice" = "Channa Dal Khichdi"
+"Roti" = "Butter Chapati"
+"Sambar / rasam" = "Mix Veg Sambar · Lemon Rasam"
+"Curd / raita" = "Curd"
+"Dessert" = "Malpua"
+
+[lunch.sunday]
+theme = "Sunday special"
+"Gravy sabji" = "Chicken Kaba / Bhindi Jaipuri"
+"Dry sabji" = "Mirchi ka Salan"
+"Dal" = "Dal Amratsari"
+"Rice" = "Steam rice"
+"Special rice" = "Chicken Dum Biryani / Paneer Dum Biryani"
+"Sambar / rasam" = "Coriander Rasam"
+"Curd / raita" = "Raita"
+"Dessert" = "Ice Cream"

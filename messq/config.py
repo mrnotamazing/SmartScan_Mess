@@ -27,7 +27,7 @@ class MessConfig:
     food_refill_time_min: float = 30.0  # call-back when running low: kitchen makes it and sends it (total)
     food_ready_refill_min: tuple[float, float] = (10.0, 14.0)  # when the food is already made: just sent
     food_ready_prob: float = 0.7  # chance the kitchen already has the next batch made when called
-    items: tuple[str, ...] = ("Main course", "Rice", "Roti", "Dal")  # trays the kitchen page shows; first = main
+    items: tuple[str, ...] = ("Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sambar / rasam", "Curd / raita", "Dessert")  # trays the kitchen page shows; first = main
     scanners: int = 1  # face-scan terminals at the entrance
     scan_time_s: float = 2.0  # time for one student to scan in
 

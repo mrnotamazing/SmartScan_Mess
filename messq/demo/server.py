@@ -35,6 +35,7 @@ from urllib.parse import parse_qs, urlparse
 from ..config import AppConfig, load_config
 from ..engine import Policy
 from ..events import FoodSignal, FoodState
+from ..menu import DayMenu, load_menu
 from ..logs import LogError, ParsedLog, parse_log, replay_slot
 from ..sheets import LOG_HEADER, log_rows, summary_rows, to_csv, workbook
 from ..simulation import Simulation
@@ -75,8 +76,9 @@ class Demo:
     """Holds both worlds. Every user action is recorded with its simulated time,
     so jumping backwards rebuilds the meal and replays the actions exactly."""
 
-    def __init__(self, cfg: AppConfig, slot: str, compliance: float, seed: int, speed: float):
+    def __init__(self, cfg: AppConfig, slot: str, compliance: float, seed: int, speed: float, menu: DayMenu | None = None):
         self.cfg, self.compliance, self.seed, self.speed = cfg, compliance, seed, speed
+        self.menu = menu or DayMenu()
         self.lock = threading.RLock()
         self.source: dict = {"type": "sim", "slot": slot}
         self.log: ParsedLog | None = None
@@ -298,7 +300,12 @@ class Demo:
             "advice": {"halls": [{"id": h["id"], "name": h["name"], "food": h["food"]} for h in s["advice"]["halls"]]},
             "kitchen": s["kitchen"],
             "kitchen_feed": s["kitchen_feed"],
+            "menu": s["menu"],
         }
+
+    def _tray_label(self, item: str) -> str:
+        dish = self.menu.dish(item)
+        return f"{item} ({dish})" if dish else item
 
     def clock(self, t_s: float) -> str:
         hh, mm = map(int, self.slot.start.split(":"))
@@ -346,15 +353,17 @@ class Demo:
             }
             kitchen = {
                 m.id: [
-                    {"item": item, "state": st.value, "since": self.clock(ts) if ts > -1e8 else None,
+                    {"item": item, "dish": self.menu.dish(item), "main": item == m.items[0],
+                     "state": st.value, "since": self.clock(ts) if ts > -1e8 else None,
                      "mins_ago": round((self.t - ts) / 60) if ts > -1e8 else None}
                     for item, st, ts in eng.trays(m.id, self.t)
+                    if self.menu.served(item)
                 ]
                 for m in self.cfg.messes
             }
             feed = [
                 {"clock": self.clock(sig.ts), "mess": names[sig.mess_id],
-                 "item": sig.item or ("all trays" if sig.state is FoodState.OK else self.cfg.mess(sig.mess_id).items[0]),
+                 "item": self._tray_label(sig.item or ("all trays" if sig.state is FoodState.OK else self.cfg.mess(sig.mess_id).items[0])),
                  "state": sig.state.value}
                 for sig in list(eng.kitchen_log)[-8:][::-1]
             ]
@@ -386,6 +395,7 @@ class Demo:
                 "doors": doors,
                 "kitchen": kitchen,
                 "kitchen_feed": feed,
+                "menu": {"day": self.menu.day.title(), "theme": self.menu.theme},
                 "actions": [{"clock": self.clock(a.t), "kind": a.kind, "mess": names[a.mess]} for a in self.actions[-6:]],
             }
 
@@ -632,6 +642,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--speed", type=float, default=60, help="simulated seconds per real second (60 = 1 min per s)")
     p.add_argument("--compliance", type=float, help="share of students who follow advice (default from config)")
     p.add_argument("--seed", type=int, default=2)
+    p.add_argument("--menu-day", help="which day's lunch menu the kitchen page shows (default: today), e.g. wednesday")
     p.add_argument("--log", help="start by replaying this scanner log (CSV)")
     p.add_argument("--show-names", action="store_true",
                    help="show names from uploaded logs in the live sheet (same as privacy.show_names = true)")
@@ -642,7 +653,10 @@ def main(argv: list[str] | None = None) -> None:
     cfg = load_config(args.config)
     if args.show_names:
         cfg = dataclasses.replace(cfg, privacy=dataclasses.replace(cfg.privacy, show_names=True))
-    demo = Demo(cfg, args.slot, args.compliance if args.compliance is not None else cfg.simulation.compliance, args.seed, args.speed)
+    demo = Demo(cfg, args.slot, args.compliance if args.compliance is not None else cfg.simulation.compliance, args.seed, args.speed,
+                load_menu(args.menu_day))
+    if demo.menu.dishes:
+        print(f"Kitchen trays use the {demo.menu.day.title()} lunch menu ({demo.menu.theme}) from config/menu.toml")
     if args.log:
         info = demo.upload(Path(args.log).read_text(encoding="utf-8-sig", errors="replace"))
         print(f"Loaded {info['scans']} scans; meals found: " + "; ".join(s["label"] for s in info["sessions"]))
