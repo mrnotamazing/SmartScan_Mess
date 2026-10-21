@@ -171,7 +171,7 @@ def test_sheet_api_exports_and_saved_files(tmp_path):
     z = zipfile.ZipFile(io.BytesIO(xlsx))
     assert "xl/charts/chart1.xml" in z.namelist() and "xl/charts/chart2.xml" in z.namelist()
     title, text = demo.export_csv(None, 30, "B")
-    assert title == "Munch Mess log" and text.splitlines()[0] == "Time,Name,ID,Wait (min),Note"
+    assert title == "Munch Mess log" and text.splitlines()[0] == "Time,Name,ID,Wait (min),Time inside (min),Note"
     demo.write_files(tmp_path, 30)
     assert {p.name for p in tmp_path.iterdir()} == {
         "central_mess_log.csv", "munch_mess_log.csv", "every_30_min.csv", "mess_logs.xlsx"}

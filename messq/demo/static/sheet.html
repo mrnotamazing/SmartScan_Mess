@@ -98,7 +98,7 @@ svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
   <div class="tabs" id="tabs" role="tablist"></div>
   <div class="panel" id="panel"></div>
 
-  <p class="note2">Times are scan times at each mess entrance. "Wait" is from scanning in to sitting down with food (simulated).
+  <p class="note2">Times are scan times at each mess entrance. "Wait" is from scanning in to sitting down with food; "Time inside" is from scanning in to leaving, filled in once they've left (both simulated).
     Names are made up for simulated students; for an uploaded log they're shown only if <code>privacy.show_names</code> is on,
     otherwise just a pseudonymised ID. The Excel download includes all rows and native charts.</p>
 </main>
@@ -170,11 +170,11 @@ function renderLog(id) {
       <span>${rows.length.toLocaleString()} scans${idx.length > MAX_ROWS ? ` · showing ${MAX_ROWS}; download for all` : ""}</span>
     </div>
     <div class="scroll"><table>
-      <thead><tr><th class="rn">#</th>${data.log_header.map(h => `<th class="${h.startsWith("Wait") ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
+      <thead><tr><th class="rn">#</th>${data.log_header.map(h => `<th class="${h.includes("(min)") ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
       <tbody>${shown.map(i => `<tr class="${i >= before ? "new" : ""}"><td class="rn">${i + 1}</td>
         <td>${esc(rows[i][0])}</td><td>${esc(rows[i][1])}</td><td>${esc(rows[i][2])}</td>
-        <td class="num">${rows[i][3] === "" ? "" : rows[i][3]}</td><td class="note">${esc(rows[i][4])}</td></tr>`).join("")
-        || `<tr><td class="rn"></td><td colspan="5">No scans yet</td></tr>`}</tbody>
+        <td class="num">${rows[i][3] === "" ? "" : rows[i][3]}</td><td class="num">${rows[i][4] === "" ? "" : rows[i][4]}</td><td class="note">${esc(rows[i][5])}</td></tr>`).join("")
+        || `<tr><td class="rn"></td><td colspan="6">No scans yet</td></tr>`}</tbody>
     </table></div>`;
   $("q").oninput = e => { search = e.target.value.trim().toLowerCase(); renderLog(id); };
   $("newest").onchange = e => { newestFirst = e.target.checked; renderLog(id); };

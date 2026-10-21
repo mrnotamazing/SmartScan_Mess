@@ -184,7 +184,8 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
 | Quantity | Measured or estimated? | How |
 |---|---|---|
 | Scans per minute per hall | **measured** | count of entry scans |
-| People inside a hall | *estimated* | entries in the last N minutes (N = 18, the measured scan-to-leaving time). There are no exit scans |
+| People inside a hall | *estimated* | people still queueing + people served in the last ~17 min (eating). There are no exit scans |
+| Time inside (scan to leaving) | *estimated* | queue time now + serving + ~17 min eating. About 18 min on a normal day (measured); longer in a surge |
 | People waiting to be served | *estimated* | fluid queue: grows with scans, shrinks at the hall's configured serving rate |
 | Wait time | *estimated* | backlog ÷ capacity + M/M/c (Erlang C) wait + seat wait + food delay, projected forward by the walk time |
 | Food state | reported by staff | kitchen taps; taps expire if staff forget to tap "refilled" |
@@ -211,7 +212,9 @@ over-corrects so that the *realised* split is balanced.
 
 ## Results (default config)
 
-Measured inputs: seating (Central CT 900, Munch Mess 500) and time from scan to leaving (~18 min).
+Measured inputs: seating (Central CT 900, Munch Mess 500) and time from scan to leaving on a normal
+day (~18 min; in the simulator, a normal visit comes out at ~17.5 min and a peak visit at ~24 min
+without screens vs ~20 min with them).
 Everything else (serving speed, food batches, arrival pattern, habits) is still ASSUMED.
 
 Every policy sees the same students (paired comparison), ±95% CI.
@@ -331,10 +334,11 @@ and whether push/webhooks exist.
 ## Assumptions in the brief I'd question
 
 1. **"Occupancy = entries in last N min" breaks down in long queues.**
-   Someone stuck in a 20-minute queue drops out of an 18-minute window. That
-   is why the no-advice case shows a ~34-person estimation error. The
-   backlog estimate partly fixes this, but only if the serving rate is
-   measured.
+   The ~18 min visit is for a normal day; in a surge, queueing adds to it, and
+   someone stuck in the queue drops out of an 18-minute window. The estimator now
+   counts people inside as *still queueing + served in the last ~17 min*, which
+   cut the "people inside" error from ~34 to ~11 people without screens (~14 to
+   ~8 with them). It still relies on the serving rate, so measure that next.
 2. **Seats are not the bottleneck; serving counters are.** With the measured
    1,400 seats (900 + 500), the simulated waits barely changed from the earlier
    guesses of 550 seats, and the deck's field notes point the same way.

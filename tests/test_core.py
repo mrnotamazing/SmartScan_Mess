@@ -41,21 +41,58 @@ def test_unstable_queue_is_infinite():
 
 
 # ---- estimator -------------------------------------------------------------
-def test_occupancy_window_and_rate():
-    est = MessEstimator(occupancy_window_s=20 * 60, rate_window_s=5 * 60)
+def _run(est, per_min, minutes, cap, t0=0.0):
+    """Feed `per_min` scans a minute for `minutes`, advancing every 5 s."""
+    t = t0
+    step = 5.0
+    owed = 0.0
+    while t < t0 + minutes * 60:
+        owed += per_min * step / 60
+        while owed >= 1:
+            est.add_scan(t)
+            owed -= 1
+        t += step
+        est.advance(t, cap)
+    return t
+
+
+def test_rate_and_counts():
+    est = MessEstimator(stay_s=16 * 60, rate_window_s=5 * 60)
     for i in range(30):  # one scan per minute for 30 minutes
         est.add_scan(i * 60.0)
     now = 29 * 60.0 + 1
-    assert est.occupancy(now) == 20
     assert est.arrival_rate_per_min(now) == pytest.approx(1.0)
     assert est.count_last(now, 60) == 1
 
 
+def test_occupancy_normal_day_is_arrivals_times_visit():
+    # 6/min with counters serving 12/min: hardly any queue, so people inside is
+    # about arrival rate x time eating (16 min) - the measured ~18 min visit.
+    est = MessEstimator(stay_s=16 * 60, rate_window_s=5 * 60)
+    now = _run(est, 6, 40, cap=12)
+    assert est.backlog < 3
+    assert est.occupancy(now) == pytest.approx(6 * 16, abs=6)
+
+
+def test_occupancy_in_a_surge_counts_the_queue():
+    # 20/min against counters serving 12/min: the queue grows by 8/min. Everyone
+    # queueing is still inside, so a fixed "scans in the last 18 min" count undercounts.
+    est = MessEstimator(stay_s=16 * 60, rate_window_s=5 * 60)
+    now = _run(est, 20, 30, cap=12)
+    assert est.backlog == pytest.approx(8 * 30, abs=10)
+    assert est.seated() == pytest.approx(12 * 16, abs=10)
+    naive = est.count_last(now, 18 * 60)
+    assert est.occupancy(now) > naive + 50
+
+
 def test_out_of_order_scans_are_counted():
     est = MessEstimator(600, 300)
+    est.advance(0.0, 100)
     for ts in [10.0, 30.0, 20.0, 5.0]:
         est.add_scan(ts)
-    assert est.occupancy(31.0) == 4
+    est.advance(60.0, 100)
+    assert est.occupancy(60.0) == pytest.approx(4)
+    assert est.count_last(60.0, 60) == 4
 
 
 def test_fluid_backlog_grows_and_drains():

@@ -35,10 +35,10 @@ class MessConfig:
 
 @dataclass(frozen=True)
 class EngineConfig:
-    occupancy_window_min: float = 22.0
     rate_window_min: float = 5.0
     horizon_min: float = 5.0
-    stay_mean_min: float = 20.0
+    stay_mean_min: float = 17.0
+    normal_visit_min: float = 18.0
     routing_update_s: float = 30.0
     routing_smoothing: float = 0.5
     min_share: float = 0.05
@@ -89,7 +89,8 @@ class SimConfig:
     step_s: float = 5.0
     compliance: float = 0.6
     staff_signal_prob: float = 0.9
-    stay_mean_min: float = 20.0
+    stay_mean_min: float = 17.0
+    normal_visit_min: float = 18.0
     stay_sd_min: float = 6.0
     service_cv: float = 0.6
 

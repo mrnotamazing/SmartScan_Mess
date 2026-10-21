@@ -15,7 +15,7 @@ from .config import AppConfig
 from .simulation import Simulation
 from .xlsx import Chart, Sheet, build_xlsx
 
-LOG_HEADER = ["Time", "Name", "ID", "Wait (min)", "Note"]
+LOG_HEADER = ["Time", "Name", "ID", "Wait (min)", "Time inside (min)", "Note"]
 # Categorical slots 1 and 2 of the dataviz palette; mess 3+ continue in fixed order.
 MESS_COLORS = ["2A78D6", "EB6834", "1BAF7A", "EDA100", "E87BA4"]
 
@@ -34,7 +34,8 @@ def log_rows(sim: Simulation, mess_id: str) -> list[list]:
     for s in sorted((s for s in sim.students if s.hall == mess_id and s.arrived_at <= sim.t), key=lambda s: s.arrived_at):
         wait = round((s.seated_at - s.arrived_at) / 60, 1) if s.seated_at is not None and s.seated_at <= sim.t else ""
         note = f"walked over from {names[s.habit]} (screen)" if s.hall != s.habit else ""
-        rows.append([_clock(sim.slot.start, s.arrived_at), s.name or "(hidden)", f"ID {s.key[:6]}", wait, note])
+        inside = round((s.left_at - s.arrived_at) / 60, 1) if s.left_at is not None and s.left_at <= sim.t else ""
+        rows.append([_clock(sim.slot.start, s.arrived_at), s.name or "(hidden)", f"ID {s.key[:6]}", wait, inside, note])
     return rows
 
 
@@ -81,7 +82,7 @@ def workbook(sim: Simulation, interval_min: int) -> bytes:
     sheets = []
     for m in cfg.messes:
         sheets.append(Sheet(name=f"{m.name} log"[:31], header=LOG_HEADER, rows=log_rows(sim, m.id),
-                            widths=[11, 22, 11, 11, 34]))
+                            widths=[11, 22, 11, 11, 16, 34]))
     header, rows = summary_rows(sim, interval_min)
     n = len(cfg.messes)
     colors = [MESS_COLORS[i % len(MESS_COLORS)] for i in range(n)]

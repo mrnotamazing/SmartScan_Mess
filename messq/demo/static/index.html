@@ -279,7 +279,9 @@ function doors(s) {
   } else {
     $("doors").innerHTML = Object.values(s.doors).map(d =>
       `<div class="door"><div class="where">Outside ${esc(halls[d.at].name)}</div><div class="say">${doorSay(d, halls[d.at])}</div></div>`
-    ).join("") + `<div class="door">${fills}</div>`;
+    ).join("") + `<div class="door">${fills}</div>` +
+      `<div class="door"><div class="where">Expected time inside for someone arriving now (scan to leaving; about ${Math.round(s.normal_visit_min)} min on a normal day)</div>` +
+      `<div class="say" style="font-size:15px">${s.advice.halls.map(h => `${esc(h.name)} ~${Math.round(h.visit_min)} min`).join(" · ")}</div></div>`;
   }
   $("screenlinks").innerHTML = "Open full screen: " + s.advice.halls.map(h => `<a href="/screen?at=${h.id}" target="_blank">outside ${esc(h.name)}</a>`).join(" · ") +
     ` · <a href="/" target="_blank">student phone page</a>`;

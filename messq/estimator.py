@@ -1,12 +1,20 @@
 """Per-hall state estimated purely from entry scans.
 
-There are no exit scans, so nothing here is measured directly:
+There are no exit scans, so nothing here is measured directly. A visit is
+modelled as two parts:
 
-* occupancy  = entries in the last N minutes (N ~ typical time spent inside)
-* arrival rate = entries in the last few minutes / window length
+    time inside = time queueing (grows in a surge) + time eating (fairly fixed)
+
 * backlog (people waiting to be served) = fluid queue: each tick it grows by
-  the arrivals and shrinks by the hall's assumed serving capacity. Its accuracy
-  depends on the configured service rate, so measure that on site.
+  the arrivals and shrinks by what the counters can serve (the hall's assumed
+  serving capacity; zero while the kitchen reports the main tray out).
+* seated = people served in the last `stay` minutes (they're eating).
+* occupancy (people inside) = backlog + seated.
+
+So on a normal day a visit takes about queue + stay (measured: ~18 min), and in a
+surge everyone stuck in the queue still counts as inside. A plain "entries in the
+last 18 minutes" count would forget them exactly when the hall is busiest.
+Accuracy depends on the configured serving rate, so measure that on site.
 """
 
 from __future__ import annotations
@@ -14,12 +22,16 @@ from __future__ import annotations
 import bisect
 from collections import deque
 
+SCAN_HISTORY_S = 15 * 60  # scans kept for rate and 1-/5-/10-minute counts
+
 
 class MessEstimator:
-    def __init__(self, occupancy_window_s: float, rate_window_s: float):
-        self.occupancy_window_s = occupancy_window_s
+    def __init__(self, stay_s: float, rate_window_s: float):
+        self.stay_s = stay_s
         self.rate_window_s = rate_window_s
         self._times: deque[float] = deque()
+        self._served: deque[tuple[float, float]] = deque()  # (time, people served in that tick)
+        self._seated = 0.0  # running sum of _served
         self._pending = 0
         self._last_advance: float | None = None
         self.backlog = 0.0
@@ -34,26 +46,36 @@ class MessEstimator:
         self._pending += 1
 
     def advance(self, now: float, capacity_per_min: float) -> None:
-        """Move the fluid backlog forward to `now` and drop expired scans."""
+        """Move the queue forward to `now`: add new scans, serve what the counters can."""
+        waiting = self.backlog + self._pending
+        self._pending = 0
         if self._last_advance is not None:
             dt_min = max(0.0, now - self._last_advance) / 60.0
-            self.backlog = max(0.0, self.backlog + self._pending - capacity_per_min * dt_min)
+            served = min(waiting, capacity_per_min * dt_min)
         else:
-            self.backlog += self._pending
-        self._pending = 0
+            served = 0.0
+        self.backlog = waiting - served
+        if served > 0:
+            self._served.append((now, served))
+            self._seated += served
         self._last_advance = now
-        horizon = now - max(self.occupancy_window_s, self.rate_window_s)
+        while self._served and self._served[0][0] <= now - self.stay_s:
+            self._seated -= self._served.popleft()[1]
+        horizon = now - max(SCAN_HISTORY_S, self.rate_window_s)
         while self._times and self._times[0] < horizon:
             self._times.popleft()
-        self.backlog = min(self.backlog, self.occupancy(now))
 
     def _count_since(self, start: float, now: float) -> int:
         lo = bisect.bisect_right(self._times, start)
         hi = bisect.bisect_right(self._times, now)
         return hi - lo
 
-    def occupancy(self, now: float) -> int:
-        return self._count_since(now - self.occupancy_window_s, now)
+    def seated(self) -> float:
+        return max(0.0, self._seated)
+
+    def occupancy(self, now: float | None = None) -> float:
+        """People inside: still queueing + served recently and eating."""
+        return self.backlog + self.seated()
 
     def arrival_rate_per_min(self, now: float) -> float:
         return self._count_since(now - self.rate_window_s, now) / (self.rate_window_s / 60.0)

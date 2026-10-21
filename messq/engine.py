@@ -39,7 +39,7 @@ class Status(str, Enum):
 class HallView:
     mess_id: str
     name: str
-    occupancy: int  # people who scanned in during the last N minutes (estimate of people inside)
+    occupancy: int  # estimated people inside: still queueing + served recently and eating
     seats: int
     load: float  # occupancy / seats
     arrival_rate: float  # scans/min over the rate window (measured)
@@ -49,6 +49,7 @@ class HallView:
     wait: WaitBreakdown  # for someone already at this door (no walk)
     status: Status
     share: float  # fraction of students the system wants in this hall
+    visit_min: float  # expected scan-to-leaving time for someone arriving now (normal ~18 min)
 
     @property
     def space(self) -> int:
@@ -101,7 +102,7 @@ class Engine:
         self.cfg = cfg
         self.policy = policy
         e = cfg.engine
-        self._est = {m.id: MessEstimator(e.occupancy_window_min * 60, e.rate_window_min * 60) for m in cfg.messes}
+        self._est = {m.id: MessEstimator(e.stay_mean_min * 60, e.rate_window_min * 60) for m in cfg.messes}
         self._trays = {(m.id, item): (FoodState.OK, -1e9) for m in cfg.messes for item in m.items}
         self._fresh_since = {m.id: -1e9 for m in cfg.messes}
         self.kitchen_log: deque[FoodSignal] = deque(maxlen=500)
@@ -259,6 +260,7 @@ class Engine:
                     wait=wb,
                     status=status,
                     share=shares[m.id],
+                    visit_min=wb.wait + wb.service + e.stay_mean_min,
                 )
             )
         by_id = {v.mess_id: v for v in views}

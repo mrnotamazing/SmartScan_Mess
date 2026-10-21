@@ -35,6 +35,7 @@ class Student:
     arrived_at: float = 0.0
     service_start: float | None = None
     seated_at: float | None = None
+    left_at: float | None = None
     name: str | None = None  # made-up for simulated students; from the log only if privacy.show_names
 
 
@@ -164,7 +165,8 @@ class Hall:
 
     def _sit(self, s: Student, t: float) -> None:
         s.seated_at = t
-        heapq.heappush(self.seated, t + self._stay_time())
+        s.left_at = t + self._stay_time()
+        heapq.heappush(self.seated, s.left_at)
 
 
 @dataclass

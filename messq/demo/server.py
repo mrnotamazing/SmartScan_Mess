@@ -319,6 +319,7 @@ class Demo:
                         "name": h.name,
                         "wait_min": round(h.wait.wait, 1),
                         "to_food_min": round(h.wait.wait + h.wait.service, 1),
+                        "visit_min": round(h.visit_min, 1),
                         "status": h.status.value,
                         "share": round(h.share, 3),
                         "occupancy": h.occupancy,
@@ -360,6 +361,7 @@ class Demo:
             return {
                 "mode": self.cfg.layout.mode,
                 "switch_walk_s": self.cfg.layout.switch_walk_s,
+                "normal_visit_min": self.cfg.engine.normal_visit_min,
                 "slot": self.slot.name,
                 "source": {**self.source, "label": self.source_label},
                 "slots": [s.name for s in self.cfg.simulation.slots],
