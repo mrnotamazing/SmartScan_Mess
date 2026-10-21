@@ -68,6 +68,10 @@ button.primary { background: var(--text); color: var(--surface); border-color: v
 .hall .name { font-weight: 600; }
 .bar { height: 14px; background: var(--track); border-radius: 4px; overflow: hidden; }
 .bar > div { height: 100%; border-radius: 0 4px 4px 0; transition: width .4s; }
+.funnel { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: -4px 0 14px; padding: 8px 10px; border: 1px solid var(--grid); border-radius: 8px; }
+.funnel div { font-size: 11px; color: var(--text-2); line-height: 1.3; }
+.funnel b { display: block; font-size: 17px; color: var(--text); font-variant-numeric: tabular-nums; }
+.hall .detail { grid-column: 1 / -1; font-size: 12px; color: var(--text-2); margin-top: -4px; font-variant-numeric: tabular-nums; }
 .hall .n { font-size: 13px; color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
 .food { font-size: 12px; color: var(--text-2); }
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border); color: var(--text); white-space: nowrap; }
@@ -98,6 +102,7 @@ svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
 .note { color: var(--text-3); font-size: 12px; margin-top: 18px; }
 input[type=file] { display: none; }
 @media (max-width: 760px) {
+  .funnel { grid-template-columns: repeat(3, 1fr); }
   .grid2, .row2 { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .timeline { grid-template-columns: auto auto auto 1fr; }
@@ -245,11 +250,20 @@ function worldCard(w, key, s) {
       <div class="stat"><div class="v">${w.long_waits}</div><div class="l">waited &gt;10 min</div></div>
       <div class="stat"><div class="v">${w.seated}</div><div class="l">served so far</div></div>
     </div>
+    <div class="funnel" title="Counts so far in this lunch">
+      <div><b>${w.arrived}</b>reached a door${w.expected ? ` <span style="opacity:.7">of ~${w.expected.toLocaleString()}</span>` : ""}</div>
+      <div><b>${w.scanned}</b>scanned in</div>
+      <div><b>${w.served}</b>got food</div>
+      <div><b>${w.eating}</b>eating now</div>
+      <div><b>${w.left}</b>left</div>
+    </div>
     ${w.halls.map(h => `
       <div class="hall">
         <div><div class="name">${esc(h.name)}</div><div class="food">${FOOD[h.food]}</div></div>
         <div class="bar" title="${h.queue} waiting"><div style="width:${Math.min(100, 100 * h.queue / maxQ)}%;background:${color}"></div></div>
         <div class="n">${h.queue} in line<br>${h.students} came</div>
+        <div class="detail">${h.scanned} scanned · ${h.served} got food · ${h.eating} eating now (${Math.round(100 * h.eating / h.seats)}% of ${h.seats} seats) · ${h.left} left
+          · waiting: ${h.outside_q} at scanner, ${h.food_q} for food${h.seat_q ? `, ${h.seat_q} for a seat` : ""}</div>
       </div>`).join("")}${extra}`;
 }
 

@@ -59,7 +59,7 @@ HOME = {"manager": "/manager", "kitchen": "/kitchen"}
 INTERVALS = (5, 10, 15, 30, 60)
 HISTORY_EVERY_S = 30  # simulated seconds between chart points
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
-TAIL_MIN = 30  # the timeline runs this long past the meal so queues can drain
+TAIL_MIN = 0  # the timeline ends when the mess closes (lunch 11:30-14:30)
 
 
 @dataclass
@@ -405,9 +405,27 @@ def _waiting(w: Simulation) -> int:
     return sum(h.outside_queue() + len(h.queue) + len(h.seat_queue) for h in w.halls.values())
 
 
+def _counts(students, t: float) -> dict:
+    """Where everyone is right now: arrived at a door -> scanned -> got food -> left."""
+    arrived = scanned = served = left = 0
+    for s in students:
+        if s.arrived_at > t:
+            continue  # still walking
+        arrived += 1
+        if s.scanned_at is not None:
+            scanned += 1
+        if s.seated_at is not None:
+            served += 1
+            if s.left_at is not None and s.left_at <= t:
+                left += 1
+    return {"arrived": arrived, "scanned": scanned, "served": served, "eating": served - left, "left": left}
+
+
 def _world(w: Simulation, history: list) -> dict:
     waits = [(s.seated_at - s.arrived_at) / 60 for s in w.students if s.seated_at is not None]
     return {
+        "expected": w.slot.expected_students,
+        **_counts(w.students, w.t),
         "students": len(w.students),
         "seated": len(waits),
         "avg_wait": round(mean(waits), 1) if waits else 0.0,
@@ -425,6 +443,10 @@ def _world(w: Simulation, history: list) -> dict:
                 "seats": h.cfg.seats,
                 "food": "out" if h.stock <= 0 else ("low" if h.stock <= h.cfg.food_refill_trigger else "ok"),
                 "students": sum(s.hall == h.cfg.id for s in w.students),
+                **_counts([s for s in w.students if s.hall == h.cfg.id], w.t),
+                "outside_q": h.outside_queue(),
+                "food_q": len(h.queue),
+                "seat_q": len(h.seat_queue),
             }
             for h in w.halls.values()
         ],
