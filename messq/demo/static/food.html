@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kitchen Food Status</title>
+<title>Food Status</title>
 <style>
 :root {
   color-scheme: light;
@@ -28,7 +28,6 @@ p.lead { color: var(--text-2); margin: 4px 0 16px; }
 .mess { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
 .mhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
 .mname { font-size: 20px; font-weight: 700; }
-.pend { font-size: 12px; font-weight: 600; color: var(--warning); margin-top: 2px; }
 .dish { font-size: 13px; color: var(--text-2); margin-top: 1px; }
 .main { font-size: 11px; font-weight: 600; color: var(--text-2); border: 1px solid var(--border); border-radius: 99px; padding: 1px 7px; margin-left: 4px; white-space: nowrap; }
 .tray { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
@@ -52,13 +51,14 @@ button.all { min-width: 0; padding: 8px 12px; font-size: 14px; }
 </head>
 <body>
 <main>
-  <div class="top"><h1>Kitchen: food trays</h1><span class="clock"><span id="clock"></span> · <a href="/logout" style="color:var(--text-2)">Log out</a></span></div>
-  <p class="lead">Tap as soon as a tray runs low or out, and again when it's refilled. The mess manager approves each report on the dashboard; the screens outside the mess update as soon as it's approved.</p>
+  <div class="top"><h1>Food status</h1><span class="clock"><span id="clock"></span> · <a href="/logout" style="color:var(--text-2)">Log out</a></span></div>
+  <p class="lead">Mess manager: tap as soon as a tray is running low or out, and again when it's refilled. The screens outside the mess update within seconds.
+    If a <b>star dish</b> runs out, students are sent to the other mess.</p>
   <p class="lead" id="menu" style="margin-top:-4px"></p>
   <div class="tabs" id="tabs"></div>
   <div id="messes"></div>
   <div class="mess"><b>Latest updates</b><ol class="feed" id="feed"></ol></div>
-  <p class="note">Demo: these taps tell the system what the kitchen sees. They don't change the simulated food itself.
+  <p class="note">Demo: these taps tell the system what the manager sees. They don't change the simulated food itself.
     Use "Make food run out" on the dashboard to simulate a real shortage.</p>
 </main>
 <div id="toast"></div>
@@ -70,31 +70,30 @@ let busy = false;
 function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(el._t); el._t = setTimeout(() => el.style.display = "none", 1800); }
 async function tap(mess, item, state, label) {
   busy = true;
-  const r = await fetch("/api/kitchen", { method: "POST", headers: { "Content-Type": "application/json", "X-Messq": "1" }, body: JSON.stringify({ mess, item, state, request: true }) });
+  const r = await fetch("/api/food", { method: "POST", headers: { "Content-Type": "application/json", "X-Messq": "1" }, body: JSON.stringify({ mess, item, state }) });
   busy = false;
-  toast(r.ok ? `Sent to the manager for approval: ${label}` : "Couldn't send. Try again.");
+  toast(r.ok ? `Updated: ${label}` : "Couldn't send. Try again.");
   poll();
 }
 async function poll() {
   if (busy) return;
-  const r = await fetch("/api/kitchen-state");
-  if (r.status === 401) { location.href = "/login?next=/kitchen"; return; }
+  const r = await fetch("/api/food-state");
+  if (r.status === 401) { location.href = "/login?next=/food"; return; }
   const s = await r.json();
   document.getElementById("clock").textContent = s.clock;
   document.getElementById("menu").innerHTML = s.menu && s.menu.theme ? `Today's lunch: <b>${esc(s.menu.day)} · ${esc(s.menu.theme)}</b>` : "";
   const names = Object.fromEntries(s.advice.halls.map(h => [h.id, h.name]));
-  document.getElementById("tabs").innerHTML = `<a href="/kitchen" class="${ONLY ? "" : "on"}">All</a>` +
+  document.getElementById("tabs").innerHTML = `<a href="/food" class="${ONLY ? "" : "on"}">All</a>` +
     s.advice.halls.map(h => `<a href="?mess=${h.id}" class="${ONLY === h.id ? "on" : ""}">${esc(h.name)}</a>`).join("");
-  const ids = Object.keys(s.kitchen).filter(id => !ONLY || id === ONLY);
+  const ids = Object.keys(s.trays).filter(id => !ONLY || id === ONLY);
   document.getElementById("messes").innerHTML = ids.map(id => `
     <div class="mess">
       <div class="mhead"><span class="mname">${esc(names[id])}</span>
         <button class="all ok" data-m="${id}" data-s="ok" data-l="${esc(names[id])}: all trays refilled"><i>●</i>All refilled</button></div>
-      ${s.kitchen[id].map(t => `
+      ${s.trays[id].map(t => `
         <div class="tray">
-          <div><div class="tname">${esc(t.item)}${t.main ? ` <span class="main">main · stops service if out</span>` : ""}</div>
+          <div><div class="tname">${esc(t.item)} <span class="main" title="${esc(t.type)} · class ${esc(t.cls)} in the priority matrix">${t.star ? "★ star dish · out = send students to the other mess" : `${esc(t.type)} · weight ${t.weight}`}</span></div>
             ${t.dish ? `<div class="dish">${esc(t.dish)}</div>` : ""}
-            ${t.pending ? `<div class="pend">⏳ Sent: ${LABEL[t.pending][1].toLowerCase().replace("ok", "refilled")} · waiting for manager approval</div>` : ""}
             <div class="tstate"><i style="color:var(--${t.state === "ok" ? "good" : t.state === "low" ? "warning" : "critical"})">${LABEL[t.state][0]}</i>${LABEL[t.state][1]}${t.since ? ` · since ${t.since} (${t.mins_ago} min ago)` : ""}</div></div>
           <div class="btns">
             <button class="low ${t.state === "low" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="low" data-l="${esc(t.dish || t.item)} running low"><i>▲</i>Low</button>
@@ -104,7 +103,7 @@ async function poll() {
         </div>`).join("")}
     </div>`).join("");
   document.querySelectorAll("button[data-m]").forEach(b => b.onclick = () => tap(b.dataset.m, b.dataset.i || null, b.dataset.s, b.dataset.l));
-  const feed = s.kitchen_feed.filter(f => !ONLY || f.mess === names[ONLY]);
+  const feed = s.tray_feed.filter(f => !ONLY || f.mess === names[ONLY]);
   document.getElementById("feed").innerHTML = feed.length
     ? feed.map(f => `<li>${f.clock} · ${esc(f.mess)}: ${esc(f.item)} ${f.state === "ok" ? "refilled" : LABEL[f.state][1].toLowerCase()}</li>`).join("")
     : "<li>No updates yet</li>";

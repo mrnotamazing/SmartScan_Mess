@@ -25,7 +25,8 @@ class HallState:
     backlog: float  # estimated people waiting to be served
     occupancy: float  # estimated people inside (entries in last N min)
     food: FoodState
-    food_out_for_min: float = 0.0  # minutes since kitchen tapped "out"
+    food_out_for_min: float = 0.0  # minutes since a star dish was marked "out"
+    food_penalty_min: float = 0.0  # weighted delay for other trays low/out (engine.food_penalty_min)
 
 
 @dataclass(frozen=True)
@@ -66,8 +67,7 @@ def predict_wait(
         food_delay = max(0.0, remaining - walk)
     else:
         backlog = max(0.0, state.backlog + (lam - cap) * walk)
-        if state.food is FoodState.LOW:
-            food_delay = eng.food_low_penalty_min
+        food_delay = state.food_penalty_min
 
     growth = max(0.0, lam - cap) * horizon / 2  # average extra queue over the horizon
     queue = (backlog + growth) / cap + mmc_wait(min(lam, RHO_CAP * cap), mu, mess.counters)

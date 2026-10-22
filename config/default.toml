@@ -16,9 +16,10 @@ routing_smoothing = 0.5       # EMA weight on the newest split (1 = no smoothing
 min_share = 0.05              # never send less than 5% to any open hall (keeps estimates alive)
 amber_wait_min = 5            # status thresholds on predicted wait (excluding walk)
 red_wait_min = 10
-food_low_penalty_min = 2      # ASSUMED: extra expected delay when kitchen tapped "tray low"
-food_out_grace_min = 5        # an "out" tap expires this long after the expected refill time
-food_low_expiry_min = 20      # a "low" tap expires after this long (staff forget to tap "refilled")
+food_low_share = 0.25         # ASSUMED: a tray marked "running low" counts as 1/4 of a run-out (the chance it
+                              #   empties before a student arriving now is served). Weighted by the tray (see [[tray]]).
+food_out_grace_min = 5        # an "out" mark expires this long after the expected refill time
+food_low_expiry_min = 20      # a "low" mark expires after this long (in case the manager forgets "refilled")
 assumed_compliance = 1.0      # set < 1 to over-correct for students who ignore advice
                               # (needs [engine.natural_share], e.g. from a no-screen baseline day)
 
@@ -114,3 +115,71 @@ duration_min = 150
 expected_students = 1500
 peak_offset_min = 45
 spread_min = 30
+
+# ---------------------------------------------------------------------------
+# Tray weights, from the ABC/XYZ priority matrix (MDS_dataset.xlsx, "Menu & Ratings").
+# The mess manager marks a tray "running low", "out" or "refilled"; the weight decides how
+# much that changes the advice on the door screens:
+#   * a STAR DISH that runs OUT closes that mess for routing: students are sent to the other
+#     mess, whatever the dish is (matrix: "the one item everyone notices when it is gone");
+#   * any other tray that is OUT adds  weight x expected refill time  to that mess's wait;
+#   * any tray "running low" adds  weight x food_low_share x expected refill time.
+# Weights are the group's reading of the matrix (to confirm with the CT manager):
+#   class A (cost of running out High) above class C; within A, items students come for
+#   (star dish) above items made continuously (chapati), one-per-plate sweets and fresh sides;
+#   C items (base food) are interchangeable, so a shortfall is "quietly absorbed by another".
+#   Table items (salt, pickle, fryums: class CX, "free issue") are not tracked.
+# ---------------------------------------------------------------------------
+[[tray]]
+name = "Gravy sabji"          # rajma masala, paneer/chicken curries...
+type = "Star dish"
+class = "AZ"                  # Tight Control
+weight = 1.0
+
+[[tray]]
+name = "Special rice"         # the pulaos, biryani
+type = "Star dish"
+class = "AZ"
+weight = 1.0
+
+[[tray]]
+name = "Roti"                 # chapatis: running out is a SPEED problem (another tawa fixes it)
+type = "Made fresh in batches"
+class = "AZ"
+weight = 0.5
+
+[[tray]]
+name = "Dessert"              # one per plate: demand = plate count
+type = "One per plate"
+class = "AX"                  # Calculated Issue
+weight = 0.3
+
+[[tray]]
+name = "Curd / raita"         # roughly one portion each; the risk is surplus more than shortage
+type = "Fresh side"
+class = "AZ"
+weight = 0.3
+
+[[tray]]
+name = "Dry sabji"
+type = "Base food"
+class = "CZ"                  # Buffered Issue
+weight = 0.1
+
+[[tray]]
+name = "Dal"
+type = "Base food"
+class = "CZ"
+weight = 0.1
+
+[[tray]]
+name = "Rice"
+type = "Base food"
+class = "CZ"
+weight = 0.1
+
+[[tray]]
+name = "Sambar / rasam"
+type = "Base food"
+class = "CZ"
+weight = 0.1

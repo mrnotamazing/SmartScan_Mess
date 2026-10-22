@@ -5,7 +5,7 @@ These ideas come from behavioural economics and consumer psychology. **Built** m
 (`/screen?at=A`). **Next** means it's worth building and A/B testing in the pilot.
 
 The rule above all of them: **never lie on the screen.** One wrong "go to B, it's empty" costs weeks of trust.
-Every nudge below uses true numbers from scans and kitchen taps.
+Every nudge below uses true numbers from scans and the mess manager's food-status taps.
 
 ## 1. Colour: use it for meaning, not decoration
 
@@ -32,7 +32,7 @@ Every nudge below uses true numbers from scans and kitchen taps.
 
 | Idea | Why it works | Status |
 |---|---|---|
-| "✨ Fresh batch just out" for 10 min after the kitchen taps "Refilled" | Fresh food pulls harder than a short line, and it turns a refill into a reason to go there | Built |
+| "✨ Fresh batch just out" for 10 min after the manager taps "Refilled" | Fresh food pulls harder than a short line, and it turns a refill into a reason to go there | Built |
 | "🍲 A tray is running low" | Honest warning so students aren't surprised inside | Built |
 | Show the menu item that's fresh ("Fresh rotis just out") | More specific means more appetising | Next (needs the tray name on the screen) |
 

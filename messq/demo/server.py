@@ -6,10 +6,9 @@
 Who sees what (see auth.py):
   anyone           /                 student page for phones: which mess is faster right now
                    /screen?at=A      the display outside a mess (A = Central, B = Munch)
-  kitchen login    /kitchen?mess=A   tray low / out / refilled, per tray
-  manager login    /manager          pitch dashboard (both worlds, chart, timeline, upload)
+  manager login    /manager          pitch dashboard (both worlds, chart, timeline, upload, food status)
+                   /food?mess=A      phone page: mark each tray running low / out / refilled
                    /sheet            live spreadsheet: scan log per mess + counts per 30 min
-                   /kitchen          (managers can use the kitchen page too)
 
 The meal is either simulated or replayed from an uploaded scanner log (CSV).
 Uploaded files are parsed in memory and never written to disk; raw IDs are
@@ -43,20 +42,20 @@ from .auth import ENV as AUTH_ENV
 from .auth import Auth
 
 STATIC = Path(__file__).resolve().parent / "static"
-PUBLIC, KITCHEN, MANAGER = frozenset(), frozenset({"kitchen", "manager"}), frozenset({"manager"})
+PUBLIC, MANAGER = frozenset(), frozenset({"manager"})
 PAGES = {  # path -> (file, roles allowed; empty = anyone)
     "/": ("student.html", PUBLIC),
     "/screen": ("screen.html", PUBLIC),
     "/login": ("login.html", PUBLIC),
-    "/kitchen": ("kitchen.html", KITCHEN),
+    "/food": ("food.html", MANAGER),
     "/manager": ("index.html", MANAGER),
     "/sheet": ("sheet.html", MANAGER),
 }
-GET_APIS = {"/api/public": PUBLIC, "/api/me": PUBLIC, "/api/kitchen-state": KITCHEN, "/api/state": MANAGER,
+GET_APIS = {"/api/public": PUBLIC, "/api/me": PUBLIC, "/api/food-state": MANAGER, "/api/state": MANAGER,
             "/api/sheet": MANAGER, "/api/export.xlsx": MANAGER, "/api/export.csv": MANAGER}
-POST_APIS = {"/api/login": PUBLIC, "/api/logout": PUBLIC, "/api/kitchen": KITCHEN, "/api/kitchen-review": MANAGER, "/api/upload": MANAGER,
+POST_APIS = {"/api/login": PUBLIC, "/api/logout": PUBLIC, "/api/food": MANAGER, "/api/upload": MANAGER,
              "/api/control": MANAGER, "/api/source": MANAGER, "/api/runout": MANAGER}
-HOME = {"manager": "/manager", "kitchen": "/kitchen"}
+HOME = {"manager": "/manager"}
 INTERVALS = (5, 10, 15, 30, 60)
 HISTORY_EVERY_S = 30  # simulated seconds between chart points
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
@@ -66,7 +65,7 @@ TAIL_MIN = 0  # the timeline ends when the mess closes (lunch 11:30-14:30)
 @dataclass
 class Action:
     t: float  # simulated seconds
-    kind: str  # "runout" | "kitchen"
+    kind: str  # "runout" | "food" (manager marked a tray low / out / refilled)
     mess: str
     item: str | None = None
     state: str | None = None
@@ -79,9 +78,6 @@ class Demo:
     def __init__(self, cfg: AppConfig, slot: str, compliance: float, seed: int, speed: float, menu: DayMenu | None = None):
         self.cfg, self.compliance, self.seed, self.speed = cfg, compliance, seed, speed
         self.menu = menu or DayMenu()
-        # Tray reports from the kitchen page wait here until a manager approves them.
-        self.pending: list[dict] = []
-        self._next_request = 1
         self.lock = threading.RLock()
         self.source: dict = {"type": "sim", "slot": slot}
         self.log: ParsedLog | None = None
@@ -130,9 +126,10 @@ class Demo:
         if a.kind == "runout":
             for w in self.worlds.values():
                 w.force_run_out(a.mess)
-        elif a.kind == "kitchen":
-            w = self.worlds["advised"]  # only the world with the system has a kitchen page
+        elif a.kind == "food":
+            w = self.worlds["advised"]  # only the world with the system gets the manager's updates
             w.engine.food_signal(FoodSignal(w.t, a.mess, FoodState(a.state), a.item))
+            w.engine.update(w.t)  # screens react at once, even while the demo is paused
 
     def _step(self) -> None:
         while self._next_action < len(self.actions) and self.actions[self._next_action].t <= self.t:
@@ -180,29 +177,9 @@ class Demo:
         with self.lock:
             self._record(Action(self.t, "runout", mess_id))
 
-    def kitchen(self, mess_id: str, item: str | None, state: FoodState) -> None:
+    def food(self, mess_id: str, item: str | None, state: FoodState) -> None:
         with self.lock:
-            self._record(Action(self.t, "kitchen", mess_id, item, state.value))
-
-    def request(self, mess_id: str, item: str | None, state: FoodState) -> dict:
-        """A kitchen-page report: held until a manager approves it. A newer report
-        for the same tray replaces the older one."""
-        with self.lock:
-            self.pending = [p for p in self.pending if (p["mess"], p["item"]) != (mess_id, item)]
-            req = {"id": self._next_request, "t": self.t, "mess": mess_id, "item": item, "state": state.value}
-            self._next_request += 1
-            self.pending.append(req)
-            return req
-
-    def review(self, request_id: int, approve: bool) -> bool:
-        with self.lock:
-            req = next((p for p in self.pending if p["id"] == request_id), None)
-            if req is None:
-                return False
-            self.pending.remove(req)
-            if approve:
-                self.kitchen(req["mess"], req["item"], FoodState(req["state"]))
-            return True
+            self._record(Action(self.t, "food", mess_id, item, state.value))
 
     def set_compliance(self, value: float) -> None:
         with self.lock:
@@ -215,7 +192,6 @@ class Demo:
         with self.lock:
             self.seed += 1
             self.actions = []
-            self.pending = []
             self._build()
 
     def set_source(self, source: dict) -> None:
@@ -325,15 +301,14 @@ class Demo:
             "advice": s["advice"],
         }
 
-    def kitchen_state(self) -> dict:
+    def food_state(self) -> dict:
         s = self.state()
         return {
             "clock": s["clock"],
             "advice": {"halls": [{"id": h["id"], "name": h["name"], "food": h["food"]} for h in s["advice"]["halls"]]},
-            "kitchen": s["kitchen"],
-            "kitchen_feed": s["kitchen_feed"],
+            "trays": s["trays"],
+            "tray_feed": s["tray_feed"],
             "menu": s["menu"],
-            "pending": s["pending"],
         }
 
     def _tray_label(self, item: str) -> str:
@@ -384,11 +359,10 @@ class Demo:
                 }
                 for d in snap.doors.values()
             }
-            waiting = {(p["mess"], p["item"]): p for p in self.pending}
-            kitchen = {
+            trays = {
                 m.id: [
-                    {"item": item, "dish": self.menu.dish(item), "main": item == m.items[0],
-                     "pending": waiting[(m.id, item)]["state"] if (m.id, item) in waiting else None,
+                    {"item": item, "dish": self.menu.dish(item), "star": self.cfg.tray(item).star,
+                     "type": self.cfg.tray(item).type, "cls": self.cfg.tray(item).cls, "weight": self.cfg.tray(item).weight,
                      "state": st.value, "since": self.clock(ts) if ts > -1e8 else None,
                      "mins_ago": round((self.t - ts) / 60) if ts > -1e8 else None}
                     for item, st, ts in eng.trays(m.id, self.t)
@@ -400,7 +374,7 @@ class Demo:
                 {"clock": self.clock(sig.ts), "mess": names[sig.mess_id],
                  "item": self._tray_label(sig.item or ("all trays" if sig.state is FoodState.OK else self.cfg.mess(sig.mess_id).items[0])),
                  "state": sig.state.value}
-                for sig in list(eng.kitchen_log)[-8:][::-1]
+                for sig in list(eng.food_log)[-8:][::-1]
             ]
             replay = self.source["type"] == "replay"
             return {
@@ -428,15 +402,9 @@ class Demo:
                 "worlds": {k: _world(w, self.history[k]) for k, w in self.worlds.items()},
                 "advice": {"text": snap.advice, "headline": snap.headline.mess_id, "halls": halls},
                 "doors": doors,
-                "kitchen": kitchen,
-                "kitchen_feed": feed,
+                "trays": trays,
+                "tray_feed": feed,
                 "menu": {"day": self.menu.day.title(), "theme": self.menu.theme},
-                "pending": [
-                    {"id": p["id"], "clock": self.clock(p["t"]), "mins_ago": round((self.t - p["t"]) / 60),
-                     "mess": p["mess"], "mess_name": names[p["mess"]], "state": p["state"],
-                     "item": self._tray_label(p["item"] or ("all trays" if p["state"] == "ok" else self.cfg.mess(p["mess"]).items[0]))}
-                    for p in self.pending
-                ],
                 "actions": [{"clock": self.clock(a.t), "kind": a.kind, "mess": names[a.mess]} for a in self.actions[-6:]],
             }
 
@@ -575,8 +543,8 @@ def make_handler(demo: Demo, auth: Auth):
                 self._json(demo.public_state())
             elif path == "/api/me":
                 self._json({"role": self.role})
-            elif path == "/api/kitchen-state":
-                self._json(demo.kitchen_state())
+            elif path == "/api/food-state":
+                self._json(demo.food_state())
             elif path == "/api/state":
                 self._json(demo.state())
             elif path == "/api/sheet":
@@ -648,19 +616,11 @@ def make_handler(demo: Demo, auth: Auth):
                     demo.set_source(body)
                 elif path == "/api/runout" and body.get("mess") in ids:
                     demo.run_out(body["mess"])
-                elif path == "/api/kitchen" and body.get("mess") in ids and body.get("state") in ("ok", "low", "out"):
+                elif path == "/api/food" and body.get("mess") in ids and body.get("state") in ("ok", "low", "out"):
                     item = body.get("item")
                     if item is not None and item not in demo.cfg.mess(body["mess"]).items:
                         raise ValueError("unknown tray")
-                    # Kitchen staff (and anyone using the kitchen page) send a request that a
-                    # manager approves on the dashboard; a manager's own tap applies at once.
-                    if self.role != "manager" or body.get("request"):
-                        req = demo.request(body["mess"], item, FoodState(body["state"]))
-                        return self._json({"ok": True, "pending": True, "id": req["id"]})
-                    demo.kitchen(body["mess"], item, FoodState(body["state"]))
-                elif path == "/api/kitchen-review":
-                    if not demo.review(int(body["id"]), bool(body.get("approve"))):
-                        return self._json({"error": "That request was already handled."}, 409)
+                    demo.food(body["mess"], item, FoodState(body["state"]))
                 else:
                     raise ValueError("bad request")
             except (ValueError, KeyError, TypeError) as e:
@@ -678,8 +638,8 @@ def _forbidden_page(role: str) -> bytes:
         "<style>body{font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:12vh auto;padding:0 16px;"
         "background:#f4f3f0;color:#0b0b0b}@media(prefers-color-scheme:dark){body{background:#111110;color:#f0efec}}"
         "a{color:#2a78d6}</style></head><body>"
-        f"<h1>This page is for managers</h1><p>You're logged in as <b>{role}</b> staff, which can only open "
-        f'the kitchen page.</p><p><a href="{home}">Back to the {role} page</a> · <a href="/logout">Log in as someone else</a></p>'
+        f"<h1>This page is for managers</h1><p>You're logged in as <b>{role}</b>, which can't open this page.</p>"
+        f'<p><a href="{home}">Back</a> · <a href="/logout">Log in as someone else</a></p>'
         "</body></html>"
     ).encode()
 
@@ -702,7 +662,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--speed", type=float, default=60, help="simulated seconds per real second (60 = 1 min per s)")
     p.add_argument("--compliance", type=float, help="share of students who follow advice (default from config)")
     p.add_argument("--seed", type=int, default=2)
-    p.add_argument("--menu-day", help="which day's lunch menu the kitchen page shows (default: today), e.g. wednesday")
+    p.add_argument("--menu-day", help="which day's lunch menu the food-status trays show (default: today), e.g. wednesday")
     p.add_argument("--log", help="start by replaying this scanner log (CSV)")
     p.add_argument("--show-names", action="store_true",
                    help="show names from uploaded logs in the live sheet (same as privacy.show_names = true)")
@@ -716,7 +676,7 @@ def main(argv: list[str] | None = None) -> None:
     demo = Demo(cfg, args.slot, args.compliance if args.compliance is not None else cfg.simulation.compliance, args.seed, args.speed,
                 load_menu(args.menu_day))
     if demo.menu.dishes:
-        print(f"Kitchen trays use the {demo.menu.day.title()} lunch menu ({demo.menu.theme}) from config/menu.toml")
+        print(f"Food-status trays use the {demo.menu.day.title()} lunch menu ({demo.menu.theme}) from config/menu.toml")
     if args.log:
         info = demo.upload(Path(args.log).read_text(encoding="utf-8-sig", errors="replace"))
         print(f"Loaded {info['scans']} scans; meals found: " + "; ".join(s["label"] for s in info["sessions"]))
@@ -754,15 +714,13 @@ def main(argv: list[str] | None = None) -> None:
     print("\nFor staff (login):")
     print(f"  Manager dashboard             {base}/manager")
     print(f"  Live spreadsheet              {base}/sheet")
-    print(f"  Kitchen trays                 {base}/kitchen")
-    print("\nPasswords:")
-    for role in ("manager", "kitchen"):
-        if role in auth.generated:
-            print(f"  {role:8s} {auth.generated[role]}   (made up for this run; set {AUTH_ENV[role]} to choose your own)")
-        else:
-            print(f"  {role:8s} from {AUTH_ENV[role]}")
-    if auth.shared:
-        print("  (same password for both: everyone who logs in gets the full manager view)")
+    for m in cfg.messes:
+        print(f"  {'Food status, ' + m.name:30s}{base}/food?mess={m.id}")
+    print("\nManager password:")
+    if "manager" in auth.generated:
+        print(f"  {auth.generated['manager']}   (made up for this run; set {AUTH_ENV['manager']} to choose your own)")
+    else:
+        print(f"  from {AUTH_ENV['manager']}")
     if args.lan and (ip := _lan_ip()):
         print(f"\nFrom phones on the same Wi-Fi: http://{ip}:{args.port}/")
     if args.save_sheets:

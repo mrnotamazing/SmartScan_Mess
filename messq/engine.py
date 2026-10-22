@@ -1,6 +1,6 @@
-"""The live engine: scan events + kitchen signals in, recommendation out.
+"""The live engine: scan events + the manager's food-status taps in, recommendation out.
 
-It only sees what the real system will see (entry scans and kitchen taps),
+It only sees what the real system will see (entry scans and the manager's food-status taps),
 never ground truth, so the simulator tests the estimator as well as the policy.
 Everything it knows about a hall comes from people who have already scanned in;
 people still outside are invisible to it by design.
@@ -45,7 +45,7 @@ class HallView:
     arrival_rate: float  # scans/min over the rate window (measured)
     backlog: float  # estimated people waiting to be served
     food: FoodState
-    fresh: bool  # kitchen tapped "refilled" in the last few minutes
+    fresh: bool  # manager tapped "refilled" in the last few minutes
     wait: WaitBreakdown  # for someone already at this door (no walk)
     status: Status
     share: float  # fraction of students the system wants in this hall
@@ -106,7 +106,7 @@ class Engine:
         self._est = {m.id: MessEstimator(e.stay_mean_min * 60, e.rate_window_min * 60) for m in cfg.messes}
         self._trays = {(m.id, item): (FoodState.OK, -1e9) for m in cfg.messes for item in m.items}
         self._fresh_since = {m.id: -1e9 for m in cfg.messes}
-        self.kitchen_log: deque[FoodSignal] = deque(maxlen=500)
+        self.food_log: deque[FoodSignal] = deque(maxlen=500)
         self._dedupe = Deduplicator()
         self._shares: dict[str, float] | None = None
         self._door: dict[str, tuple[str | None, float]] = {m.id: (None, 0.0) for m in cfg.messes}
@@ -133,7 +133,7 @@ class Engine:
         return n
 
     def food_signal(self, sig: FoodSignal) -> None:
-        """A kitchen tap. item=None means the main tray, or every tray for "refilled"."""
+        """The manager marks a tray. item=None means the main tray, or every tray for "refilled"."""
         m = self.cfg.mess(sig.mess_id)
         items = m.items if (sig.item is None and sig.state is FoodState.OK) else [sig.item or m.items[0]]
         was_short = any(self.tray_state(m.id, i, sig.ts)[0] is not FoodState.OK for i in items)
@@ -142,7 +142,8 @@ class Engine:
                 self._trays[(m.id, item)] = (sig.state, sig.ts)
         if sig.state is FoodState.OK and was_short:
             self._fresh_since[m.id] = sig.ts
-        self.kitchen_log.append(sig)
+        self.food_log.append(sig)
+        self._last_route_ts = None  # food changed: re-route at the next update instead of waiting
 
     def tray_state(self, mess_id: str, item: str, now: float) -> tuple[FoodState, float]:
         """One tray's state, with stale taps expired. Staff forget to tap
@@ -158,17 +159,33 @@ class Engine:
         return state, since
 
     def food_state(self, mess_id: str, now: float) -> tuple[FoodState, float]:
-        """Whole-hall state: the worst tray. Only the main tray running out stops
-        service; any other tray being out just slows it, so it counts as LOW."""
+        """Whole-hall state. OUT only when a star dish is out (students are then sent
+        to the other mess); any other tray out, or any tray running low, is LOW."""
         m = self.cfg.mess(mess_id)
         worst, since = FoodState.OK, 0.0
-        for idx, item in enumerate(m.items):
+        for item in m.items:
             st, ts = self.tray_state(mess_id, item, now)
-            if st is FoodState.OUT and idx > 0:
+            if st is FoodState.OUT and not self.cfg.tray(item).star:
                 st = FoodState.LOW
             if _SEVERITY[st] > _SEVERITY[worst]:
                 worst, since = st, ts
         return worst, since
+
+    def food_penalty_min(self, mess_id: str, now: float) -> float:
+        """Extra minutes added to a mess's predicted wait for trays that are low or out,
+        weighted by the priority matrix. A star dish that is OUT is not counted here:
+        it closes the mess for routing instead (food_state -> OUT)."""
+        m, e = self.cfg.mess(mess_id), self.cfg.engine
+        refill = m.expected_refill_min
+        total = 0.0
+        for item in m.items:
+            st, _ = self.tray_state(mess_id, item, now)
+            tray = self.cfg.tray(item)
+            if st is FoodState.OUT and not tray.star:
+                total += tray.weight * refill
+            elif st is FoodState.LOW:
+                total += tray.weight * e.food_low_share * refill
+        return total
 
     def trays(self, mess_id: str, now: float) -> list[tuple[str, FoodState, float]]:
         return [(item, *self.tray_state(mess_id, item, now)) for item in self.cfg.mess(mess_id).items]
@@ -192,6 +209,7 @@ class Engine:
             occupancy=est.occupancy(now),
             food=food,
             food_out_for_min=(now - since) / 60.0 if food is FoodState.OUT else 0.0,
+            food_penalty_min=self.food_penalty_min(m.id, now),
         )
 
     def _route(self, now: float) -> None:

@@ -1,14 +1,13 @@
 """Who can see what.
 
     public   (no login)   screens outside each mess, and the student page for phones
-    kitchen  (password)   the kitchen tray page
-    manager  (password)   everything: dashboard, live spreadsheet, kitchen page, uploads, exports
+    manager  (password)   everything: dashboard, food status (running low / out),
+                          live spreadsheet, uploads, exports
 
-Passwords come from the environment (MESSQ_MANAGER_PASSWORD, MESSQ_KITCHEN_PASSWORD),
-never from files in the repo. If one isn't set, a random password is made at
-start-up and printed in the terminal. If both are set to the same password,
-everyone who logs in is a manager. Sessions are HMAC-signed cookies
-(HttpOnly, SameSite=Strict) that end when the demo restarts.
+Only the mess manager logs in. The password comes from the environment
+(MESSQ_MANAGER_PASSWORD), never from files in the repo. If it isn't set, a random
+password is made at start-up and printed in the terminal. Sessions are
+HMAC-signed cookies (HttpOnly, SameSite=Strict) that end when the demo restarts.
 """
 
 from __future__ import annotations
@@ -20,8 +19,8 @@ import secrets
 import time
 from collections import defaultdict, deque
 
-ROLES = ("kitchen", "manager")
-ENV = {"manager": "MESSQ_MANAGER_PASSWORD", "kitchen": "MESSQ_KITCHEN_PASSWORD"}
+ROLES = ("manager",)
+ENV = {"manager": "MESSQ_MANAGER_PASSWORD"}
 SESSION_HOURS = 12
 COOKIE = "messq_session"
 MAX_ATTEMPTS = 8  # failed logins per address per 5 minutes
@@ -42,8 +41,6 @@ class Auth:
                 pw = _readable_password()
                 self.generated[role] = pw
             self.passwords[role] = pw
-        # One shared password is allowed; anyone who logs in then gets manager access.
-        self.shared = self.passwords["kitchen"] == self.passwords["manager"]
         self._secret = secrets.token_bytes(32)
         self._fails: dict[str, deque[float]] = defaultdict(deque)
 

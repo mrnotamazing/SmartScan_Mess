@@ -7,7 +7,7 @@ modelled as two parts:
 
 * backlog (people waiting to be served) = fluid queue: each tick it grows by
   the arrivals and shrinks by what the counters can serve (the hall's assumed
-  serving capacity; zero while the kitchen reports the main tray out).
+  serving capacity; zero while the manager reports a star dish out).
 * seated = people served in the last `stay` minutes (they're eating).
 * occupancy (people inside) = backlog + seated.
 

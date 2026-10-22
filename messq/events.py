@@ -20,8 +20,8 @@ class ScanEvent:
 
 class FoodState(str, Enum):
     OK = "ok"
-    LOW = "low"  # kitchen tapped "tray low"
-    OUT = "out"  # kitchen tapped "out"; cleared by "refilled" (-> OK)
+    LOW = "low"  # manager tapped "running low"
+    OUT = "out"  # manager tapped "out"; cleared by "refilled" (-> OK)
 
 
 @dataclass(frozen=True, slots=True)

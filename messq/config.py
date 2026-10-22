@@ -27,7 +27,7 @@ class MessConfig:
     food_refill_time_min: float = 30.0  # call-back when running low: kitchen makes it and sends it (total)
     food_ready_refill_min: tuple[float, float] = (10.0, 14.0)  # when the food is already made: just sent
     food_ready_prob: float = 0.7  # chance the kitchen already has the next batch made when called
-    items: tuple[str, ...] = ("Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sambar / rasam", "Curd / raita", "Dessert")  # trays the kitchen page shows; first = main
+    items: tuple[str, ...] = ("Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sambar / rasam", "Curd / raita", "Dessert")  # trays on the food-status page; first = the one the simulator tracks
     scanners: int = 1  # face-scan terminals at the entrance
     scan_time_s: float = 2.0  # time for one student to scan in
 
@@ -48,6 +48,22 @@ class MessConfig:
 
 
 @dataclass(frozen=True)
+class TrayConfig:
+    """How much one tray matters, from the ABC/XYZ priority matrix (MDS_dataset.xlsx).
+
+    weight 1.0 = a star dish: if it runs OUT, students are sent to the other mess.
+    Smaller weights only add a delay to that mess's predicted wait (see engine.food_penalty_min)."""
+    name: str
+    type: str = "Base food"  # Star dish / Made fresh in batches / Fresh side / One per plate / Base food / Table item
+    cls: str = "CZ"  # ABC/XYZ class: AZ Tight Control, AX Calculated Issue, CZ Buffered Issue, CX Free Issue
+    weight: float = 0.1
+
+    @property
+    def star(self) -> bool:
+        return self.type == "Star dish"
+
+
+@dataclass(frozen=True)
 class EngineConfig:
     rate_window_min: float = 5.0
     horizon_min: float = 5.0
@@ -58,7 +74,7 @@ class EngineConfig:
     min_share: float = 0.05
     amber_wait_min: float = 5.0
     red_wait_min: float = 10.0
-    food_low_penalty_min: float = 2.0
+    food_low_share: float = 0.25  # a "running low" tray counts as this share of a run-out
     food_out_grace_min: float = 5.0
     food_low_expiry_min: float = 20.0
     assumed_compliance: float = 1.0
@@ -122,6 +138,11 @@ class AppConfig:
     privacy: PrivacyConfig
     simulation: SimConfig
     layout: LayoutConfig = field(default_factory=LayoutConfig)
+    trays: dict[str, TrayConfig] = field(default_factory=dict)
+
+    def tray(self, name: str) -> TrayConfig:
+        """Tray settings; a tray missing from the config counts as base food."""
+        return self.trays.get(name) or TrayConfig(name)
 
     def mess(self, mess_id: str) -> MessConfig:
         for m in self.messes:
@@ -152,7 +173,9 @@ def config_from_dict(raw: dict) -> AppConfig:
     engine = EngineConfig(**eng_raw)
     privacy = PrivacyConfig(**raw.get("privacy", {}))
     layout = LayoutConfig(**raw.get("layout", {}))
-    return AppConfig(messes=messes, engine=engine, privacy=privacy, simulation=sim, layout=layout)
+    trays = {t["name"]: TrayConfig(name=t["name"], type=t.get("type", "Base food"), cls=t.get("class", "CZ"),
+                                   weight=float(t.get("weight", 0.1))) for t in raw.get("tray", [])}
+    return AppConfig(messes=messes, engine=engine, privacy=privacy, simulation=sim, layout=layout, trays=trays)
 
 
 def _normalise(shares: dict[str, float], messes: tuple[MessConfig, ...]) -> dict[str, float]:

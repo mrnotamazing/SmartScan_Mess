@@ -10,7 +10,7 @@ from messq.demo.auth import Auth
 from messq.demo.server import Demo, make_handler
 
 
-PW = {"manager": "manager-pass-1", "kitchen": "kitchen-pass-2"}
+PW = {"manager": "manager-pass-1"}
 
 
 class Client:
@@ -62,11 +62,11 @@ def test_demo_server_end_to_end():
         assert a["students"] == n["students"] > 0  # same students in both worlds
         assert len(a["history"]) == len(n["history"]) > 0
         c.call("/api/runout", {"mess": "A"})
-        c.call("/api/kitchen", {"mess": "B", "state": "low"})
+        c.call("/api/food", {"mess": "B", "state": "low"})
         state = json.loads(c.call("/api/state")[0])
         foods = {h["id"]: h["food"] for h in state["advice"]["halls"]}
         assert foods == {"A": "out", "B": "low"}
-        for page in ("/", "/screen", "/kitchen", "/manager", "/sheet"):
+        for page in ("/", "/screen", "/food", "/manager", "/sheet"):
             assert b"<html" in c.call(page)[0]
         c.call("/api/control", {"action": "reset"})
         assert json.loads(c.call("/api/state")[0])["t_min"] == 0
@@ -86,50 +86,26 @@ def test_access_control():
         pub = json.loads(anon.call("/api/public")[0])
         assert set(pub) == {"clock", "mode", "switch_walk_s", "min_saving_min", "doors", "advice"}
         assert "Name" not in json.dumps(pub) and "worlds" not in pub
-        for page in ("/manager", "/sheet", "/kitchen"):
+        for page in ("/manager", "/sheet", "/food"):
             _, url = anon.call(page)
             assert "/login?next=" in url  # redirected to the login page
-        for api in ("/api/state", "/api/sheet", "/api/export.xlsx", "/api/kitchen-state"):
+        for api in ("/api/state", "/api/sheet", "/api/export.xlsx", "/api/food-state"):
             anon.call(api, expect=401)
-        anon.call("/api/kitchen", {"mess": "A", "state": "out"}, expect=401)
+        anon.call("/api/food", {"mess": "A", "state": "out"}, expect=401)
         anon.call("/api/control", {"action": "reset"}, expect=401)
         anon.call("/api/login", {"password": "wrong"}, expect=401)
-
-        # Kitchen staff: the kitchen page and tray updates, nothing else.
-        k = Client(port)
-        assert k.login("kitchen")["next"] == "/kitchen"
-        k.call("/kitchen")
-        k.call("/api/kitchen-state")
-        sent = json.loads(k.call("/api/kitchen", {"mess": "A", "item": "Rice", "state": "low"})[0])
-        assert sent["pending"]  # kitchen reports wait for a manager
-        k.call("/api/kitchen-review", {"id": sent["id"], "approve": True}, expect=401)  # can't approve itself
-        ks = json.loads(k.call("/api/kitchen-state")[0])
-        assert [t["pending"] for t in ks["kitchen"]["A"] if t["item"] == "Rice"] == ["low"]
-        assert [t["state"] for t in ks["kitchen"]["A"] if t["item"] == "Rice"] == ["ok"]
-        k.call("/sheet", expect=403)
-        k.call("/manager", expect=403)
-        k.call("/api/sheet", expect=401)
-        k.call("/api/control", {"action": "pause"}, expect=401)
 
         # Cross-site requests can't add the header, so even a logged-in browser is protected.
         m = Client(port)
         m.login("manager")
         m.call("/api/control", {"action": "pause"}, header=False, expect=403)
         m.call("/api/control", {"action": "pause"})
-        # The manager approves the kitchen's report; then the tray changes.
-        st = json.loads(m.call("/api/state")[0])
-        assert [p["state"] for p in st["pending"]] == ["low"]
-        m.call("/api/kitchen-review", {"id": sent["id"], "approve": True})
-        m.call("/api/kitchen-review", {"id": sent["id"], "approve": True}, expect=409)  # already handled
-        st = json.loads(m.call("/api/state")[0])
-        assert not st["pending"] and [t["state"] for t in st["kitchen"]["A"] if t["item"] == "Rice"] == ["low"]
-        # A report the manager rejects changes nothing; the manager's own tap applies at once.
-        r = json.loads(k.call("/api/kitchen", {"mess": "B", "item": "Dal", "state": "out"})[0])
-        m.call("/api/kitchen-review", {"id": r["id"], "approve": False})
-        m.call("/api/kitchen", {"mess": "B", "item": "Roti", "state": "low"})
-        st = json.loads(m.call("/api/state")[0])
-        trays = {t["item"]: t["state"] for t in st["kitchen"]["B"]}
-        assert trays["Dal"] == "ok" and trays["Roti"] == "low"
+        # Only the manager marks trays; the change applies at once.
+        m.call("/food")
+        m.call("/api/food", {"mess": "B", "item": "Roti", "state": "low"})
+        st = json.loads(m.call("/api/food-state")[0])
+        trays = {t["item"]: t for t in st["trays"]["B"]}
+        assert trays["Roti"]["state"] == "low" and trays["Gravy sabji"]["star"] and trays["Dal"]["weight"] == 0.1
         m.call("/logout")
         m.call("/api/state", expect=401)
     finally:
@@ -142,9 +118,9 @@ def test_login_rate_limit_and_tampered_cookie():
         assert auth.login("1.2.3.4", "nope") is None
     assert auth.login("1.2.3.4", PW["manager"]) is None  # blocked even with the right password
     assert auth.login("5.6.7.8", PW["manager"]) == "manager"
-    cookie = auth.make_cookie("kitchen").split(";")[0]
-    assert auth.role_from(cookie) == "kitchen"
-    forged = cookie.replace("kitchen.", "manager.", 1)
+    cookie = auth.make_cookie("manager").split(";")[0]
+    assert auth.role_from(cookie) == "manager"
+    forged = cookie.replace("manager.", "admin.", 1)
     assert auth.role_from(forged) is None
     assert Auth(PW).role_from(cookie) is None  # another server run doesn't accept it
 
@@ -168,8 +144,8 @@ def test_demo_seek_back_replays_actions_and_upload():
     assert len(info["sessions"]) == 3
     st = demo.state()
     assert st["source"]["type"] == "replay" and st["slot"] == "lunch"
-    demo.kitchen("B", "Rice", __import__("messq.events", fromlist=["FoodState"]).FoodState.LOW)
-    trays = {t["item"]: t["state"] for t in demo.state()["kitchen"]["B"]}
+    demo.food("B", "Rice", __import__("messq.events", fromlist=["FoodState"]).FoodState.LOW)
+    trays = {t["item"]: t["state"] for t in demo.state()["trays"]["B"]}
     assert trays["Rice"] == "low"
 
 
@@ -217,7 +193,7 @@ def test_uploaded_names_hidden_unless_enabled():
     assert demo2.sheet(None, 30)["logs"]["A"][0][1] == "Real Person 0"
 
 
-def test_shared_password_gives_manager_access():
-    auth = Auth({"manager": "appleisyum", "kitchen": "appleisyum"})
-    assert auth.shared
+def test_single_manager_login():
+    auth = Auth({"manager": "appleisyum"})
     assert auth.login("9.9.9.9", "appleisyum") == "manager"
+    assert auth.login("9.9.9.9", "kitchen") is None  # there is no kitchen login

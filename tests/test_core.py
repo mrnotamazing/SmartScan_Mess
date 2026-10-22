@@ -130,7 +130,7 @@ def test_food_out_adds_refill_delay(cfg):
     m, e = cfg.messes[0], cfg.engine
     ok = predict_wait(m, e, HallState(0, 0, FoodState.OK), 5)
     out = predict_wait(m, e, HallState(0, 0, FoodState.OUT, food_out_for_min=2), 5)
-    low = predict_wait(m, e, HallState(0, 0, FoodState.LOW), 5)
+    low = predict_wait(m, e, HallState(0, 0, FoodState.LOW, food_penalty_min=4.0), 5)
     assert out.total > low.total > ok.total
     assert out.food == pytest.approx(m.expected_refill_min - 2 - m.walk_time_s / 60)
 
@@ -245,3 +245,25 @@ def test_advice_beats_no_advice_on_default_config(cfg):
     none = mean(simulate(cfg, slot, Policy.NONE, seed=s).mean_wait_min for s in range(3))
     eq = mean(simulate(cfg, slot, Policy.EQUILIBRIUM, seed=s).mean_wait_min for s in range(3))
     assert eq < none
+
+
+def test_tray_weights_from_priority_matrix(cfg):
+    """A star dish out closes the mess for routing; other trays only add a weighted delay."""
+    from messq.engine import Engine
+    from messq.events import FoodSignal
+
+    refill = cfg.mess("A").expected_refill_min
+    eng = Engine(cfg)
+    eng.food_signal(FoodSignal(0, "A", FoodState.OUT, "Rice"))  # base food out
+    assert eng.food_state("A", 10)[0] is FoodState.LOW
+    assert eng.food_penalty_min("A", 10) == pytest.approx(0.1 * refill)
+    eng.food_signal(FoodSignal(20, "A", FoodState.LOW, "Special rice"))  # star dish running low
+    assert eng.food_penalty_min("A", 30) == pytest.approx(0.1 * refill + 1.0 * cfg.engine.food_low_share * refill)
+    eng.food_signal(FoodSignal(40, "A", FoodState.OUT, "Special rice"))  # any star dish out -> route away
+    assert eng.food_state("A", 50)[0] is FoodState.OUT
+    eng.update(60)
+    assert eng.snapshot().hall("B").share == pytest.approx(1.0)
+    # Weights follow the matrix: star dishes > chapati > sweet, curd > base food.
+    w = {name: t.weight for name, t in cfg.trays.items()}
+    assert w["Gravy sabji"] == w["Special rice"] == 1.0 > w["Roti"] > w["Dessert"] >= w["Curd / raita"] > w["Dal"]
+    assert {t.cls for t in cfg.trays.values() if t.star} == {"AZ"}

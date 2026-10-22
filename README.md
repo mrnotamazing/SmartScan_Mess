@@ -14,7 +14,7 @@ only counts people who have **scanned in**; it never tries to count people still
 | Phase | What | State |
 |---|---|---|
 | 1 | Scanner adapter interface, fake-event simulator, occupancy/wait estimation, probabilistic routing, food-stock input, tests | ✅ done |
-| 2 | Door screens, kitchen tray page, manager dashboard, log upload + replay | demo versions working (`python -m messq.demo`); production hardening next |
+| 2 | Door screens, manager dashboard with food status, log upload + replay | demo versions working (`python -m messq.demo`); production hardening next |
 | 3 | Surge alerts (1-/5-min counts, learned baselines, cooldown, Telegram/WhatsApp) | |
 | 4 | Real COSEC adapter (pycosec / official API) + CSV-export fallback | needs credentials + permission |
 | 5 | A/B logging, metrics, report notebook | |
@@ -44,49 +44,43 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
 | | Pages | Login |
 |---|---|---|
 | **Students / anyone** | `/` (phone page: which mess is quicker right now), `/screen?at=A` (outside Central Mess), `/screen?at=B` (outside Munch Mess) | none |
-| **Kitchen staff** | `/kitchen` (tray Low / Out / Refilled, sent to the manager for approval) | kitchen password |
-| **Managers** | `/manager` (dashboard: approve kitchen reports, set trays directly), `/sheet` (live spreadsheet), `/kitchen`, uploads, downloads | manager password |
+| **Mess manager** | `/manager` (dashboard, including food status: mark trays running low / out / refilled), `/food?mess=A` (the same food status as a phone page), `/sheet` (live spreadsheet), uploads, downloads | manager password |
 
-Students can't reach the dashboard, the spreadsheet (names, logs) or the kitchen buttons: those
-pages redirect to a login, and their data feeds refuse requests without a staff session. A kitchen
-login can only open the kitchen page.
+There is one staff login: the mess manager's. Students can't reach the dashboard, the spreadsheet
+(names, logs) or the food-status buttons: those pages redirect to a login, and their data feeds
+refuse requests without a manager session.
 
-**Passwords** are never stored in the code. Each run, the terminal prints a made-up password for any
-role you haven't set. To choose your own (so it doesn't change every run), set them before starting:
+**The password** is never stored in the code. If you haven't set it, the terminal prints a made-up
+one each run. To choose your own (so it doesn't change every run), set it before starting:
 
 ```bash
 export MESSQ_MANAGER_PASSWORD='pick-something-long'      # Mac / Linux
-export MESSQ_KITCHEN_PASSWORD='another-different-one'
 python3 -m messq.demo
 
 set MESSQ_MANAGER_PASSWORD=pick-something-long           # Windows (Command Prompt)
-set MESSQ_KITCHEN_PASSWORD=another-different-one
 py -m messq.demo
 ```
-
-If you set both to the same password, there's one shared staff login and everyone who uses it
-gets the full manager view (dashboard, spreadsheet with names, kitchen page).
 
 Logins last 12 hours and end when the demo restarts. After 8 wrong passwords from one device,
 that device has to wait 5 minutes.
 
 | Page | Use it for |
 |---|---|
-| `localhost:8000/manager` | **Pitch dashboard** (manager login): the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
+| `localhost:8000/manager` | **Pitch dashboard** (manager login): the same meal run twice with identical students, *without* vs *with* the screens. Live charts, timeline, log upload, food status |
 | `localhost:8000/` | **Student phone page** (no login): which mess is quicker now. When both are close, each phone gets a suggestion drawn from the system's split, so phones don't all pile into one mess |
 | `localhost:8000/screen?at=A` | The screen **outside Central Mess** (use `?at=B` for Munch Mess). Full-screen it (F11) on a projector. Add `&dir=left` if the other mess is to the left |
-| `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray. Each tap is sent to the manager, who approves or rejects it on the dashboard (the manager's own taps there apply at once) (gravy sabji, dry sabji, dal, rice, special rice, roti, sambar/rasam, curd/raita, dessert), each showing today's dish from `config/menu.toml`. Update that file each week; `--menu-day wednesday` shows another day's menu |
+| `localhost:8000/food?mess=A` | **Food status** for the mess manager's phone (`?mess=B` for Munch Mess; also on the dashboard): tap *Running low / Out / Refilled* per tray (gravy sabji, dry sabji, dal, rice, special rice, roti, sambar/rasam, curd/raita, dessert), each showing today's dish from `config/menu.toml`. Update that file each week; `--menu-day wednesday` shows another day's menu. How much each tray matters comes from the priority matrix (see *Food status and the priority matrix*) |
 | `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts. Download as Excel or CSV |
 
 **Dashboard controls**
 
 * **Timeline**: play/pause, −5/+5 min, and a slider to jump to any time, forwards or backwards.
-  Jumping back re-runs the meal and replays anything you clicked (run-outs, kitchen taps) at the same moments.
+  Jumping back re-runs the meal and replays anything you clicked (run-outs, food-status updates) at the same moments.
 * **Speed**: from 1× (real time) up to 600× (a 2-hour lunch in 12 seconds).
 * **Students who follow the screen**: change it mid-meal; the meal is re-run with the new share up to the current time.
 * **Meal**: simulated breakfast/lunch/dinner, or any meal from an uploaded log.
 * **Upload a day's log (CSV)**: see below.
-* **Make food run out**: simulates a real shortage at a mess. The kitchen page is different: it's what managers *report*.
+* **Make food run out**: simulates a real shortage at a mess. Food status is different: it's what the manager *reports*.
 
 ### Live spreadsheet
 
@@ -131,7 +125,7 @@ the assumed speeds, so treat the minutes as estimates.
 
 **Phones in the room.** Run `python -m messq.demo --lan` and the terminal prints an address like
 `http://192.168.1.23:8000/`. Anyone on the **same Wi-Fi** can open the student page and the door
-screens on their phone. Hand someone `/kitchen` with the kitchen password and let them tap "Out" during the pitch. (Windows may ask to allow Python
+screens on their phone. Open `/food?mess=A` on your phone and tap "Out" during the pitch. (Windows may ask to allow Python
 through the firewall: allow it on *private* networks. College Wi-Fi often blocks
 device-to-device traffic; a phone hotspot works.)
 
@@ -146,7 +140,7 @@ Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--
 3. Point at **"waited >10 min"** and at the line under the blue card: *"only about 1 in 5 students
    had to walk 30 seconds to the other mess."*
 4. Open `/screen?at=A`: *"This is what you'd see outside Central Mess: how full each mess is and when you'd get food."*
-5. Hand someone the kitchen page and have them tap **Out** on Central Mess's main course. Its
+5. On the food-status page, tap **Out** on Central Mess's star dish (gravy sabji). Its
    screen starts pointing to Munch Mess within seconds.
 6. Open `/sheet` → *Every 30 min*: *"And the mess manager gets this, live: who came when, per mess, every half hour."*
 7. If you have a real log, upload it: *"This is last Tuesday's lunch, replayed."*
@@ -176,7 +170,7 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
  (simulator now,     ├ dedupe events                          "Go to Munch Mess"
   COSEC API later)   ├ occupancy  = entries in last N min      + per-hall wait,
                      ├ arrival rate = entries in last 5 min      status, split %
- kitchen taps ──────►├ backlog    = fluid queue estimate
+ manager taps ──────►├ backlog    = fluid queue estimate
  (low/out/refilled)  ├ wait       = backlog + M/M/c + seats + food
                      └ split      = equal-wait (Wardrop) split
 ```
@@ -188,7 +182,28 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
 | Time inside (scan to leaving) | *estimated* | queue time now + serving + ~17 min eating. About 18 min on a normal day (measured); longer in a surge |
 | People waiting to be served | *estimated* | fluid queue: grows with scans, shrinks at the hall's configured serving rate |
 | Wait time | *estimated* | backlog ÷ capacity + M/M/c (Erlang C) wait + seat wait + food delay, projected forward by the walk time |
-| Food state | reported by staff | kitchen taps; taps expire if staff forget to tap "refilled" |
+| Food state | reported by the mess manager | food-status taps, weighted by the priority matrix; taps expire if "refilled" is forgotten |
+
+**Food status and the priority matrix.** The manager marks trays *running low*, *out* or
+*refilled*. Each tray has a weight from the ABC/XYZ priority matrix (`MDS_dataset.xlsx`), set in
+`[[tray]]` in `config/default.toml`:
+
+| Tray | Item type (matrix) | Class | Weight |
+|---|---|---|---|
+| Gravy sabji, Special rice | Star dish | AZ Tight Control | ★ 1.0 |
+| Roti | Made fresh in batches | AZ | 0.5 |
+| Dessert | One per plate | AX Calculated Issue | 0.3 |
+| Curd / raita | Fresh side | AZ | 0.3 |
+| Dry sabji, Dal, Rice, Sambar / rasam | Base food | CZ Buffered Issue | 0.1 |
+
+* A **star dish OUT** (any star dish, whatever it is that day) closes that mess for routing: the
+  screens send students to the other mess until it is refilled.
+* Any **other tray OUT** adds *weight × expected refill time* (≈17 min) to that mess's predicted wait.
+* Any tray **running low** adds *weight × 0.25 × expected refill time*. The 0.25 (assumed) is the
+  chance it empties before a student arriving now is served. A star dish running low adds ≈4 min.
+* Table items (salt, pickle, fryums: class CX, "free issue") aren't tracked.
+
+The weights are the group's reading of the matrix and should be confirmed with the CT manager.
 
 **Anti-herding.** The engine does not tell everyone to go to the emptier
 hall. It finds the split of incoming students that would make the predicted
@@ -229,10 +244,10 @@ Wait = minutes from reaching the mess door (including any queue at the scanner) 
 | Policy | Students who follow | Avg wait | p90 wait | Peak queue | Food run-outs | Walked to the other mess |
 |---|---|---|---|---|---|---|
 | No screens (habit 85/15) | – | 7.2 ± 0.4 | 17.6 ± 0.9 | 405 ± 16 | 0.8 | 0% |
-| "Switch if it saves ≥2 min" (greedy) | 60% | 0.8 ± 0.1 | 2.5 ± 0.4 | 83 ± 7 | 0.7 | 13% |
-| Equilibrium split | 30% | 1.4 ± 0.2 | 4.3 ± 0.6 | 119 ± 12 | 1.1 | 12% |
-| Equilibrium split | 60% | 0.8 ± 0.1 | 2.5 ± 0.4 | 84 ± 10 | 0.9 | 13% |
-| Equilibrium split | 100% | 0.9 ± 0.3 | 2.7 ± 0.8 | 80 ± 18 | 0.9 | 16% |
+| "Switch if it saves ≥2 min" (greedy) | 60% | 1.0 ± 0.2 | 2.8 ± 0.5 | 83 ± 13 | 0.3 | 16% |
+| Equilibrium split | 30% | 1.6 ± 0.3 | 4.8 ± 0.9 | 122 ± 15 | 0.8 | 13% |
+| Equilibrium split | 60% | 1.1 ± 0.3 | 3.1 ± 0.9 | 94 ± 19 | 0.5 | 15% |
+| Equilibrium split | 100% | 1.0 ± 0.1 | 2.6 ± 0.4 | 82 ± 11 | 0.5 | 17% |
 
 How much the restock matters (`food_ready_prob`, the chance the next batch is already made
 when the mess calls; group estimate 70%), equilibrium split at 60%:
@@ -275,7 +290,7 @@ What this says (under the ASSUMED parameters):
 
 1. With the corrected inputs, door screens cut the average wait from about 7 to about 1–1.5 minutes,
    and the p90 wait from about 17 to about 4 minutes.
-2. **About 1 in 8 students walks to the other mess** (12–17%). Because 85% start at Central, rebalancing
+2. **About 1 in 7 students walks to the other mess** (13–17%). Because 85% start at Central, rebalancing
    needs more movement than the earlier 65/35 guess did.
 3. At the doors, a simple "switch if it saves ≥2 min" rule does as well as the equilibrium split.
    Feedback is fast (30 s walk) and the threshold stops herding. The equilibrium split matters

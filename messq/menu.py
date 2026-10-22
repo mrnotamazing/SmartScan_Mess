@@ -1,4 +1,4 @@
-"""Today's dishes for each kitchen tray, from config/menu.toml.
+"""Today's dishes for each food tray, from config/menu.toml.
 
 The trays are fixed categories (gravy sabji, rice, roti, ...) so the system's
 logic does not change with the menu; the menu only names what is in each tray.

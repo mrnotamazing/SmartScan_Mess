@@ -2,7 +2,7 @@
 
 Ground truth (real queues, real seats, real food stock) lives here. The engine
 only receives what the real deployment would: entry scans at each hall and
-kitchen "tray low / out / refilled" taps (which staff sometimes forget).
+the mess manager's "running low / out / refilled" taps (sometimes forgotten).
 
 Per hall: arrival -> scan at entrance -> serving queue (c counters, food stock
 with batch refills) -> seat (or wait for one) -> eat -> leave.
@@ -89,7 +89,7 @@ class Hall:
         sigma2 = math.log(1 + (sim.stay_sd_min / sim.stay_mean_min) ** 2)
         self._stay_mu, self._stay_sigma = math.log(sim.stay_mean_min) - sigma2 / 2, math.sqrt(sigma2)
 
-    # Staff only sometimes tap the kitchen page.
+    # The manager only sometimes taps the food-status page.
     def _tap(self, ts: float, state: FoodState) -> None:
         if self.rng.random() < self.sim.staff_signal_prob:
             self.signal(FoodSignal(ts, self.cfg.id, state))
@@ -328,7 +328,7 @@ class Simulation:
             self.halls[s.hall].scan_queue.append(s)
         for h in self.halls.values():
             h.advance(t1)
-        # The engine sees only polled scans and kitchen taps.
+        # The engine sees only polled scans and the manager's food-status taps.
         engine.ingest(self.scanner.poll())
         for sig in self._signals:
             engine.food_signal(sig)
@@ -343,7 +343,7 @@ class Simulation:
     def force_run_out(self, mess_id: str) -> None:
         """Demo control: the hall's food runs out right now."""
         self.halls[mess_id].force_run_out(self.t)
-        for sig in self._signals:  # the kitchen's "out" tap reaches the engine immediately
+        for sig in self._signals:  # the manager's "out" tap reaches the engine immediately
             self.engine.food_signal(sig)
         self._signals.clear()
 
