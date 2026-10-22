@@ -100,7 +100,12 @@ def test_access_control():
         assert k.login("kitchen")["next"] == "/kitchen"
         k.call("/kitchen")
         k.call("/api/kitchen-state")
-        k.call("/api/kitchen", {"mess": "A", "item": "Rice", "state": "low"})
+        sent = json.loads(k.call("/api/kitchen", {"mess": "A", "item": "Rice", "state": "low"})[0])
+        assert sent["pending"]  # kitchen reports wait for a manager
+        k.call("/api/kitchen-review", {"id": sent["id"], "approve": True}, expect=401)  # can't approve itself
+        ks = json.loads(k.call("/api/kitchen-state")[0])
+        assert [t["pending"] for t in ks["kitchen"]["A"] if t["item"] == "Rice"] == ["low"]
+        assert [t["state"] for t in ks["kitchen"]["A"] if t["item"] == "Rice"] == ["ok"]
         k.call("/sheet", expect=403)
         k.call("/manager", expect=403)
         k.call("/api/sheet", expect=401)
@@ -111,6 +116,20 @@ def test_access_control():
         m.login("manager")
         m.call("/api/control", {"action": "pause"}, header=False, expect=403)
         m.call("/api/control", {"action": "pause"})
+        # The manager approves the kitchen's report; then the tray changes.
+        st = json.loads(m.call("/api/state")[0])
+        assert [p["state"] for p in st["pending"]] == ["low"]
+        m.call("/api/kitchen-review", {"id": sent["id"], "approve": True})
+        m.call("/api/kitchen-review", {"id": sent["id"], "approve": True}, expect=409)  # already handled
+        st = json.loads(m.call("/api/state")[0])
+        assert not st["pending"] and [t["state"] for t in st["kitchen"]["A"] if t["item"] == "Rice"] == ["low"]
+        # A report the manager rejects changes nothing; the manager's own tap applies at once.
+        r = json.loads(k.call("/api/kitchen", {"mess": "B", "item": "Dal", "state": "out"})[0])
+        m.call("/api/kitchen-review", {"id": r["id"], "approve": False})
+        m.call("/api/kitchen", {"mess": "B", "item": "Roti", "state": "low"})
+        st = json.loads(m.call("/api/state")[0])
+        trays = {t["item"]: t["state"] for t in st["kitchen"]["B"]}
+        assert trays["Dal"] == "ok" and trays["Roti"] == "low"
         m.call("/logout")
         m.call("/api/state", expect=401)
     finally:

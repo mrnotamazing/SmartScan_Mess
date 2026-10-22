@@ -54,7 +54,7 @@ PAGES = {  # path -> (file, roles allowed; empty = anyone)
 }
 GET_APIS = {"/api/public": PUBLIC, "/api/me": PUBLIC, "/api/kitchen-state": KITCHEN, "/api/state": MANAGER,
             "/api/sheet": MANAGER, "/api/export.xlsx": MANAGER, "/api/export.csv": MANAGER}
-POST_APIS = {"/api/login": PUBLIC, "/api/logout": PUBLIC, "/api/kitchen": KITCHEN, "/api/upload": MANAGER,
+POST_APIS = {"/api/login": PUBLIC, "/api/logout": PUBLIC, "/api/kitchen": KITCHEN, "/api/kitchen-review": MANAGER, "/api/upload": MANAGER,
              "/api/control": MANAGER, "/api/source": MANAGER, "/api/runout": MANAGER}
 HOME = {"manager": "/manager", "kitchen": "/kitchen"}
 INTERVALS = (5, 10, 15, 30, 60)
@@ -79,6 +79,9 @@ class Demo:
     def __init__(self, cfg: AppConfig, slot: str, compliance: float, seed: int, speed: float, menu: DayMenu | None = None):
         self.cfg, self.compliance, self.seed, self.speed = cfg, compliance, seed, speed
         self.menu = menu or DayMenu()
+        # Tray reports from the kitchen page wait here until a manager approves them.
+        self.pending: list[dict] = []
+        self._next_request = 1
         self.lock = threading.RLock()
         self.source: dict = {"type": "sim", "slot": slot}
         self.log: ParsedLog | None = None
@@ -181,6 +184,26 @@ class Demo:
         with self.lock:
             self._record(Action(self.t, "kitchen", mess_id, item, state.value))
 
+    def request(self, mess_id: str, item: str | None, state: FoodState) -> dict:
+        """A kitchen-page report: held until a manager approves it. A newer report
+        for the same tray replaces the older one."""
+        with self.lock:
+            self.pending = [p for p in self.pending if (p["mess"], p["item"]) != (mess_id, item)]
+            req = {"id": self._next_request, "t": self.t, "mess": mess_id, "item": item, "state": state.value}
+            self._next_request += 1
+            self.pending.append(req)
+            return req
+
+    def review(self, request_id: int, approve: bool) -> bool:
+        with self.lock:
+            req = next((p for p in self.pending if p["id"] == request_id), None)
+            if req is None:
+                return False
+            self.pending.remove(req)
+            if approve:
+                self.kitchen(req["mess"], req["item"], FoodState(req["state"]))
+            return True
+
     def set_compliance(self, value: float) -> None:
         with self.lock:
             self.compliance = value
@@ -192,6 +215,7 @@ class Demo:
         with self.lock:
             self.seed += 1
             self.actions = []
+            self.pending = []
             self._build()
 
     def set_source(self, source: dict) -> None:
@@ -309,6 +333,7 @@ class Demo:
             "kitchen": s["kitchen"],
             "kitchen_feed": s["kitchen_feed"],
             "menu": s["menu"],
+            "pending": s["pending"],
         }
 
     def _tray_label(self, item: str) -> str:
@@ -359,9 +384,11 @@ class Demo:
                 }
                 for d in snap.doors.values()
             }
+            waiting = {(p["mess"], p["item"]): p for p in self.pending}
             kitchen = {
                 m.id: [
                     {"item": item, "dish": self.menu.dish(item), "main": item == m.items[0],
+                     "pending": waiting[(m.id, item)]["state"] if (m.id, item) in waiting else None,
                      "state": st.value, "since": self.clock(ts) if ts > -1e8 else None,
                      "mins_ago": round((self.t - ts) / 60) if ts > -1e8 else None}
                     for item, st, ts in eng.trays(m.id, self.t)
@@ -404,6 +431,12 @@ class Demo:
                 "kitchen": kitchen,
                 "kitchen_feed": feed,
                 "menu": {"day": self.menu.day.title(), "theme": self.menu.theme},
+                "pending": [
+                    {"id": p["id"], "clock": self.clock(p["t"]), "mins_ago": round((self.t - p["t"]) / 60),
+                     "mess": p["mess"], "mess_name": names[p["mess"]], "state": p["state"],
+                     "item": self._tray_label(p["item"] or ("all trays" if p["state"] == "ok" else self.cfg.mess(p["mess"]).items[0]))}
+                    for p in self.pending
+                ],
                 "actions": [{"clock": self.clock(a.t), "kind": a.kind, "mess": names[a.mess]} for a in self.actions[-6:]],
             }
 
@@ -619,7 +652,15 @@ def make_handler(demo: Demo, auth: Auth):
                     item = body.get("item")
                     if item is not None and item not in demo.cfg.mess(body["mess"]).items:
                         raise ValueError("unknown tray")
+                    # Kitchen staff (and anyone using the kitchen page) send a request that a
+                    # manager approves on the dashboard; a manager's own tap applies at once.
+                    if self.role != "manager" or body.get("request"):
+                        req = demo.request(body["mess"], item, FoodState(body["state"]))
+                        return self._json({"ok": True, "pending": True, "id": req["id"]})
                     demo.kitchen(body["mess"], item, FoodState(body["state"]))
+                elif path == "/api/kitchen-review":
+                    if not demo.review(int(body["id"]), bool(body.get("approve"))):
+                        return self._json({"error": "That request was already handled."}, 409)
                 else:
                     raise ValueError("bad request")
             except (ValueError, KeyError, TypeError) as e:

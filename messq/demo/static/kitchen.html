@@ -28,6 +28,7 @@ p.lead { color: var(--text-2); margin: 4px 0 16px; }
 .mess { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
 .mhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px; }
 .mname { font-size: 20px; font-weight: 700; }
+.pend { font-size: 12px; font-weight: 600; color: var(--warning); margin-top: 2px; }
 .dish { font-size: 13px; color: var(--text-2); margin-top: 1px; }
 .main { font-size: 11px; font-weight: 600; color: var(--text-2); border: 1px solid var(--border); border-radius: 99px; padding: 1px 7px; margin-left: 4px; white-space: nowrap; }
 .tray { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
@@ -52,7 +53,7 @@ button.all { min-width: 0; padding: 8px 12px; font-size: 14px; }
 <body>
 <main>
   <div class="top"><h1>Kitchen: food trays</h1><span class="clock"><span id="clock"></span> · <a href="/logout" style="color:var(--text-2)">Log out</a></span></div>
-  <p class="lead">Tap as soon as a tray runs low or out, and again when it's refilled. Screens outside the mess update within seconds.</p>
+  <p class="lead">Tap as soon as a tray runs low or out, and again when it's refilled. The mess manager approves each report on the dashboard; the screens outside the mess update as soon as it's approved.</p>
   <p class="lead" id="menu" style="margin-top:-4px"></p>
   <div class="tabs" id="tabs"></div>
   <div id="messes"></div>
@@ -69,9 +70,9 @@ let busy = false;
 function toast(t) { const el = document.getElementById("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(el._t); el._t = setTimeout(() => el.style.display = "none", 1800); }
 async function tap(mess, item, state, label) {
   busy = true;
-  const r = await fetch("/api/kitchen", { method: "POST", headers: { "Content-Type": "application/json", "X-Messq": "1" }, body: JSON.stringify({ mess, item, state }) });
+  const r = await fetch("/api/kitchen", { method: "POST", headers: { "Content-Type": "application/json", "X-Messq": "1" }, body: JSON.stringify({ mess, item, state, request: true }) });
   busy = false;
-  toast(r.ok ? `Sent: ${label}` : "Couldn't send. Try again.");
+  toast(r.ok ? `Sent to the manager for approval: ${label}` : "Couldn't send. Try again.");
   poll();
 }
 async function poll() {
@@ -93,6 +94,7 @@ async function poll() {
         <div class="tray">
           <div><div class="tname">${esc(t.item)}${t.main ? ` <span class="main">main · stops service if out</span>` : ""}</div>
             ${t.dish ? `<div class="dish">${esc(t.dish)}</div>` : ""}
+            ${t.pending ? `<div class="pend">⏳ Sent: ${LABEL[t.pending][1].toLowerCase().replace("ok", "refilled")} · waiting for manager approval</div>` : ""}
             <div class="tstate"><i style="color:var(--${t.state === "ok" ? "good" : t.state === "low" ? "warning" : "critical"})">${LABEL[t.state][0]}</i>${LABEL[t.state][1]}${t.since ? ` · since ${t.since} (${t.mins_ago} min ago)` : ""}</div></div>
           <div class="btns">
             <button class="low ${t.state === "low" ? "active" : ""}" data-m="${id}" data-i="${esc(t.item)}" data-s="low" data-l="${esc(t.dish || t.item)} running low"><i>▲</i>Low</button>

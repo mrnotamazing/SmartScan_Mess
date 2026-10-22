@@ -96,6 +96,12 @@ svg text { fill: var(--text-3); font-size: 11px; font-family: inherit; }
 .fill .bar { height: 8px; }
 .links { font-size: 13px; margin: 8px 0 0; }
 .links a { color: var(--with); }
+.pending { border: 1px solid var(--warning); border-radius: 10px; padding: 8px 12px; margin: 8px 0 12px; }
+.pending .preq { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; padding: 6px 0; border-top: 1px solid var(--grid); font-size: 13px; }
+.pending .preq:first-of-type { border-top: 0; }
+.tbtn { display: flex; gap: 4px; margin-top: 3px; }
+.tbtn button { font-size: 11px; padding: 2px 7px; border-radius: 6px; }
+.tbtn button.on { border-color: var(--text); font-weight: 650; }
 .kgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; margin-top: 8px; }
 .tray { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px; }
 .feed { font-size: 13px; color: var(--text-2); margin: 0; padding-left: 18px; }
@@ -178,7 +184,8 @@ input[type=file] { display: none; }
   </div>
 
   <section class="card" style="margin-top:16px">
-    <h2>Kitchen trays <span class="msg" id="menu-line">(what managers have tapped)</span></h2>
+    <h2>Kitchen trays <span class="msg" id="menu-line"></span></h2>
+    <div id="pending"></div>
     <div class="kgrid" id="kitchen"></div>
     <div class="row" style="margin-top:12px;align-items:start">
       <div style="flex:1;min-width:240px"><div class="msg">Latest updates</div><ol class="feed" id="feed"></ol></div>
@@ -309,12 +316,30 @@ function doors(s) {
     ` · <a href="/" target="_blank">student phone page</a>`;
 }
 
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-rev], #kitchen button[data-s]");
+  if (!b) return;
+  const req = b.dataset.rev
+    ? post("/api/kitchen-review", { id: +b.dataset.rev, approve: !!b.dataset.ok })
+    : post("/api/kitchen", { mess: b.dataset.m, item: b.dataset.i || null, state: b.dataset.s });
+  req.then(poll, err => alert(err.message));
+});
+
 function kitchen(s) {
   const names = Object.fromEntries(s.advice.halls.map(h => [h.id, h.name]));
-  $("menu-line").textContent = s.menu && s.menu.theme ? `(what managers have tapped · ${s.menu.day} lunch: ${s.menu.theme})` : "(what managers have tapped)";
-  $("kitchen").innerHTML = Object.entries(s.kitchen).map(([id, trays]) => `<div><b>${esc(names[id])}</b>${trays.map(t => {
+  $("menu-line").textContent = s.menu && s.menu.theme ? `(${s.menu.day} lunch: ${s.menu.theme}. Your taps here apply at once.)` : "(your taps here apply at once)";
+  const VERB = { low: "running low", out: "OUT", ok: "refilled" };
+  $("pending").innerHTML = s.pending.length ? `<div class="pending"><b>Waiting for your approval (${s.pending.length})</b>
+    <div class="msg">Reports from the kitchen page. Approve to update the trays and the door screens.</div>
+    ${s.pending.map(p => `<div class="preq"><span>${p.clock} · <b>${esc(p.mess_name)}</b>: ${esc(p.item)} <b>${VERB[p.state]}</b>
+      <span class="msg">(${p.mins_ago} min ago)</span></span>
+      <span><button data-rev="${p.id}" data-ok="1" class="primary">Approve</button> <button data-rev="${p.id}" data-ok="">Reject</button></span></div>`).join("")}</div>` : "";
+  $("kitchen").innerHTML = Object.entries(s.kitchen).map(([id, trays]) => `<div><b>${esc(names[id])}</b>
+    <button data-m="${id}" data-s="ok" style="font-size:11px;padding:2px 7px;margin-left:6px">All refilled</button>${trays.map(t => {
     const [cls, icon, label] = TRAY[t.state];
-    return `<div class="tray"><span>${esc(t.item)}${t.dish ? `<br><small style="color:var(--text-2)">${esc(t.dish)}</small>` : ""}</span><span class="chip ${cls}"><i>${icon}</i>${label}${t.since ? ` · ${t.since}` : ""}</span></div>`;
+    return `<div class="tray"><span>${esc(t.item)}${t.dish ? `<br><small style="color:var(--text-2)">${esc(t.dish)}</small>` : ""}
+      <span class="tbtn">${["low", "out", "ok"].map(st => `<button data-m="${id}" data-i="${esc(t.item)}" data-s="${st}" class="${t.state === st ? "on" : ""}">${TRAY[st][1]} ${st === "ok" ? "Refilled" : TRAY[st][2]}</button>`).join("")}</span></span>
+      <span class="chip ${cls}"><i>${icon}</i>${label}${t.since ? ` · ${t.since}` : ""}</span></div>`;
   }).join("")}</div>`).join("");
   $("feed").innerHTML = s.kitchen_feed.length
     ? s.kitchen_feed.map(f => `<li>${f.clock} · ${esc(f.mess)}: ${esc(f.item)} ${f.state === "ok" ? "refilled" : TRAY[f.state][2].toLowerCase()}</li>`).join("")

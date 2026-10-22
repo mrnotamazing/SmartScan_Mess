@@ -44,8 +44,8 @@ Needs **Python 3.11 or newer** and nothing else: no `pip install`, no internet d
 | | Pages | Login |
 |---|---|---|
 | **Students / anyone** | `/` (phone page: which mess is quicker right now), `/screen?at=A` (outside Central Mess), `/screen?at=B` (outside Munch Mess) | none |
-| **Kitchen staff** | `/kitchen` (tray Low / Out / Refilled) | kitchen password |
-| **Managers** | `/manager` (dashboard), `/sheet` (live spreadsheet), `/kitchen`, uploads, downloads | manager password |
+| **Kitchen staff** | `/kitchen` (tray Low / Out / Refilled, sent to the manager for approval) | kitchen password |
+| **Managers** | `/manager` (dashboard: approve kitchen reports, set trays directly), `/sheet` (live spreadsheet), `/kitchen`, uploads, downloads | manager password |
 
 Students can't reach the dashboard, the spreadsheet (names, logs) or the kitchen buttons: those
 pages redirect to a login, and their data feeds refuse requests without a staff session. A kitchen
@@ -75,7 +75,7 @@ that device has to wait 5 minutes.
 | `localhost:8000/manager` | **Pitch dashboard** (manager login): the same meal run twice with identical students, *without* vs *with* the screens. Live chart, timeline, log upload, kitchen overview |
 | `localhost:8000/` | **Student phone page** (no login): which mess is quicker now. When both are close, each phone gets a suggestion drawn from the system's split, so phones don't all pile into one mess |
 | `localhost:8000/screen?at=A` | The screen **outside Central Mess** (use `?at=B` for Munch Mess). Full-screen it (F11) on a projector. Add `&dir=left` if the other mess is to the left |
-| `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray (gravy sabji, dry sabji, dal, rice, special rice, roti, sambar/rasam, curd/raita, dessert), each showing today's dish from `config/menu.toml`. Update that file each week; `--menu-day wednesday` shows another day's menu |
+| `localhost:8000/kitchen?mess=A` | Central Mess kitchen managers' page (`?mess=B` for Munch Mess): tap *Low / Out / Refilled* per tray. Each tap is sent to the manager, who approves or rejects it on the dashboard (the manager's own taps there apply at once) (gravy sabji, dry sabji, dal, rice, special rice, roti, sambar/rasam, curd/raita, dessert), each showing today's dish from `config/menu.toml`. Update that file each week; `--menu-day wednesday` shows another day's menu |
 | `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts. Download as Excel or CSV |
 
 **Dashboard controls**
