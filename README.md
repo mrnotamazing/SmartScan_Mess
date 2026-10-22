@@ -225,6 +225,15 @@ students go by habit and roughly what fraction follow advice, set
 `engine.assumed_compliance` and `engine.natural_share`. The engine then
 over-corrects so that the *realised* split is balanced.
 
+## Where this sits in Operations Management
+
+Mainly **capacity management / load balancing** and **queuing theory**; also **behavioural operations**
+(habit, herding, partial compliance) and **demand shaping** (influencing where and when students eat
+with information rather than new capacity). With the simulated peak, total capacity is enough
+(~34 arrivals/min against 40/min of serving) but the load is uneven: Central gets ~29/min against
+20/min while Munch gets ~5/min. See section 1.1 of `docs/MDS_Queuing_Theory_and_Simulation.docx`.
+(Not *yield* management: that means pricing perishable capacity, and a prepaid mess has no price lever.)
+
 ## Results (default config)
 
 **Measured inputs:** lunch 11:30–14:30; 2,960 students (= plates served) across Central CT and Munch Mess;
@@ -254,9 +263,9 @@ when the mess calls; group estimate 70%), equilibrium split at 60%:
 
 | Next batch already made? | Restock time | Run-outs, no screens | Run-outs, screens | Avg wait, no screens → screens |
 |---|---|---|---|---|
-| Never | 30 min | 2.0 | 3.0 | 7.0 → 0.9 |
-| Half the time | 30 or 10–14 min | 1.3 | 1.6 | 7.1 → 0.8 |
-| 70% of the time (default) | 30 or 10–14 min | 0.8 | 0.9 | 7.2 → 0.8 |
+| Never | 30 min | 2.0 | 2.1 | 7.0 → 1.1 |
+| Half the time | 30 or 10–14 min | 1.3 | 1.1 | 7.1 → 1.0 |
+| 70% of the time (default) | 30 or 10–14 min | 0.8 | 0.5 | 7.2 → 1.1 |
 | Always | 10–14 min | 0 | 0 | 7.2 → 0.9 |
 
 Without screens the simulated p90 wait (~17 min) is close to the ~15 min delay observed in Phase 1,
@@ -296,8 +305,9 @@ What this says (under the ASSUMED parameters):
    Feedback is fast (30 s walk) and the threshold stops herding. The equilibrium split matters
    when advice is read early, e.g. on phones.
 4. Greedy advice herds when the advice lags (hallway tables): it gets *worse* as more students obey it.
-5. **Moving students moves the run-outs.** Food run-outs rise slightly with screens because Munch now
-   feeds more students and a 30-minute call-back restock cannot keep up. Student routing and food
+5. **Routing and food interact.** When the next batch is rarely ready, run-outs stay about the same
+   with screens (Munch feeds more students and a 30-minute call-back cannot keep up). When food is
+   usually ready, screens cut run-outs, because a star dish marked "out" sends students elsewhere at once. Student routing and food
    allocation have to be planned together (see the LP allocation in `docs/MDS_Decision_Workbook.xlsx`).
 6. **Run-outs are a kitchen-timing problem, not a queue problem.** If the next batch is always made
    before the mess calls (10–14 min to send instead of 30), run-outs disappear in the model. Average
