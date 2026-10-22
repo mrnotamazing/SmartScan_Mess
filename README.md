@@ -132,6 +132,19 @@ device-to-device traffic; a phone hotspot works.)
 Options: `--speed 120` (a 2-hour lunch in 1 minute; default 60 = 2 minutes), `--slot dinner`,
 `--compliance 0.4` (share of students who follow advice), `--seed 5` (a different "day"), `--port 8080`.
 
+### Hosting it online (Render, free)
+
+The demo is a small Python server that keeps the simulated lunch running, so it needs a host that
+runs a program all the time. Static or serverless hosts (GitHub Pages, Vercel) can't keep the
+clock running or remember the manager's taps. `render.yaml` sets up Render's free tier:
+
+1. render.com → sign up with GitHub → **New → Blueprint** → pick `SmartScan_Mess`.
+2. Type a manager password when asked for `MESSQ_MANAGER_PASSWORD` → **Apply**.
+3. Open the `https://….onrender.com` address: `/` and `/screen?at=A` for students, `/manager` to log in.
+
+The free tier sleeps after ~15 min without visitors; the next visit wakes it in about a minute and
+the simulated lunch starts again. Use simulated or sample data only until the college approves real logs.
+
 ### A 3-minute pitch script
 
 0. Before you start: open `/manager` and log in. Have the student page (`/`) open on your phone.

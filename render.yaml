@@ -1,0 +1,19 @@
+# Render Blueprint: hosts the live demo (simulated data only) as a free web service.
+# Render dashboard -> New -> Blueprint -> pick this repository and branch.
+# Render asks for MESSQ_MANAGER_PASSWORD on first deploy; it is never stored in the repo.
+services:
+  - type: web
+    name: smart-mess-queue
+    runtime: python
+    plan: free
+    branch: claude/laughing-bell-r2ub69
+    buildCommand: python --version   # nothing to install: standard library only
+    startCommand: python -m messq.demo --lan --port $PORT
+    healthCheckPath: /login
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: MESSQ_TRUST_PROXY       # tell visitors apart for the login lock-out
+        value: "1"
+      - key: MESSQ_MANAGER_PASSWORD  # you type it in the Render dashboard
+        sync: false

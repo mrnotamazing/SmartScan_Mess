@@ -513,6 +513,20 @@ def make_handler(demo: Demo, auth: Auth):
         def _redirect(self, to: str, extra: dict | None = None) -> None:
             self._send(303, b"", "text/plain", {"Location": to, **(extra or {})})
 
+        def client_ip(self) -> str:
+            """The visitor's address. Behind a hosting proxy (Render, a Cloudflare tunnel)
+            every request comes from the proxy, so with MESSQ_TRUST_PROXY=1 we read the
+            address the proxy adds. Only the right-most X-Forwarded-For entry is used: it is
+            the one the proxy wrote, while entries to its left can be faked by the visitor."""
+            if os.environ.get("MESSQ_TRUST_PROXY") == "1":
+                cf = self.headers.get("CF-Connecting-IP")
+                if cf:
+                    return cf.strip()
+                fwd = self.headers.get("X-Forwarded-For")
+                if fwd:
+                    return fwd.split(",")[-1].strip()
+            return self.client_address[0]
+
         @property
         def role(self) -> str | None:
             return auth.role_from(self.headers.get("Cookie"))
@@ -580,7 +594,7 @@ def make_handler(demo: Demo, auth: Auth):
             except json.JSONDecodeError:
                 return self._json({"error": "bad json"}, 400)
             if path == "/api/login":
-                addr = self.client_address[0]
+                addr = self.client_ip()
                 if auth.blocked(addr):
                     return self._json({"error": "Too many attempts. Wait 5 minutes."}, 429)
                 role = auth.login(addr, str(body.get("password", "")))

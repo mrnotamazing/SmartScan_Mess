@@ -197,3 +197,31 @@ def test_single_manager_login():
     auth = Auth({"manager": "appleisyum"})
     assert auth.login("9.9.9.9", "appleisyum") == "manager"
     assert auth.login("9.9.9.9", "kitchen") is None  # there is no kitchen login
+
+
+def test_login_lockout_uses_proxy_address(monkeypatch):
+    """Behind a proxy, one visitor's wrong passwords must not lock everyone out."""
+    import urllib.error
+    import urllib.request
+
+    monkeypatch.setenv("MESSQ_TRUST_PROXY", "1")
+    demo = Demo(load_config(), "lunch", 0.6, seed=1, speed=60)
+    server, port = _serve(demo)
+
+    def login(pw, fwd):
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/api/login", data=json.dumps({"password": pw}).encode(),
+                                     method="POST", headers={"X-Messq": "1", "X-Forwarded-For": fwd})
+        try:
+            with urllib.request.urlopen(req) as r:
+                return r.status
+        except urllib.error.HTTPError as e:
+            return e.code
+
+    try:
+        for _ in range(8):
+            login("wrong", "1.1.1.1")
+        assert login("wrong", "1.1.1.1") == 429  # that visitor is locked out...
+        assert login(PW["manager"], "2.2.2.2") == 200  # ...another visitor is not
+        assert login(PW["manager"], "9.9.9.9, 1.1.1.1") == 429  # a faked left-most entry doesn't help
+    finally:
+        server.shutdown()
