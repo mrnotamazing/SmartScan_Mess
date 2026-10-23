@@ -1,11 +1,14 @@
 # Smart Mess Queue Balancer
 
+*MDS project, Group WGB3: **Beyond the Bottleneck: Enabling Smarter Lunch Flow by Optimising Queue
+Management and Capacity Utilisation Across Chefs Touch Centres** (Phase 1 was "The Two-Hour Bottleneck").*
+
 Uses live entry scans from the mess face-recognition terminals (Matrix COSEC
 ARGO FACE) to estimate how busy each mess is, and tells students which mess
 to go to so the queues balance out.
 
-**Status: Phase 1 (simulator + core logic) is done, and the demo (Phase 2 preview) runs on
-simulated data or on a scanner log you upload. Nothing connects to a live scanner yet.**
+**Status: the simulator and core logic are done, and the demo runs on simulated data or on a
+scanner log you upload. Nothing connects to a live scanner yet.**
 
 **Deployment assumed:** a screen **outside each mess entrance**. A student walks to the mess they
 usually go to, sees the screen, and either goes in or walks ~30 s to the other mess. The system
