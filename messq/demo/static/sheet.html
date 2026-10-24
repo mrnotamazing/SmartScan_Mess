@@ -53,6 +53,7 @@ button.primary { background: var(--text); color: var(--surface); border-color: v
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 th, td { border-bottom: 1px solid var(--grid); border-right: 1px solid var(--grid); padding: 5px 9px; text-align: left; white-space: nowrap; }
 th { position: sticky; top: 0; background: var(--head); font-weight: 650; font-size: 12px; z-index: 1; }
+th.num { white-space: normal; min-width: 70px; vertical-align: bottom; }
 td.rn, th.rn { color: var(--text-3); text-align: right; width: 44px; background: var(--head); font-size: 12px; }
 td.num, th.num { text-align: right; }
 td.note { color: var(--text-2); white-space: normal; min-width: 180px; }
@@ -195,8 +196,8 @@ function renderSummary() {
       <div class="kpi"><div class="v">${busiest ? esc(busiest[0].replace(" (so far)", "")) : "–"}</div><div class="l">busiest slot${busiest ? ` (${busiest[n + 1]} students)` : ""}</div></div>
     </div>
     <div class="scroll" style="max-height:none"><table>
-      <thead><tr>${H.map((h, i) => `<th class="${i ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
-      <tbody>${R.map(r => `<tr>${r.map((v, i) => `<td class="${i ? "num" : ""}">${v === "" ? "" : esc(v)}</td>`).join("")}</tr>`).join("")
+      <thead><tr>${H.map((h, i) => `<th class="${i && i < H.length - (H[H.length - 1] === "On lunch break" ? 1 : 0) ? "num" : ""}">${esc(h)}</th>`).join("")}</tr></thead>
+      <tbody>${R.map(r => `<tr>${r.map((v, i) => `<td class="${i && typeof v !== "string" ? "num" : ""}"${i && typeof v === "string" && v.includes(",") ? ' style="white-space:normal;min-width:200px;font-size:12px"' : ""}>${v === "" ? "" : esc(v)}</td>`).join("")}</tr>`).join("")
         || `<tr><td colspan="${H.length}">No scans yet</td></tr>`}</tbody>
     </table></div>
     <div class="charts">

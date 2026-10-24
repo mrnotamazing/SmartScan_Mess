@@ -75,13 +75,21 @@ def summary_rows(sim: Simulation, interval_min: int) -> tuple[list[str], list[li
     header = ["Time slot", *[m.name for m in cfg.messes], "Total",
               f"{cfg.messes[0].name} share (%)",
               *[f"Avg wait {m.name} (min)" for m in cfg.messes], "Walked over (screen)"]
+    depts = bool(sim.slot.groups)
+    if depts:
+        header.append("On lunch break")
     rows = []
-    for label, studs in _slots(sim, interval_min):
+    hh, mm = map(int, sim.slot.start.split(":"))
+    first = ((hh * 60 + mm) // interval_min) * interval_min - (hh * 60 + mm)
+    for k, (label, studs) in enumerate(_slots(sim, interval_min)):
         counts = [sum(s.hall == i for s in studs) for i in ids]
         total = sum(counts)
         waits = [_avg_wait([s for s in studs if s.hall == i], sim.t) for i in ids]
         rows.append([label, *counts, total, round(100 * counts[0] / total) if total else "", *waits,
                      sum(s.hall != s.habit for s in studs)])
+        if depts:
+            lo = first + k * interval_min
+            rows[-1].append(", ".join(sim.slot.on_break(lo, lo + interval_min)))
     return header, rows
 
 

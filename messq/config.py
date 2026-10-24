@@ -170,6 +170,14 @@ class MealSlot:
                             _clock_min(g.alt_start) - t0, _clock_min(g.alt_end) - t0))
         return out
 
+    def on_break(self, lo_min: float, hi_min: float) -> list[str]:
+        """Departments whose lunch break overlaps [lo_min, hi_min) after opening."""
+        names = []
+        for name, _n, a, b in self.cohorts():
+            if a < hi_min and b > lo_min and name not in names:
+                names.append(name)
+        return names
+
     def peak_min(self) -> float:
         """Minute (after opening) when the arrival rate is highest."""
         if not self.groups:

@@ -73,7 +73,7 @@ that device has to wait 5 minutes.
 | `localhost:8000/` | **Student phone page** (no login): which mess is quicker now. When both are close, each phone gets a suggestion drawn from the system's split, so phones don't all pile into one mess |
 | `localhost:8000/screen?at=A` | The screen **outside Central Mess** (use `?at=B` for Munch Mess). Full-screen it (F11) on a projector. Add `&dir=left` if the other mess is to the left |
 | `localhost:8000/food?mess=A` | **Food status** for the mess manager's phone (`?mess=B` for Munch Mess; also on the dashboard): tap *Running low / Out / Refilled* per tray (gravy sabji, dry sabji, dal, rice, special rice, roti, sambar/rasam, curd/raita, dessert), each showing today's dish from `config/menu.toml`. Update that file each week; `--menu-day wednesday` shows another day's menu. How much each tray matters comes from the priority matrix (see *Food status and the priority matrix*) |
-| `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts. Download as Excel or CSV |
+| `localhost:8000/sheet` | **Live spreadsheet**: a scan log per mess (time, name, ID, wait) and counts per 30 min with charts and the departments on their lunch break in each slot. Download as Excel or CSV |
 
 **Dashboard controls**
 
@@ -84,6 +84,9 @@ that device has to wait 5 minutes.
 * **Meal**: simulated breakfast/lunch/dinner, or any meal from an uploaded log.
 * **Upload a day's log (CSV)**: see below.
 * **Make food run out**: simulates a real shortage at a mess. Food status is different: it's what the manager *reports*.
+* **When students arrive** (panel): the simulated lunch's arrival curve built from the department lunch breaks
+  (`[[simulation.slot.group]]` in `config/default.toml`), the arrivals so far, the serving capacity (40/min both
+  messes, 20/min Central), and a bar per department lit while its break is on. Hover a point to see who is on break.
 
 ### Live spreadsheet
 

@@ -37,7 +37,7 @@ from ..events import FoodSignal, FoodState
 from ..menu import DayMenu, load_menu
 from ..logs import LogError, ParsedLog, parse_log, replay_slot
 from ..sheets import LOG_HEADER, compare_wait_rows, log_rows, summary_rows, to_csv, workbook
-from ..simulation import Simulation
+from ..simulation import Simulation, _truncated_normal, arrival_rate_per_min
 from .auth import ENV as AUTH_ENV
 from .auth import Auth
 
@@ -107,6 +107,9 @@ class Demo:
             for w in self.worlds.values():
                 w.engine.natural = natural
         self.history: dict[str, list[list[float]]] = {k: [] for k in self.worlds}
+        # Expected arrivals per minute, every 5 minutes (the curve the simulated students are drawn from).
+        self.expected_curve = [[m, round(arrival_rate_per_min(self.slot, m + 2.5), 1)]
+                               for m in range(0, int(self.slot.duration_min), 5)] if arrivals is None else []
         self._next_action = 0
         self._owed = 0.0
 
@@ -315,6 +318,31 @@ class Demo:
         dish = self.menu.dish(item)
         return f"{item} ({dish})" if dish else item
 
+    def _arrivals_view(self, w: Simulation) -> dict:
+        """When students arrive: expected curve, actual arrivals so far (per minute, 5-min bins),
+        serving capacity, and which department lunch breaks are on now."""
+        now = w.t / 60
+        bins: dict[int, int] = {}
+        for st in w.students:
+            if st.arrived_at is not None and st.arrived_at <= w.t:
+                bins[int(st.arrived_at // 300)] = bins.get(int(st.arrived_at // 300), 0) + 1
+        # The bin still filling is divided by the minutes elapsed in it, not by 5.
+        actual = [[b * 5, round(n / max(1.0, min(5.0, now - b * 5)), 1)] for b, n in sorted(bins.items())]
+        rate = {name: 0.0 for name, *_ in self.slot.cohorts()}
+        for name, n, a, b in self.slot.cohorts():
+            rate[name] += _truncated_normal(n, now, a + self.slot.lag_mean_min, self.slot.lag_sd_min, a, b)
+        depts = [{"name": name, "students": round(n), "start": self.clock(a * 60), "end": self.clock(b * 60),
+                  "a": a, "b": b, "on": a <= now < b, "rate": round(rate[name], 1)}
+                 for name, n, a, b in self.slot.cohorts()]
+        return {
+            "expected": self.expected_curve,
+            "actual": actual,
+            "capacity": sum(m.capacity_per_min for m in self.cfg.messes),
+            "capacity_A": self.cfg.messes[0].capacity_per_min,
+            "lag": [self.slot.lag_mean_min, self.slot.lag_sd_min] if self.slot.groups else None,
+            "depts": depts,
+        }
+
     def clock(self, t_s: float) -> str:
         hh, mm = map(int, self.slot.start.split(":"))
         minutes = hh * 60 + mm + int(t_s // 60)
@@ -400,6 +428,7 @@ class Demo:
                     "advised": "Same students, with the screens",
                 },
                 "worlds": {k: _world(w, self.history[k]) for k, w in self.worlds.items()},
+                "arrivals": self._arrivals_view(adv),
                 "advice": {"text": snap.advice, "headline": snap.headline.mess_id, "halls": halls},
                 "doors": doors,
                 "trays": trays,

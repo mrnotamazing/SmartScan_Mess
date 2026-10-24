@@ -225,3 +225,15 @@ def test_login_lockout_uses_proxy_address(monkeypatch):
         assert login(PW["manager"], "9.9.9.9, 1.1.1.1") == 429  # a faked left-most entry doesn't help
     finally:
         server.shutdown()
+
+
+def test_dashboard_shows_department_breaks_and_arrivals():
+    demo = Demo(load_config(), "lunch", 0.6, seed=1, speed=60)
+    demo.seek(105 * 60)  # 13:15, the overlap
+    a = demo.state()["arrivals"]
+    on = {d["name"] for d in a["depts"] if d["on"]}
+    assert {"TAPMI", "MIT (lab day)"} <= on and "SMI" not in on
+    assert a["capacity"] == 40 and a["expected"] and a["actual"]
+    assert sum(r for _m, r in a["expected"]) * 5 == pytest.approx(2960, rel=0.03)
+    header, rows = demo.sheet("advised", 30)["summary_header"], demo.sheet("advised", 30)["summary"]
+    assert header[-1] == "On lunch break" and "TAPMI" in rows[-1][-1] and rows[0][-1] == ""
