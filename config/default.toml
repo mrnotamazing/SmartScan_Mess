@@ -111,8 +111,60 @@ name = "lunch"
 start = "11:30"               # MEASURED: lunch runs 11:30–14:30
 duration_min = 180
 expected_students = 2960      # MEASURED: plates served at lunch (Central CT + Munch Mess)
-peak_offset_min = 95          # ASSUMED shape: busiest around 13:05 (field visit saw full load ~13:18).
-spread_min = 35               #   The biometric logs will give the real arrival curve.
+# Arrival curve built from department lunch breaks (group's timetable, Oct 2026). Each department
+# starts arriving when its break starts; a student's lag after the break starts is
+# Normal(20 min, 20 min), cut off at the end of the break: CALIBRATED (not measured) so that,
+# without screens, the simulated visit fits the group's 17-25 min and the ~15 min peak delay seen
+# in Phase 1. A tighter lag (15 +/- 10: everyone rushes at the bell) gives 36-min peak visits. Department sizes are ROUGH counts
+# (they add to 3,150, more than the 2,960 plates), so they are used as shares and scaled to 2,960.
+# The biometric logs will give the real curve (and the real shares).
+lag_mean_min = 20             # CALIBRATED: average minutes from the start of the break to the mess door
+lag_sd_min = 20               # CALIBRATED: spread of that lag
+
+[[simulation.slot.group]]
+name = "MIT"
+students = 1100               # rough count (group)
+start = "12:00"
+end = "13:00"
+alt_share = 0.45              # lab days eat 13:00-14:00. Electrical has labs 3 days/week, other branches 2:
+alt_start = "13:00"           #   ASSUMED 5-day week and ~25% of MIT in electrical -> 0.75*2/5 + 0.25*3/5 = 0.45
+alt_end = "14:00"
+
+[[simulation.slot.group]]
+name = "TAPMI"
+students = 850
+start = "13:05"
+end = "14:00"
+
+[[simulation.slot.group]]
+name = "DOC/MICFE"
+students = 550
+start = "12:30"
+end = "13:30"
+
+[[simulation.slot.group]]
+name = "SMI"
+students = 450
+start = "12:00"
+end = "13:00"
+
+[[simulation.slot.group]]
+name = "DLHS/MILHS"
+students = 100                # ASSUMED: size not known yet (taken as similar to MLS + MIRM)
+start = "12:40"
+end = "13:40"
+
+[[simulation.slot.group]]
+name = "MLS"
+students = 50                 # MLS + MIRM together ~100 (group); ASSUMED half each
+start = "12:50"
+end = "13:50"
+
+[[simulation.slot.group]]
+name = "MIRM"
+students = 50
+start = "12:30"               # ASSUMED: timing not known; placed in the middle of the other breaks
+end = "13:30"
 
 [[simulation.slot]]
 name = "dinner"

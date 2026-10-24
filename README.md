@@ -168,7 +168,7 @@ Be upfront that it is a simulation with assumed numbers. The pilot exists to mea
 
 ```bash
 pip install pytest                 # only needed for the tests
-python -m pytest                   # 44 tests
+python -m pytest                   # 45 tests
 
 python -m messq.simulate --trace   # one simulated lunch, as the screen would show it, in the terminal
 python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilibrium routing
@@ -255,8 +255,8 @@ over-corrects so that the *realised* split is balanced.
 Mainly **capacity management / load balancing** and **queuing theory**; also **behavioural operations**
 (habit, herding, partial compliance) and **demand shaping** (influencing where and when students eat
 with information rather than new capacity). With the simulated peak, total capacity is enough
-(~34 arrivals/min against 40/min of serving) but the load is uneven: Central gets ~29/min against
-20/min while Munch gets ~5/min. See section 1.1 of `docs/MDS_Queuing_Theory_and_Simulation.docx`.
+(~37 arrivals/min in the busiest 10 minutes against 40/min of serving) but the load is uneven: Central
+gets ~32/min against 20/min while Munch gets ~6/min. See section 1.1 of `docs/MDS_Queuing_Theory_and_Simulation.docx`.
 (Not *yield* management: that means pricing perishable capacity, and a prepaid mess has no price lever.)
 
 ## Results (default config)
@@ -268,12 +268,19 @@ if it must be made, 10–14 min if already made.
 scanning + plate ≤ ~45 s; the next batch is already made ~70% of the time.
 **Assumed:** 85% go to Central by habit; ~10 students/min per serving station (it must be about this fast for
 2 stations to serve ~2,500 Central students in 3 hours); 2 s per face scan; 15–35 s to collect a plate;
-40–80 s along the food line; the arrival curve's shape; food batch sizes and call levels.
+40–80 s along the food line; department sizes (rough) and MIT's lab-day share; food batch sizes and call levels.
+**Arrival curve:** built from the department lunch breaks (MIT 12:00–13:00, or 13:00–14:00 on lab days; TAPMI 13:05–14:00;
+DLHS/MILHS 12:40–13:40; SMI 12:00–13:00; DOC/MICFE 12:30–13:30; MLS 12:50–13:50; MIRM timing assumed 12:30–13:30). Rough sizes
+(MIT 1,100, TAPMI 850, DOC 550, SMI 450, MLS + MIRM 100, DLHS/MILHS assumed 100) are scaled to the 2,960 plates. Each
+department starts arriving when its break starts, with a lag of Normal(20, 20) min cut off at the end of the break: this lag is
+**calibrated** (not measured) so the no-screen simulation fits the group's 17–25 min. The curve has two surges, ~12:10
+(MIT + SMI) and a larger one at ~13:10–13:30 (MIT lab days + TAPMI + DOC + DLHS + MLS), which matches the full load seen at ~13:18
+in the field visit. `[[simulation.slot.group]]` in `config/default.toml`; workbook tab *Arrival Curve*.
 
 **A visit has four stages** (simulator): scan + collect a plate → queue for a serving station, served,
 walk the food line → eat at a table (wait for a seat if full) → dispose of the plate. **Queue wait** =
 time queueing for the scanner, a station and a seat. **Throughput** = door to leaving. Simulated
-throughput: ~16.6 min in the quiet first 30 minutes, ~25.6 min at today's peak (group: 17–25).
+throughput: ~16.7 min for students who meet no queue, ~26.7 min around today's 13:17 peak (group: 17–25).
 
 ### Four scenarios, busy day, 60% follow the screens, 20 simulated lunches each (same students)
 
@@ -281,10 +288,10 @@ throughput: ~16.6 min in the quiet first 30 minutes, ~25.6 min at today's peak (
 
 | Scenario | Queue wait (min) ± 95% CI | p90 wait | Throughput | p90 throughput | Stations busy Central / Munch | Run-outs | Redirected | Unsuccessful redirects |
 |---|---|---|---|---|---|---|---|---|
-| 1 Current system | 8.02 ± 0.63 | 20.0 | 24.6 | 36.4 | 70% / 12% | 0.6 | 0 | – |
-| 2 Screens, queue information only | 1.37 ± 0.36 | 3.5 | 17.9 | 20.5 | 60% / 22% | 0.9 | 334 | 6% |
-| **3 Screens + food status (proposal)** | 0.81 ± 0.11 | 2.2 | 17.4 | 19.2 | 59% / 23% | 0.7 | 380 | 8% |
-| Naive: go to the shorter queue | 0.99 ± 0.16 | 2.8 | 17.5 | 19.7 | 60% / 22% | 0.8 | 375 | 6% |
+| 1 Current system | 7.34 ± 0.68 | 20.5 | 23.9 | 36.8 | 70% / 12% | 0.8 | 0 | – |
+| 2 Screens, queue information only | 1.93 ± 0.43 | 5.2 | 18.5 | 21.9 | 61% / 22% | 1.0 | 336 | 0% |
+| **3 Screens + food status (proposal)** | 0.98 ± 0.12 | 2.4 | 17.5 | 19.4 | 59% / 23% | 0.6 | 385 | 3% |
+| Naive: go to the shorter queue | 0.97 ± 0.13 | 2.2 | 17.5 | 19.3 | 59% / 22% | 0.5 | 377 | 2% |
 
 An *unsuccessful redirect* is a redirected student whose wait plus walk was longer than the average wait of
 students who stayed at the mess they left and arrived within 2 minutes.
@@ -293,38 +300,45 @@ students who stayed at the mess they left and arrived within 2 minutes.
 
 | Changed input | 1 Current | 2 Queue only | 3 Proposal |
 |---|---|---|---|
-| Demand +20% (3,552 students) | 15.71 | 2.67 | 2.73 |
-| Sharper peak (spread 25 min, not 35) | 16.88 | 4.16 | 3.45 |
-| Only 30% follow the screens | 8.02 | 1.70 | 1.51 |
-| Everyone follows the screens | 8.02 | 1.26 | 0.92 |
-| Slower serving: 8 students/min per station | 16.09 | 1.76 | 1.66 |
-| Faster serving: 12 students/min per station | 4.05 | 2.17 | 0.78 |
-| More stock-outs: next batch never ready | 10.41 | 3.07 | 1.91 |
-| No stock-outs: next batch always ready | 6.90 | 0.71 | 0.70 |
-| Slower eating: 15-18 min | 8.02 | 1.37 | 0.81 |
+| Demand +20% (3,552 students) | 16.14 | 2.79 | 2.22 |
+| Students rush at the bell (lag 15 +/- 10 min, not 20 +/- 20) | 12.21 | 2.12 | 1.88 |
+| Heavy lab day: 70% of MIT eat 13:00-14:00 | 7.55 | 1.74 | 1.48 |
+| No MIT labs: all MIT eat 12:00-13:00 | 12.52 | 1.30 | 1.12 |
+| Stagger: SMI lunch 15 min earlier (11:45-12:45) | 4.25 | 1.01 | 0.80 |
+| Stagger: TAPMI lunch 15 min later (13:20-14:15) | 3.91 | 1.46 | 0.79 |
+| One bell curve (old assumption: peak 13:05, spread 35) | 8.02 | 1.37 | 0.81 |
+| Only 30% follow the screens | 7.34 | 2.01 | 1.59 |
+| Everyone follows the screens | 7.34 | 1.71 | 1.11 |
+| Slower serving: 8 students/min per station | 17.78 | 1.90 | 1.92 |
+| Faster serving: 12 students/min per station | 3.96 | 1.97 | 0.80 |
+| More stock-outs: next batch never ready | 9.77 | 3.41 | 1.28 |
+| No stock-outs: next batch always ready | 5.78 | 0.95 | 0.99 |
+| Slower eating: 15-18 min | 7.34 | 1.93 | 0.98 |
 
-The proposal cuts the wait in every stress test (by at least ~80%). It beats "queue information only" in
-most; on a sharp demand surge the two tie, because Munch then fills whichever signal is used.
+The proposal cuts the wait in every stress test (by about 80–90%) and beats or ties "queue information
+only" in every one. **Staggering one department's lunch by 15 minutes** (SMI earlier or TAPMI later) roughly
+halves today's wait on its own, which is evidence for alternative A7 (needs academic administration).
 
 ### What the analysis found (under the ASSUMED parameters)
 
-1. **Capacity is enough in total but used unevenly.** At the peak ~34 students/min arrive against 40/min
-   of serving, but Central gets ~29/min against 20/min while Munch gets ~5/min.
-2. **The LP optimum redirects about 11% of students** (337 of 2,960), close to the simulator's ~380. The LP
+1. **Capacity is enough in total but used unevenly, and the 13:10 overlap is tight.** In the busiest 10 minutes
+   (13:10) ~37 students/min arrive against 40/min of serving in both messes, but Central gets ~32/min against
+   20/min while Munch gets ~6/min.
+2. **The LP optimum redirects about 12% of students** (358 of 2,960), close to the simulator's ~385. The LP
    is a fluid lower bound (0.06 min average) because it has no randomness and perfect foresight.
-3. **Food is the binding constraint below ~780 star-dish portions at Munch.** Under that, each extra
-   portion saves about 40 student-minutes (the LP's shadow price): routing and food allocation must be
+3. **Food is the binding constraint below ~800 star-dish portions at Munch.** Under that, each extra
+   portion saves 10–50 student-minutes (the LP's shadow price): routing and food allocation must be
    planned together.
 4. **Using food status the right way matters.** An earlier rule that penalised "running low" for everyone
    sent students away for nothing; charging the delay only to students who would reach an empty tray, and
    running the refill clock from the call, cut unsuccessful redirects and made food status help.
-5. **The spreadsheet and the simulator agree when they make the same assumptions** (6.87 vs 6.80 min
-   without screens). With screens the spreadsheet (0.42) is optimistic because it routes with perfect
-   knowledge (workbook: Reconciliation).
-6. **A 3rd serving station alone does best on quiet days**; the proposal does best on busy and surge days;
-   both together is best everywhere but costs a station's staff every day (workbook: S7 Payoff Matrix).
+5. **The spreadsheet and the simulator agree when they make the same assumptions** (6.43 vs 5.76 min
+   without screens, within 15%; the spreadsheet's steady-state formula overstates short slots near 100% busy).
+   With screens the spreadsheet (0.66) is optimistic because it routes with perfect knowledge (workbook: Reconciliation).
+6. **A 3rd serving station alone does best on normal days**; the proposal ties the best option on a busy
+   day; proposal + a 3rd station is best on surge days but costs a station's staff every day (workbook: S7 Payoff Matrix).
 7. **Earlier results understated run-outs.** A simulator bug let a queue be served "in the past" after a
-   refill; fixed, run-outs now cost the time they should (today's average wait 7.2 → 8.0 min).
+   refill; fixed, run-outs now cost the time they should (this, and the department arrival curve, explain why the deck's earlier figures changed).
 
 Older tables (hallway layout, earlier placeholder inputs) are in the git history.
 

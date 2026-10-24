@@ -119,14 +119,63 @@ class PrivacyConfig:
     show_names: bool = False
 
 
+def _clock_min(hhmm: str) -> float:
+    h, m = hhmm.split(":")
+    return int(h) * 60 + int(m)
+
+
+@dataclass(frozen=True)
+class ArrivalGroup:
+    """A department whose classes break for lunch at a fixed time. `students` are
+    relative sizes (rough counts): the slot scales them to `expected_students`.
+    `alt_share` of the group eats in the alternative window instead (lab days)."""
+    name: str
+    students: float
+    start: str
+    end: str
+    alt_share: float = 0.0
+    alt_start: str | None = None
+    alt_end: str | None = None
+
+
 @dataclass(frozen=True)
 class MealSlot:
+    """Arrivals follow either one bell curve (peak_offset_min, spread_min) or, when
+    `groups` is set, one curve per department: each starts arriving when its lunch
+    break starts, lag ~ Normal(lag_mean_min, lag_sd_min) cut off at the end of its break."""
     name: str
     start: str
     duration_min: float
     expected_students: int
-    peak_offset_min: float
-    spread_min: float
+    peak_offset_min: float = 0.0
+    spread_min: float = 1.0
+    groups: tuple[ArrivalGroup, ...] = ()
+    lag_mean_min: float = 15.0
+    lag_sd_min: float = 10.0
+
+    def cohorts(self) -> list[tuple[str, float, float, float]]:
+        """(name, students, window start, window end) per cohort, in minutes after the
+        slot opens, with students scaled so they add up to expected_students."""
+        total = sum(g.students for g in self.groups)
+        if not total:
+            return []
+        k, t0 = self.expected_students / total, _clock_min(self.start)
+        out = []
+        for g in self.groups:
+            main = 1.0 - g.alt_share
+            if main > 0:
+                out.append((g.name, g.students * main * k, _clock_min(g.start) - t0, _clock_min(g.end) - t0))
+            if g.alt_share > 0:
+                out.append((f"{g.name} (lab day)", g.students * g.alt_share * k,
+                            _clock_min(g.alt_start) - t0, _clock_min(g.alt_end) - t0))
+        return out
+
+    def peak_min(self) -> float:
+        """Minute (after opening) when the arrival rate is highest."""
+        if not self.groups:
+            return self.peak_offset_min
+        from .simulation import arrival_rate_per_min
+        return max((t / 2 for t in range(int(self.duration_min * 2))), key=lambda t: arrival_rate_per_min(self, t))
 
 
 @dataclass(frozen=True)
@@ -184,7 +233,7 @@ def config_from_dict(raw: dict) -> AppConfig:
     if len({m.id for m in messes}) != len(messes):
         raise ValueError("mess ids must be unique")
     sim_raw = dict(raw.get("simulation", {}))
-    slots = tuple(MealSlot(**s) for s in sim_raw.pop("slot", []))
+    slots = tuple(_slot(s) for s in sim_raw.pop("slot", []))
     habit = sim_raw.pop("habit_share", {m.id: 1 / len(messes) for m in messes})
     sim = SimConfig(habit_share=_normalise(habit, messes), slots=slots, **sim_raw)
     eng_raw = dict(raw.get("engine", {}))
@@ -196,6 +245,12 @@ def config_from_dict(raw: dict) -> AppConfig:
     trays = {t["name"]: TrayConfig(name=t["name"], type=t.get("type", "Base food"), cls=t.get("class", "CZ"),
                                    weight=float(t.get("weight", 0.1))) for t in raw.get("tray", [])}
     return AppConfig(messes=messes, engine=engine, privacy=privacy, simulation=sim, layout=layout, trays=trays)
+
+
+def _slot(raw: dict) -> MealSlot:
+    raw = dict(raw)
+    groups = tuple(ArrivalGroup(**g) for g in raw.pop("group", []))
+    return MealSlot(**raw, groups=groups)
 
 
 def _normalise(shares: dict[str, float], messes: tuple[MessConfig, ...]) -> dict[str, float]:

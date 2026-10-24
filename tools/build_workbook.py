@@ -25,6 +25,20 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs" / "MDS_Decision_Wo
 SCEN = json.loads((ROOT / "results" / "scenarios.json").read_text())
 PAYOFF = json.loads((ROOT / "results" / "payoff.json").read_text())
 RECON = json.loads((ROOT / "results" / "reconcile.json").read_text())
+sys.path.insert(0, str(ROOT))
+from messq.config import load_config  # noqa: E402
+
+LUNCH = load_config().simulation.slot("lunch")
+base = {r["scenario"]: r for r in SCEN["results"] if r["group"] == "base"}
+STRESS = {(r["group"], r["scenario"][:1]): r["mean_wait_min"]["mean"] for r in SCEN["results"]}
+PAYW = {(c["row"], c["col"]): c["mean_wait_min"]["mean"] for c in PAYOFF["cells"]}
+W1, W2, W3 = (base[k]["mean_wait_min"]["mean"] for k in ["1 Current system", "2 Queue information only", "3 Queue + food (proposal)"])
+
+
+def stress(prefix, sc="1"):
+    return next(v for (g, k), v in STRESS.items() if g.startswith(prefix) and k == sc)
+
+
 SIM_SOURCE = (f"Simulated: python -m messq.scenarios, {SCEN['runs_per_scenario']} lunches per row (seeds 0–"
               f"{SCEN['runs_per_scenario'] - 1}, the same students in every scenario); ± = 95% confidence interval")
 
@@ -131,6 +145,37 @@ ws = sheet(INP, "Inputs: every assumption the workbook and the simulator use",
 table(ws, 4, 1, ["Parameter", "Value", "Unit", "Status", "Source / how to measure", "Date", "Used in"], [])
 SEP = "Sep 2026"
 OCT = "Oct 2026"
+
+
+def _day(hhmm):  # "12:30" -> Excel time (fraction of a day)
+    h, m = hhmm.split(":")
+    return (int(h) * 60 + int(m)) / 1440
+
+
+DEPT_NOTES = {  # status and source for each department's size and break, from the group (Oct 2026)
+    "MIT": ("Group estimate", "Group: ~1,100 (rough)", "Measured", "Department timetable"),
+    "TAPMI": ("Group estimate", "Group: ~850 (rough)", "Measured", "Department timetable"),
+    "DOC/MICFE": ("Group estimate", "Group: ~550 (rough)", "Measured", "Department timetable"),
+    "SMI": ("Group estimate", "Group: ~450 (rough)", "Measured", "Department timetable"),
+    "DLHS/MILHS": ("Assumed", "Size not known yet: taken as similar to MLS + MIRM", "Measured", "Department timetable"),
+    "MLS": ("Assumed", "Group: MLS + MIRM ~100 together; half each assumed", "Measured", "Department timetable"),
+    "MIRM": ("Assumed", "As MLS", "Assumed", "Timing not known: placed in the middle of the other breaks"),
+}
+DEPT_ROWS = [("sec", "DEPARTMENT LUNCH BREAKS (sizes are rough counts, used as shares and scaled to the plates served)")]
+for _i, _g in enumerate(LUNCH.groups):
+    _ns, _nsrc, _ts, _tsrc = DEPT_NOTES.get(_g.name, ("Assumed", "", "Assumed", ""))
+    DEPT_ROWS += [
+        (f"dn{_i}", f"{_g.name}: students (rough)", _g.students, "students", _ns, _nsrc, OCT, "Arrival Curve, simulator", "#,##0"),
+        (f"ds{_i}", f"{_g.name}: lunch break starts", _day(_g.start), "time", _ts, _tsrc, OCT, "Arrival Curve, simulator", "hh:mm"),
+        (f"de{_i}", f"{_g.name}: lunch break ends", _day(_g.end), "time", _ts, _tsrc, OCT, "Arrival Curve, simulator", "hh:mm"),
+    ]
+    if _g.alt_share:
+        DEPT_ROWS += [
+            (f"da{_i}", f"{_g.name}: share eating in the lab-day break (average weekday)", _g.alt_share, "share", "Assumed",
+             "Labs: electrical 3 days/week, other branches 2. Assumed 5-day week, ~25% electrical: 0.75×2/5 + 0.25×3/5", OCT, "Arrival Curve, simulator", "0%"),
+            (f"dx{_i}", f"{_g.name}: lab-day break starts", _day(_g.alt_start), "time", "Measured", "Group: 13:00–14:00 if there is a lab", OCT, "Arrival Curve, simulator", "hh:mm"),
+            (f"dy{_i}", f"{_g.name}: lab-day break ends", _day(_g.alt_end), "time", "Measured", "As above", OCT, "Arrival Curve, simulator", "hh:mm"),
+        ]
 ROWS = [
     # key, label, value, unit, status, source, date, used in, fmt
     ("sec", "MEASURED (Phase 1 field work, CT, the group)"),
@@ -169,8 +214,11 @@ ROWS = [
      "Group's estimate. A day of biometric logs without screens measures it (Data Collection tab)", "—", "S15, LP, scenarios", "0%"),
     ("comply", "Share of students who follow the screen", 0.6, "share", "Assumed", "The pilot measures it; stress-tested at 30% and 100%", "—", "S15, LP, scenarios", "0%"),
     ("walk", "Walk between the two mess doors", 0.5, "minutes", "Assumed", "30 s; walk it with a stopwatch", "—", "LP, Decision Rule, simulator", "0.0"),
-    ("peak", "Arrival peak: minutes after opening", 95, "minutes", "Assumed", "13:05. The biometric logs show the real curve", "—", "S15 arrival curve", "0"),
-    ("spread", "Arrival peak: spread (standard deviation)", 35, "minutes", "Assumed", "Stress-tested at 25 min (a sharper peak)", "—", "S15 arrival curve", "0"),
+    ("lag_m", "Minutes from the start of a department's lunch break to the mess door: mean", LUNCH.lag_mean_min, "minutes", "Calibrated",
+     "Chosen so the no-screen simulation fits the 17–25 min visit and ~15 min peak delay. Logs + timetable measure it", "—", "Arrival Curve, simulator", "0"),
+    ("lag_sd", "Same lag: spread (standard deviation); cut off at the end of the break", LUNCH.lag_sd_min, "minutes", "Calibrated",
+     "Stress-tested at 15 ± 10 min (everyone rushes at the bell)", "—", "Arrival Curve, simulator", "0"),
+    *DEPT_ROWS,
     ("sec", "FOOD"),
     ("ready_p", "Chance the next batch is already made when the mess calls", 0.7, "share", "Group estimate", "Group: about 70% of the time", OCT, "Decision Rule, simulator", "0%"),
     ("low_left", "Food left when the manager taps 'running low' (= calls the kitchen)", 20, "minutes", "Assumed",
@@ -199,7 +247,7 @@ for row in ROWS:
     key, label, val, unit, status, src, date, used, fmt = row
     put(ws, f"A{r}", label)
     c = put(ws, f"B{r}", val, kind="input", fmt=fmt)
-    if status in ("Assumed", "Group estimate"):
+    if status in ("Assumed", "Group estimate", "Calibrated"):
         c.fill = F_KEY
     put(ws, f"C{r}", unit)
     put(ws, f"D{r}", status, bold=status == "Measured")
@@ -354,11 +402,12 @@ put(ws, "C23", 3, kind="input")
 table(ws, 25, 1, ["Intervention", "Impact (1–5)", "Effort (1–5)", "Quadrant", "Reason (impact)", "Reason (effort)"], [
     [n, i, e, f'=IF(B{26+k}>$C$23,IF(C{26+k}>$C$23,"Major project","Quick win"),IF(C{26+k}>$C$23,"Thankless task","Fill-in"))', ri, re]
     for k, (n, i, e, ri, re) in enumerate([
-        ("A2 Door screens, queue information only", 4, 3, "Busy day: wait 8.0 → 1.4 min (simulated)", "Two screens + a laptop; needs data access"),
-        ("A3 Screens + food status (proposal)", 5, 3, "Busy day: wait 8.0 → 0.8 min; fewer bad redirects", "Same as A2 + manager taps food status"),
-        ("A4 3rd serving station at Central", 4, 4, "Busy day: 8.0 → 2.0 min; best on quiet days", "Staff cost every day; space at counter"),
+        ("A2 Door screens, queue information only", 4, 3, f"Busy day: wait {W1:.1f} → {W2:.1f} min (simulated)", "Two screens + a laptop; needs data access"),
+        ("A3 Screens + food status (proposal)", 5, 3, f"Busy day: wait {W1:.1f} → {W3:.1f} min (simulated)", "Same as A2 + manager taps food status"),
+        ("A4 3rd serving station at Central", 4, 4, f"Busy day: {W1:.1f} → {PAYW[('A4 3rd serving station at Central (no screens)', 'S2 Busy day (2,960 students)')]:.1f} min; best on normal days", "Staff cost every day; space at counter"),
         ("A6 Larger buffers for base foods (CZ)", 2, 1, "Base foods ran dry in the field visit", "Just send more rice/dal/sambar"),
-        ("A7 Stagger class end times", 4, 5, "Lowers peak arrivals", "Needs academic administration"),
+        ("A7 Stagger class end times", 4, 5, f"SMI 15 min earlier: today's wait {W1:.1f} → {stress('Stagger: SMI'):.1f} min; "
+         f"TAPMI 15 min later: → {stress('Stagger: TAPMI'):.1f} (simulated)", "Needs academic administration"),
     ])
 ], kinds=["text", "input", "input", "formula", "text", "text"], wrap_cols=(4, 5))
 put(ws, "A32", "4. Decision dilemmas", bold=True)
@@ -367,6 +416,99 @@ table(ws, 33, 1, ["Dilemma", "Option 1", "Option 2", "", "Trade-off", "How we re
     ["React to 'running low'?", "Redirect early (needless walks)", "Wait for 'out' (late)", "", "Walks vs waits", "Delay only for students who would reach an empty tray (Decision Rule)"],
     ["Add a serving station?", "Yes (staff every day)", "No (long peak waits)", "", "Staff cost vs waiting", "S7 Payoff Matrix (A4, A5) and Scenarios"],
 ], wrap_cols=(0, 1, 2, 4, 5))
+
+
+DEF = {k: v for k, _l, v, *_ in [r for r in ROWS if r[0] != "sec"]}  # default input values, for solving in Python
+
+
+def _bins(slot, nb):
+    """Arrivals per 10-min slot: the same sum of cut-off normal curves as the Arrival Curve tab."""
+    sd = slot.lag_sd_min
+    out = [0.0] * nb
+    for _nm, n, a, b in slot.cohorts():
+        mu = a + slot.lag_mean_min
+        phi = lambda x: 0.5 * (1 + math.erf((x - mu) / (sd * math.sqrt(2))))  # noqa: E731
+        z = phi(b) - phi(a)
+        for k in range(nb):
+            out[k] += n * (phi(min(b, max(a, (k + 1) * 10))) - phi(min(b, max(a, k * 10)))) / z
+    return out
+
+
+
+# =============================================================================
+# Arrival Curve: one curve per department lunch break, added up
+# =============================================================================
+AC = "Arrival Curve"
+ws = sheet(AC, "When students arrive: department lunch breaks added up", "Feeds S15 Queuing and the LP. The simulator uses the same curve (config/default.toml)",
+           [26, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14])
+put(ws, "A3", "Scale: plates served ÷ sum of the rough department sizes")
+dn_keys = [k for k in REF if k.startswith("dn")]
+put(ws, "E3", f"={REF['students']}/({'+'.join(REF[k] for k in dn_keys)})", kind="link", fmt="0.000")
+COH = []  # (name, students formula, start key, end key)
+for i_, g_ in enumerate(LUNCH.groups):
+    n_, s_, e_ = REF[f"dn{i_}"], REF[f"ds{i_}"], REF[f"de{i_}"]
+    if g_.alt_share:
+        a_ = REF[f"da{i_}"]
+        COH.append((g_.name, f"{n_}*(1-{a_})*$E$3", s_, e_))
+        COH.append((f"{g_.name} (lab day)", f"{n_}*{a_}*$E$3", REF[f"dx{i_}"], REF[f"dy{i_}"]))
+    else:
+        COH.append((g_.name, f"{n_}*$E$3", s_, e_))
+open_ = f"TIMEVALUE({REF['start']})"
+table(ws, 5, 1, ["Cohort", "Students (scaled)", "Break starts (min after opening)", "Break ends (min)", "Mean arrival (min)", "Share of the curve inside the break"], [
+    [nm, f"={nf}", f"=ROUND(({st}-{open_})*1440,0)", f"=ROUND(({en}-{open_})*1440,0)", f"=C{6+k}+{REF['lag_m']}",
+     f"=NORMDIST(D{6+k},E{6+k},{REF['lag_sd']},TRUE)-NORMDIST(C{6+k},E{6+k},{REF['lag_sd']},TRUE)"]
+    for k, (nm, nf, st, en) in enumerate(COH)
+], fmts=[None, "0", "0", "0", "0", "0.000"])
+ws.row_dimensions[5].height = 30
+C_LAST = 5 + len(COH)
+put(ws, f"A{C_LAST+1}", "Total")
+put(ws, f"B{C_LAST+1}", f"=SUM(B6:B{C_LAST})", kind="formula", fmt="#,##0")
+note(ws, f"A{C_LAST+2}", "Each department starts arriving when its lunch break starts. A student's lag after the break starts is Normal(mean, spread) from the Inputs tab, "
+     "cut off at the end of the break, so each cohort's arrivals add up to its size. MIT eats 13:00–14:00 on lab days. The sizes are rough and add up to more than "
+     "the plates served, so they are used as shares. The biometric logs replace this whole tab once available.", f"L{C_LAST+2}", 44)
+AG = C_LAST + 4
+put(ws, f"A{AG}", "Arrivals per 10-minute slot", bold=True)
+heads = ["Slot", "Minute"] + [c[0] for c in COH] + ["Total", "Share"]
+table(ws, AG + 1, 1, heads, [])
+ws.row_dimensions[AG + 1].height = 30
+AF = AG + 2
+for b_ in range(18):
+    r_ = AF + b_
+    m_ = 11 * 60 + 30 + b_ * 10
+    put(ws, f"A{r_}", f"{m_ // 60:02d}:{m_ % 60:02d}")
+    put(ws, f"B{r_}", b_ * 10, fmt="0")
+    for k, _c in enumerate(COH):
+        cr = 6 + k
+        lo = f"MIN($D${cr},MAX($C${cr},$B{r_}))"
+        hi = f"MIN($D${cr},MAX($C${cr},$B{r_}+10))"
+        put(ws, f"{L(3+k)}{r_}", f"=$B${cr}*(NORMDIST({hi},$E${cr},{REF['lag_sd']},TRUE)-NORMDIST({lo},$E${cr},{REF['lag_sd']},TRUE))/$F${cr}",
+            kind="link", fmt="0")
+    tc = L(3 + len(COH))
+    put(ws, f"{tc}{r_}", f"=SUM(C{r_}:{L(2+len(COH))}{r_})", kind="formula", fmt="0", fill=F_OUT)
+    put(ws, f"{L(4+len(COH))}{r_}", f"={tc}{r_}/SUM(${tc}${AF}:${tc}${AF+17})", kind="formula", fmt="0.0%")
+AL = AF + 17
+AC_TOT = f"{q(AC)}!${L(3+len(COH))}$"
+AC_SHR = f"{q(AC)}!${L(4+len(COH))}$"
+put(ws, f"A{AL+2}", "Busiest 10-minute slot")
+put(ws, f"B{AL+2}", f"=INDEX(A{AF}:A{AL},MATCH(MAX({L(3+len(COH))}{AF}:{L(3+len(COH))}{AL}),{L(3+len(COH))}{AF}:{L(3+len(COH))}{AL},0))", kind="formula", fill=F_OUT)
+put(ws, f"A{AL+3}", "Students arriving in it (both messes)")
+put(ws, f"B{AL+3}", f"=MAX({L(3+len(COH))}{AF}:{L(3+len(COH))}{AL})", kind="formula", fmt="0", fill=F_OUT)
+put(ws, f"A{AL+4}", "Capacity of both messes in 10 min (4 stations)")
+put(ws, f"B{AL+4}", f"=({REF['cap_A']}+{REF['cap_B']})*10", kind="link", fmt="0")
+_pk = max(_bins(LUNCH, 18))
+_capb = (DEF["c_A"] + DEF["c_B"]) * DEF["mu"] * 10
+note(ws, f"A{AL+5}", "Two surges: about 12:10 (MIT and SMI) and a larger one about 13:10–13:30, when MIT's lab-day batch, TAPMI, DOC/MICFE, DLHS/MILHS and MLS "
+     f"overlap. In the busiest slot arrivals reach about {_pk / _capb:.0%} of what both messes together can serve, and {DEF['habit']:.0%} of them head to Central, "
+     f"which alone can serve only {DEF['c_A'] * DEF['mu'] * 10:.0f}. Balancing uses Munch's spare capacity; "
+     "staggering one department's break by 15 minutes is the demand-side fix (Scenarios: stagger tests).", f"L{AL+5}", 44)
+bc = BarChart()
+bc.type, bc.grouping, bc.overlap = "col", "stacked", 100
+bc.title = "Arrivals per 10 minutes, by department"
+bc.y_axis.title = "Students"
+bc.add_data(Reference(ws, min_col=3, max_col=2 + len(COH), min_row=AG + 1, max_row=AL), titles_from_data=True)
+bc.set_categories(Reference(ws, min_col=1, min_row=AF, max_row=AL))
+bc.height, bc.width = 9, 22
+ws.add_chart(bc, f"A{AL+8}")
 
 
 # =============================================================================
@@ -398,7 +540,7 @@ ws.add_chart(ch, "O4")
 
 B0 = 22
 put(ws, f"A{B0}", "3. Lunch by 10-minute slot: without vs with the door screens (M/M/c, plus a fluid queue for overload)", bold=True)
-note(ws, f"A{B0+1}", "Arrivals = students × the share of a bell-shaped curve falling in each slot (peak and spread on the Inputs tab; ASSUMED until the biometric logs "
+note(ws, f"A{B0+1}", "Arrivals = the department lunch breaks added up (Arrival Curve tab; shape ASSUMED until the biometric logs "
      "replace column C). Queue wait = backlog ÷ capacity + steady-state M/M/c wait at the serving stations. When ρ ≥ 1 the steady-state formula does not apply, "
      "so the queue is carried forward: backlog = max(0, previous + arrivals − capacity × 10). Throughput = stage 1 + queue wait + serving + food line + "
      "eating + disposal. 'With screens' moves the share who comply toward equal utilisation in every slot, with perfect knowledge (see Reconciliation).", f"AK{B0+1}", 58)
@@ -432,13 +574,12 @@ for gname, mess, gk in groups:
     col += len(sub)
 ws.row_dimensions[SR].height = 30
 K = "{0,1,2,3,4,5,6,7,8,9}"
-nd = lambda x: f"NORMDIST({x},{REF['peak']},{REF['spread']},TRUE)"  # noqa: E731
 for i in range(N_BINS):
     r_ = FR + i
     m = (11 * 60 + 30 + i * 10)
     put(ws, f"A{r_}", f"{m // 60:02d}:{m % 60:02d}", kind="text")
-    put(ws, f"B{r_}", f"=({nd((i + 1) * 10)}-{nd(i * 10)})/({nd(REF['dur'])}-{nd(0)})", kind="link", fmt="0.0%")
-    put(ws, f"C{r_}", f"={REF['students']}*B{r_}", kind="link", fmt="0")
+    put(ws, f"B{r_}", f"={AC_SHR}{AF + i}", kind="link", fmt="0.0%")
+    put(ws, f"C{r_}", f"={AC_TOT}{AF + i}", kind="link", fmt="0")
     put(ws, f"D{r_}", f"=C{r_}/10", kind="formula", fmt="0.0")
     for gk, cols in COLS.items():
         A = cols["mess"] == "A"
@@ -509,16 +650,7 @@ ws.freeze_panes = f"B{FR}"
 # =============================================================================
 # LP Student Flow (PRIMARY decision model)
 # =============================================================================
-DEF = {k: v for k, _l, v, *_ in [r for r in ROWS if r[0] != "sec"]}  # default input values, for solving in Python
-
-
-def _bins(n, peak, spread, dur, nb):
-    phi = lambda x: 0.5 * (1 + math.erf((x - peak) / (spread * math.sqrt(2))))  # noqa: E731
-    z = phi(dur) - phi(0)
-    return [n * (phi((b + 1) * 10) - phi(b * 10)) / z for b in range(nb)]
-
-
-D_BINS = _bins(DEF["students"], DEF["peak"], DEF["spread"], DEF["dur"], N_BINS)
+D_BINS = _bins(LUNCH, N_BINS)
 CAP_A, CAP_B = DEF["c_A"] * DEF["mu"], DEF["c_B"] * DEF["mu"]
 
 
@@ -800,10 +932,21 @@ put(ws, "A41", "EVPI = extra minutes per student if we knew the kind of day in a
 put(ws, "B41", "=B39-B40", kind="formula", fmt="0.00", fill=F_OUT)
 put(ws, "A42", "Check: EVPI equals the minimum expected regret")
 put(ws, "B42", "=MIN(F30:F34)", kind="formula", fmt="0.00")
-note(ws, "A44", "Reading it: the payoff is waiting time only, so the objective stays explicit. A5 (proposal + a third station) dominates on minutes, so EVPI is 0: "
-     "knowing the kind of day in advance would not change the choice. But staff cost is not in these minutes: A4 and A5 need a third station's staff every day, "
-     "while A3 needs two screens and the manager's taps. Without extra staff, the proposal (A3) is the best choice on every criterion (row 25); "
-     "on quiet days a third station alone does slightly better. "
+_alts, _states = PAYOFF["alternatives"], PAYOFF["states"]
+_best = {st: min(_alts, key=lambda a: PAYW[(a, st)]) for st in _states}
+if len(set(_best.values())) == 1:
+    _dom = (f"{next(iter(_best.values()))[:2]} has the lowest wait on every kind of day, so EVPI is 0: "
+            "knowing the kind of day in advance would not change the choice. ")
+else:
+    _dom = ("No alternative has the lowest wait on every kind of day (" + "; ".join(f"{st[:2]}: {a[:2]}" for st, a in _best.items())
+            + "), but the differences on the busy day are within the simulation's confidence interval, so EVPI (B41) is small. ")
+_a3, _a4 = "A3 Door screens + food status (proposal)", "A4 3rd serving station at Central (no screens)"
+_quiet = (f"On normal days a third station alone does a little better ({PAYW[(_a4, _states[0])]:.1f} vs {PAYW[(_a3, _states[0])]:.1f} min). "
+          if PAYW[(_a4, _states[0])] < PAYW[(_a3, _states[0])] else "")
+note(ws, "A44", "Reading it: the payoff is waiting time only, so the objective stays explicit. " + _dom +
+     "Staff cost is not in these minutes: A4 and A5 need a third station's staff every day, "
+     "while A3 needs two screens and the manager's taps. Without extra staff, the proposal (A3) is the best choice (row 25). " + _quiet +
+     
      "A1 and A4 are without the system; A2, A3 and A5 are with it. For a table of waits (lower is better) the criteria would be minimin and minimax; "
      "turning waits into minutes saved makes higher better, so the maximax / maximin names apply.", "J44", 58)
 bc = BarChart()
@@ -1060,7 +1203,11 @@ put(ws, f"F{6+len(RECON['steps'])}", "A lower bound: the best any routing could 
 RC_GAP = 7 + len(RECON["steps"])
 put(ws, f"A{RC_GAP}", "Gap without screens: spreadsheet vs spreadsheet-like simulator (should be small)")
 put(ws, f"B{RC_GAP}", "=B6-B5", kind="formula", fmt="+0.00;-0.00", fill=F_OUT)
-note(ws, f"A{RC_GAP+2}", "Conclusion: the two models agree when they make the same assumptions (first two rows, without screens). The headline numbers come from the full "
+put(ws, f"A{RC_GAP+1}", "Gap as a share of the simulator's figure (the check allows 15%)")
+put(ws, f"B{RC_GAP+1}", f"=B{RC_GAP}/B6", kind="formula", fmt="+0%;-0%", fill=F_OUT)
+note(ws, f"A{RC_GAP+2}", "Conclusion: the two models agree when they make the same assumptions (first two rows, without screens), within 15%. The spreadsheet "
+     "is a little higher because it adds the steady-state M/M/c wait in every 10-minute slot; near 100% busy a slot is too short for the queue to reach "
+     "steady state, and the department surge passes through several such slots. The headline numbers come from the full "
      f"simulator (last simulator row) because it includes the things the spreadsheet cannot: randomness, live estimation, the scanner, seats and run-outs. "
      "The spreadsheet's 'with screens' figure is optimistic because it routes with perfect knowledge; the LP is the theoretical best case. "
      f"{RECON['runs']} lunches per simulator row.", f"F{RC_GAP+2}", 58)
@@ -1073,7 +1220,8 @@ ws = sheet(SM, "How the simulator works (messq/simulation.py, messq/engine.py)",
            [26, 64, 40, 22])
 table(ws, 4, 1, ["Component", "How it is modelled", "Parameters (Inputs / config)", "Status"], [
     ["Time", "Discrete steps of 5 seconds (the scanner poll interval), 11:30–14:30; the run continues until everyone has food", "step_s = 5", "Design"],
-    ["Arrivals", "Random (Poisson) arrivals whose rate follows a bell-shaped curve over the lunch; total = students per lunch", "students, peak, spread", "Total measured; shape assumed"],
+    ["Arrivals", "Random (Poisson) arrivals; the rate is the department lunch breaks added up (Arrival Curve tab): each department starts arriving when its break starts, "
+     "lag Normal(20, 20) min cut off at the end of the break; total = students per lunch", "students, department breaks, lag_m, lag_sd", "Total and timetable measured; sizes rough; lag calibrated"],
     ["Where students head", "Each student heads to Central with probability h (habit), else Munch", "habit share h", "Assumed"],
     ["Advice at the door", "The screen at the mess they reach asks a share of students to walk to the other mess (none in scenario 1)", "Decision Rule; min saving 2 min", "Policy"],
     ["Compliance", "Each advised student follows with probability κ; followers walk 30 s to the other door", "comply κ, walk", "Assumed"],
@@ -1187,10 +1335,12 @@ checks = [
     ("Response: a faster serving rate lowers the M/M/c wait (λ = 17/min, c = 2)", "=_wq(17,1.1*%MU%)-_wq(17,%MU%)", "=IF(B17<0,\"OK\",\"CHECK\")", "Outputs move in the right direction"),
     ("With screens, Munch's peak utilisation stays below 100% (S15)", f"={QS_PEAKRHO_WB}", "=IF(B18<1,\"OK\",\"CHECK\")", "Redistribution must not overload Munch"),
     ("Throughput with no queues is within the measured range", f"={REF['thr0']}", f"=IF(AND(B19>={REF['thr_lo']}-1,B19<={REF['thr_hi']}),\"OK\",\"CHECK\")", "17–25 min (group); quiet visit ~18"),
-    ("Simulated throughput, quiet first 30 min (today)", sim_quiet, f"=IF(AND(B20>={REF['thr_lo']}-1,B20<={REF['thr_hi']}),\"OK\",\"CHECK\")", "Simulator calibration"),
+    ("Simulated throughput for students who met no queue (today)", sim_quiet, f"=IF(AND(B20>={REF['thr_lo']}-1,B20<={REF['thr_hi']}),\"OK\",\"CHECK\")", "Simulator calibration"),
     ("Simulated throughput at the peak (today)", sim_peak, f"=IF(AND(B21>={REF['thr_lo']},B21<={REF['thr_hi']}+3),\"OK\",\"CHECK\")", "Group: up to ~25 min in a surge"),
-    ("Spreadsheet vs spreadsheet-like simulator, without screens", f"={q(RC)}!$B${RC_GAP}", "=IF(ABS(B22)<0.5,\"OK\",\"CHECK\")", "The two models agree under the same assumptions"),
+    ("Spreadsheet vs spreadsheet-like simulator, without screens", f"={q(RC)}!$B${RC_GAP}", f"=IF(ABS(B22)<=0.15*{q(RC)}!$B$6,\"OK\",\"CHECK\")", "The two models agree within 15% under the same assumptions"),
     ("Payoff matrix: no errors", f"=SUMPRODUCT(--ISERROR({q(PAY)}!$A$6:$J$42))", "=IF(B23=0,\"OK\",\"CHECK\")", ""),
+    ("Arrival Curve: no errors", f"=SUMPRODUCT(--ISERROR({q(AC)}!$A$3:$N${AL+4}))", "=IF(B24=0,\"OK\",\"CHECK\")", ""),
+    ("Department cohorts add up to students per lunch", f"={q(AC)}!$B${C_LAST+1}-{REF['students']}", "=IF(ABS(B25)<0.5,\"OK\",\"CHECK\")", "Rough sizes scaled to the plates served"),
 ]
 mm1 = lambda lam, mu: (f"IF({lam}/(2*{mu})<1,(({lam}/{mu})^2/2*2/(2-{lam}/{mu}))/(1+{lam}/{mu}+({lam}/{mu})^2/2*2/(2-{lam}/{mu}))/(2*{mu}-{lam}),99)")  # noqa: E731
 for k_, (lab, v, res, what) in enumerate(checks):
@@ -1241,8 +1391,9 @@ put(ws, "A14", "Status tags", bold=True)
 table(ws, 15, 1, ["Tag", "Meaning", "Example"], [
     ["Measured", "From field work, CT or the group", "2,960 students; seats 900 / 500; 2 stations + 1 scanner per mess"],
     ["Group estimate", "The group's figure, not yet timed", "Eating 12–15 min; disposal ≤ 2 min; food ready 70% of the time"],
-    ["Assumed", "A placeholder until measured", "85% go to Central; 10 students/min per station; arrival curve"],
-    ["Simulated", "Output of the simulator, 20 lunches per row", "Average wait 8.0 → 0.8 min on a busy day"],
+    ["Assumed", "A placeholder until measured", "85% go to Central; 10 students/min per station; MIT lab share"],
+    ["Calibrated", "Not measured: chosen so the model reproduces what was observed", "Lag from the start of a lunch break to the mess door"],
+    ["Simulated", "Output of the simulator, 20 lunches per row", f"Average wait {W1:.1f} → {W3:.1f} min on a busy day"],
     ["Policy", "Our design choice", "Minimum saving 2 min before suggesting a switch"],
 ], wrap_cols=(1, 2))
 put(ws, "A22", "Tabs", bold=True)
@@ -1251,6 +1402,7 @@ tabs = [
     ("S2-3 Problem & Root Cause", "2–3", "Problem and decision; 5 Whys backtracked from the Phase 1 symptom; fishbone; issue tree"),
     ("S4 Biases & Ethics", "4", "Status quo, herding, loss aversion, missing information (hypotheses vs findings); DPDP ethics"),
     ("S5-6 Priority Matrix", "5–6", "ABC/XYZ menu matrix; tray weights; impact–effort matrix; decision dilemmas"),
+    ("Arrival Curve", "15", "Department lunch breaks added up: when students arrive, and the 13:10–13:30 overlap"),
     ("S15 Queuing", "15", "M/M/1 check, utilisation curve, M/M/c + fluid queue by 10-min slot, four-stage throughput"),
     ("LP Student Flow", "10–11", "PRIMARY model: students to direct to each mess per slot; food as a constraint; shadow price"),
     ("LP Food Allocation", "10–11", "SECONDARY model: the star dish split that supports the flow; graphical method"),

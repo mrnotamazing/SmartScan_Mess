@@ -286,3 +286,15 @@ def test_no_one_is_served_during_a_run_out(cfg):
         starts = sorted(s.service_start for s in r.students_list if s.hall == h and s.service_start is not None)
         # two stations at ~10/min: never more than ~2 service starts in the same 3 seconds
         assert all(starts[i + 6] - starts[i] > 3 for i in range(len(starts) - 6))
+
+
+def test_department_arrivals_add_up_and_peak_when_breaks_overlap():
+    from messq.simulation import arrival_rate_per_min
+
+    lunch = load_config().simulation.slot("lunch")
+    cohorts = lunch.cohorts()
+    assert sum(n for _name, n, _a, _b in cohorts) == pytest.approx(lunch.expected_students)
+    total = sum(arrival_rate_per_min(lunch, t / 10) / 10 for t in range(int(lunch.duration_min * 10)))
+    assert total == pytest.approx(lunch.expected_students, rel=0.01)
+    assert arrival_rate_per_min(lunch, 10) == 0  # no department is on break before 12:00
+    assert 13 * 60 + 5 <= 11 * 60 + 30 + lunch.peak_min() <= 13 * 60 + 30  # MIT lab days + TAPMI + DOC overlap

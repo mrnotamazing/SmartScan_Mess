@@ -67,15 +67,24 @@ class Student:
     name: str | None = None  # made-up for simulated students; from the log only if privacy.show_names
 
 
+def _truncated_normal(n: float, t: float, mu: float, sd: float, lo: float, hi: float) -> float:
+    """n × the density at t of Normal(mu, sd) cut to [lo, hi]."""
+    if t < lo or t > hi:
+        return 0.0
+    phi = lambda x: 0.5 * (1 + math.erf((x - mu) / (sd * math.sqrt(2))))  # noqa: E731
+    dens = math.exp(-0.5 * ((t - mu) / sd) ** 2) / (sd * math.sqrt(2 * math.pi))
+    return n * dens / (phi(hi) - phi(lo))
+
+
 def arrival_rate_per_min(slot: MealSlot, t_min: float) -> float:
-    """Truncated-normal arrival profile scaled to expected_students over the slot."""
+    """Arrivals per minute at t_min after opening, adding up to expected_students:
+    one curve per department (from its lunch break), else one bell curve."""
     if t_min < 0 or t_min > slot.duration_min:
         return 0.0
-    mu, sd, d = slot.peak_offset_min, slot.spread_min, slot.duration_min
-    phi = lambda x: 0.5 * (1 + math.erf(x / math.sqrt(2)))  # noqa: E731
-    z = phi((d - mu) / sd) - phi(-mu / sd)
-    dens = math.exp(-0.5 * ((t_min - mu) / sd) ** 2) / (sd * math.sqrt(2 * math.pi))
-    return slot.expected_students * dens / z
+    if slot.groups:
+        return sum(_truncated_normal(n, t_min, a + slot.lag_mean_min, slot.lag_sd_min, max(a, 0), min(b, slot.duration_min))
+                   for _name, n, a, b in slot.cohorts())
+    return _truncated_normal(slot.expected_students, t_min, slot.peak_offset_min, slot.spread_min, 0, slot.duration_min)
 
 
 def poisson(rng: random.Random, lam: float) -> int:
@@ -337,6 +346,7 @@ class Simulation:
         self._abs_err: list[float] = []
         self.t = 0.0
         self.end = slot.duration_min * 60
+        self._peak = slot.peak_min()
         self._hard_stop = self.end + 90 * 60
         self._n_events = 0
         self.engine.update(0.0)
@@ -443,9 +453,9 @@ class Simulation:
             mean_throughput_min=mean(through) if through else 0.0,
             p90_throughput_min=through[int(0.9 * (len(through) - 1))] if through else 0.0,
             mean_total_min=mean((s.left_at - s.decided_at) / 60 for s in done) if done else 0.0,
-            quiet_throughput_min=_mean_or_0(s.throughput_min for s in done if s.arrived_at < 30 * 60),
+            quiet_throughput_min=_mean_or_0(s.throughput_min for s in done if s.queue_wait_min < 1.0),
             peak_throughput_min=_mean_or_0(s.throughput_min for s in done
-                                           if abs(s.arrived_at / 60 - self.slot.peak_offset_min) <= 15),
+                                           if abs(s.arrived_at / 60 - self._peak) <= 15),
             redirected=len(moved),
             unsuccessful_rate=_unsuccessful(moved, done, self.cfg.layout.switch_walk_s / 60),
             util=util,

@@ -45,6 +45,12 @@ def _with_slot(cfg: AppConfig, **changes) -> AppConfig:
     return dataclasses.replace(cfg, simulation=dataclasses.replace(sim, slots=slots))
 
 
+def _with_group(cfg: AppConfig, name: str, **changes) -> AppConfig:
+    lunch = cfg.simulation.slot("lunch")
+    groups = tuple(dataclasses.replace(g, **changes) if g.name == name else g for g in lunch.groups)
+    return _with_slot(cfg, groups=groups)
+
+
 def _with_sim(cfg: AppConfig, **changes) -> AppConfig:
     return dataclasses.replace(cfg, simulation=dataclasses.replace(cfg.simulation, **changes))
 
@@ -54,7 +60,13 @@ def stress_tests(cfg: AppConfig) -> list[tuple[str, AppConfig, float]]:
     comp = cfg.simulation.compliance
     return [
         ("Demand +20% (3,552 students)", _with_slot(cfg, expected_students=round(lunch.expected_students * 1.2)), comp),
-        ("Sharper peak (spread 25 min, not 35)", _with_slot(cfg, spread_min=25), comp),
+        ("Students rush at the bell (lag 15 +/- 10 min, not 20 +/- 20)", _with_slot(cfg, lag_mean_min=15.0, lag_sd_min=10.0), comp),
+        ("Heavy lab day: 70% of MIT eat 13:00-14:00", _with_group(cfg, "MIT", alt_share=0.7), comp),
+        ("No MIT labs: all MIT eat 12:00-13:00", _with_group(cfg, "MIT", alt_share=0.0), comp),
+        ("Stagger: SMI lunch 15 min earlier (11:45-12:45)", _with_group(cfg, "SMI", start="11:45", end="12:45"), comp),
+        ("Stagger: TAPMI lunch 15 min later (13:20-14:15)", _with_group(cfg, "TAPMI", start="13:20", end="14:15"), comp),
+        ("One bell curve (old assumption: peak 13:05, spread 35)",
+         _with_slot(cfg, groups=(), peak_offset_min=95.0, spread_min=35.0), comp),
         ("Only 30% follow the screens", cfg, 0.3),
         ("Everyone follows the screens", cfg, 1.0),
         ("Slower serving: 8 students/min per station", _with_messes(cfg, service_rate_per_counter_per_min=8.0), comp),
