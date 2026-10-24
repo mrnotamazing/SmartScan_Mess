@@ -26,9 +26,9 @@ food_low_expiry_min = 20      # a "low" mark expires after this long (in case th
 assumed_compliance = 1.0      # set < 1 to over-correct for students who ignore advice
                               # (needs [engine.natural_share], e.g. from a no-screen baseline day)
 
-[engine.natural_share]          # ASSUMED (pure assumption, group's estimate): share who go to each mess by habit
-A = 0.85
-B = 0.15
+[engine.natural_share]          # MEASURED (group): ~2,360 eat at Central, ~600 at Munch of ~2,960 (80/20)
+A = 2360
+B = 600
 
 [layout]
 mode = "doors"                # "doors": a screen outside each mess entrance (students see it at the
@@ -49,8 +49,8 @@ id = "A"
 name = "Central Mess"
 seats = 900                   # MEASURED: Central CT seating capacity
 counters = 2                  # MEASURED: serving stations
-service_rate_per_counter_per_min = 10.0  # ASSUMED (~6 s per student). Must be roughly this fast: ~2,500 students reach
-                              #   Central in 3 hours, and 2 lines at the old guess of 4/min could only serve 8/min.
+service_rate_per_counter_per_min = 10.0  # ASSUMED (~6 s per student). Must be roughly this fast: ~2,360 students reach
+                              #   Central, mostly in two hours of breaks, and 2 lines at the old guess of 4/min could only serve 8/min.
                               #   Measure with a stopwatch.
 scanners = 1                  # MEASURED: one face-scan terminal at the entrance
 scan_time_s = 2               # ASSUMED: seconds per scan (step up, recognise, move on). Time it.
@@ -94,9 +94,9 @@ eat_min = [12, 15]            # 3. GROUP ESTIMATE: eating at a table
 dispose_min = [1, 2]          # 4. GROUP ESTIMATE: disposing of leftovers and the plate, 2 min at most (seat already free)
 service_cv = 0.6              # variability of serving time (1.0 = exponential, as M/M/c assumes)
 
-[simulation.habit_share]      # ASSUMED (pure assumption, group's estimate): where students go by habit without advice
-A = 0.85
-B = 0.15
+[simulation.habit_share]      # MEASURED (group): ~2,360 eat at Central, ~600 at Munch without screens (shares, normalised)
+A = 2360
+B = 600
 
 [[simulation.slot]]
 name = "breakfast"
@@ -115,7 +115,8 @@ expected_students = 2960      # MEASURED: plates served at lunch (Central CT + M
 # starts arriving when its break starts; a student's lag after the break starts is
 # Normal(20 min, 20 min), cut off at the end of the break: CALIBRATED (not measured) so that,
 # without screens, the simulated visit fits the group's 17-25 min and the ~15 min peak delay seen
-# in Phase 1. A tighter lag (15 +/- 10: everyone rushes at the bell) gives 36-min peak visits. Department sizes are ROUGH counts
+# in Phase 1 (rechecked with the measured 80/20 split). A tighter lag (15 +/- 10: everyone rushes at the bell)
+# gives ~30-min peak visits and a 23-min 90th-percentile wait, above what was observed. Department sizes are ROUGH counts
 # (they add to 3,150, more than the 2,960 plates), so they are used as shares and scaled to 2,960.
 # The biometric logs will give the real curve (and the real shares).
 lag_mean_min = 20             # CALIBRATED: average minutes from the start of the break to the mess door

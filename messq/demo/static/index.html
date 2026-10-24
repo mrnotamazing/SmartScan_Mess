@@ -280,16 +280,19 @@ $("file").onchange = async e => {
   poll();
 };
 
+const habitText = s => Object.entries(s.habit_share).map(([n, v]) => `${Math.round(100 * v)}% ${esc(n)}`).join(", ");
 function worldCard(w, key, s) {
   const color = key === "advised" ? "var(--with)" : "var(--without)";
   const maxQ = Math.max(120, ...Object.values(s.worlds).flatMap(x => x.halls.map(h => h.queue)));
   const extra = key === "advised" && w.students
-    ? `<div class="msg" style="margin-top:6px">${w.switched} of ${w.students} students (${Math.round(100 * w.switched / w.students)}%) walked to the other mess because of a screen.</div>` : "";
+    ? `<div class="msg" style="margin-top:6px">${w.switched} of ${w.students} students (${Math.round(100 * w.switched / w.students)}%) walked to the other mess because of a screen.
+       Nothing fixes the split: each student starts at their usual mess (${habitText(s)}), and only those who see a "go to the other mess" screen and follow it
+       (${Math.round(100 * s.compliance)}% do; slider above) change mess.</div>` : (s.source.type === "replay" ? "" : `<div class="msg" style="margin-top:6px">Everyone goes to their usual mess: ${habitText(s)}.</div>`);
   return `
     <div class="worldtitle"><span class="swatch" style="background:${color}"></span>${esc(s.titles[key])}</div>
     <div class="stats">
       <div class="stat"><div class="v">${w.avg_wait.toFixed(1)}<small style="font-size:14px"> min</small></div><div class="l">average wait</div></div>
-      <div class="stat"><div class="v">${w.waiting_now}</div><div class="l">in line now</div></div>
+      <div class="stat" title="Outside waiting to scan + scanned in and queueing for food + waiting for a seat"><div class="v">${w.waiting_now}</div><div class="l">queueing now</div></div>
       <div class="stat"><div class="v">${w.long_waits}</div><div class="l">waited &gt;10 min</div></div>
       <div class="stat"><div class="v">${w.seated}</div><div class="l">served so far</div></div>
     </div>
@@ -304,9 +307,9 @@ function worldCard(w, key, s) {
       <div class="hall">
         <div><div class="name">${esc(h.name)}</div><div class="food">${FOOD[h.food]}</div></div>
         <div class="bar" title="${h.queue} waiting"><div style="width:${Math.min(100, 100 * h.queue / maxQ)}%;background:${color}"></div></div>
-        <div class="n">${h.queue} in line<br>${h.students} came</div>
+        <div class="n">${h.queue} queueing<br>${h.students} came${key === "advised" && h.students !== h.by_habit ? `<br><span style="opacity:.75">${h.by_habit} by habit</span>` : ""}</div>
         <div class="detail">${h.scanned} scanned · ${h.served} got food · ${h.eating} eating now (${Math.round(100 * h.eating / h.seats)}% of ${h.seats} seats) · ${h.left} left
-          · waiting: ${h.outside_q} at scanner, ${h.food_q} for food${h.seat_q ? `, ${h.seat_q} for a seat` : ""}</div>
+          · queueing: ${h.outside_q} outside for the scanner (not yet scanned), ${h.food_q} scanned in and waiting for food${h.seat_q ? `, ${h.seat_q} for a seat` : ""}</div>
       </div>`).join("")}${extra}`;
 }
 

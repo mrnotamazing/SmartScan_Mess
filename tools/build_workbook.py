@@ -28,7 +28,9 @@ RECON = json.loads((ROOT / "results" / "reconcile.json").read_text())
 sys.path.insert(0, str(ROOT))
 from messq.config import load_config  # noqa: E402
 
-LUNCH = load_config().simulation.slot("lunch")
+_CFG = load_config()
+LUNCH = _CFG.simulation.slot("lunch")
+HABIT_A = _CFG.simulation.habit_share["A"]
 base = {r["scenario"]: r for r in SCEN["results"] if r["group"] == "base"}
 STRESS = {(r["group"], r["scenario"][:1]): r["mean_wait_min"]["mean"] for r in SCEN["results"]}
 PAYW = {(c["row"], c["col"]): c["mean_wait_min"]["mean"] for c in PAYOFF["cells"]}
@@ -202,16 +204,16 @@ ROWS = [
     ("plate_lo", "Stage 1: collect a plate after the scan (low)", 15, "seconds", "Assumed", "Group: scanning + plate takes up to ~45 s. Time it", "—", "S15, simulator", "0"),
     ("plate_hi", "Stage 1: collect a plate after the scan (high)", 35, "seconds", "Assumed", "As above", "—", "S15, simulator", "0"),
     ("mu", "Stage 2: service rate per serving station", 10, "students/min", "Assumed",
-     "≈6 s per student. Must be about this fast for 2 stations to serve ~2,500 Central students in 3 hours. Stopwatch 20–30 students", "—", "S15, LP, Decision Rule, simulator", "0.0"),
+     "≈6 s per student. Must be about this fast for 2 stations to serve ~2,360 Central students, mostly within two hours. Stopwatch 20–30 students", "—", "S15, LP, Decision Rule, simulator", "0.0"),
     ("line_lo", "Stage 2: walk the rest of the food line after the station (low)", 40, "seconds", "Assumed", "Time a few students from station to table", "—", "S15, simulator", "0"),
     ("line_hi", "Stage 2: walk the rest of the food line (high)", 80, "seconds", "Assumed", "As above", "—", "S15, simulator", "0"),
     ("eat_lo", "Stage 3: eating at a table (low)", 12, "minutes", "Group estimate", "Group: 12–15 min", OCT, "S15, simulator", "0"),
     ("eat_hi", "Stage 3: eating at a table (high)", 15, "minutes", "Group estimate", "As above", OCT, "S15, simulator", "0"),
     ("disp_lo", "Stage 4: dispose of leftovers and the plate (low)", 1, "minutes", "Group estimate", "Group: 2 min at most", OCT, "S15, simulator", "0.0"),
     ("disp_hi", "Stage 4: dispose of leftovers and the plate (high)", 2, "minutes", "Group estimate", "As above", OCT, "S15, simulator", "0.0"),
-    ("sec", "BEHAVIOUR AND DEMAND (assumed until the biometric logs arrive)"),
-    ("habit", "Share who go to Central CT by habit", 0.85, "share", "Assumed",
-     "Group's estimate. A day of biometric logs without screens measures it (Data Collection tab)", "—", "S15, LP, scenarios", "0%"),
+    ("sec", "BEHAVIOUR AND DEMAND"),
+    ("habit", "Share who go to Central CT by habit (no screens)", round(HABIT_A, 3), "share", "Measured",
+     "Group: ~2,360 eat at Central and ~600 at Munch of ~2,960. A day of biometric logs confirms it (Data Collection tab)", OCT, "S15, LP, scenarios", "0.0%"),
     ("comply", "Share of students who follow the screen", 0.6, "share", "Assumed", "The pilot measures it; stress-tested at 30% and 100%", "—", "S15, LP, scenarios", "0%"),
     ("walk", "Walk between the two mess doors", 0.5, "minutes", "Assumed", "30 s; walk it with a stopwatch", "—", "LP, Decision Rule, simulator", "0.0"),
     ("lag_m", "Minutes from the start of a department's lunch break to the mess door: mean", LUNCH.lag_mean_min, "minutes", "Calibrated",
@@ -318,8 +320,8 @@ table(ws, 9, 1, ["Dimension", "Classification", "Why"], [
 put(ws, "A16", "Session 3: 5 Whys, backtracked. Phase 1 stopped at a symptom; Phase 2 follows the chain to the root cause", bold=True)
 table(ws, 17, 1, ["Why?", "Phase 1 answer (symptom)", "Phase 2 answer (after backtracking)", "Evidence", "Status"], [
     ["1. Why do students wait ~15 min?", "Food runs out at peak", "Central's serving stations are overloaded at peak", "Line was at the stations; trays and seats free (field visit)", "Observed"],
-    ["2. Why are they overloaded?", "—", "~29 arrive/min against 20/min capacity, while Munch gets ~5", "S15 Queuing, Scenarios (simulated)", "Simulated; logs will confirm"],
-    ["3. Why so uneven?", "—", "About 85% go to Central by habit", "Inputs: habit share", "Assumed"],
+    ["2. Why are they overloaded?", "—", "~30 arrive/min against 20/min capacity at the 13:10 overlap, while Munch gets ~8", "S15 Queuing, Scenarios (simulated)", "Simulated; logs will confirm"],
+    ["3. Why so uneven?", "—", "About 80% go to Central by habit (~2,360 of ~2,960)", "Inputs: habit share", "Measured (group)"],
     ["4. Why habit?", "—", "At the moment of choosing, nobody can see how busy either mess is", "S4 Biases", "Hypothesis (survey)"],
     ["5. Why not?", "—", "Every entry is already scanned, but the data is never used live", "Biometric system exists (COSEC)", "Observed"],
 ], wrap_cols=(0, 1, 2, 3))
@@ -757,7 +759,7 @@ for k_, (key, lab, f, fmt) in enumerate(res_rows):
 ws.column_dimensions["A"].width = 52
 # sensitivity on Munch's food
 SENS = []
-for fb in (600, 700, 800, 1000, 1200):
+for fb in (650, 700, 800, 900, 1000, 1200):  # Munch needs ~600 for its habit share alone
     y_, *_r, obj_, dual_ = solve_flow(D_BINS, DEF["habit"], DEF["comply"], CAP_A, CAP_B, DEF["walk"], fb)
     SENS.append([fb, round(obj_), round(obj_ / sum(D_BINS), 2), round(float(sum(y_))), round(float(dual_), 1)])
 S1 = R0 + len(res_rows) + 3
@@ -1160,10 +1162,10 @@ for i, g in enumerate(groups_):
 STR_LAST = STR_FIRST + len(groups_) - 1
 put(ws, f"A{STR_LAST+1}", "Smallest reduction across all stress tests", bold=True)
 put(ws, f"H{STR_LAST+1}", f"=MIN(H{STR_FIRST}:H{STR_LAST})", kind="formula", fmt="0%", fill=F_OUT)
-note(ws, f"A{STR_LAST+3}", "Reading it: the proposal cuts the average wait in every stress test. It beats 'queue information only' in most of them; on a sharp demand surge "
-     "the two are statistically tied, because Munch then fills up whichever signal is used. With fewer stock-outs the food signal matters less (2 and 3 converge); "
-     "with more stock-outs it matters more. One limitation: everything here rests on the assumed 85/15 habit split and 10 students/min per station until the "
-     "biometric logs and a stopwatch replace them (Data Collection).", f"M{STR_LAST+3}", 58)
+note(ws, f"A{STR_LAST+3}", "Reading it: the proposal cuts the average wait in every stress test and beats or ties 'queue information only' in every one. With no stock-outs the "
+     "food signal adds nothing (2 and 3 converge); with more stock-outs it matters most. The timetable matters as much as any operational input: "
+     "the stagger rows show what moving one department's lunch by 15 minutes does with no screens at all. One limitation: everything here rests on the assumed 10 students/min per station, the rough department sizes and the "
+     "calibrated arrival lag until the biometric logs and a stopwatch replace them (Data Collection).", f"M{STR_LAST+3}", 58)
 
 # =============================================================================
 # Reconciliation: spreadsheet vs simulator
@@ -1391,7 +1393,7 @@ put(ws, "A14", "Status tags", bold=True)
 table(ws, 15, 1, ["Tag", "Meaning", "Example"], [
     ["Measured", "From field work, CT or the group", "2,960 students; seats 900 / 500; 2 stations + 1 scanner per mess"],
     ["Group estimate", "The group's figure, not yet timed", "Eating 12–15 min; disposal ≤ 2 min; food ready 70% of the time"],
-    ["Assumed", "A placeholder until measured", "85% go to Central; 10 students/min per station; MIT lab share"],
+    ["Assumed", "A placeholder until measured", "10 students/min per station; MIT lab share; DLHS/MILHS size"],
     ["Calibrated", "Not measured: chosen so the model reproduces what was observed", "Lag from the start of a lunch break to the mess door"],
     ["Simulated", "Output of the simulator, 20 lunches per row", f"Average wait {W1:.1f} → {W3:.1f} min on a busy day"],
     ["Policy", "Our design choice", "Minimum saving 2 min before suggesting a switch"],
