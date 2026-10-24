@@ -341,7 +341,7 @@ class Demo:
                         "occupancy": h.occupancy,
                         "seats": h.seats,
                         "space": h.space,
-                        "seats_free_per_min": round(h.seats / self.cfg.engine.stay_mean_min),
+                        "seats_free_per_min": round(h.seats / self.cfg.engine.eat_mean_min),
                         "load": round(h.load, 3),
                         "rate": round(h.arrival_rate, 1),
                         "food": h.food.value,
@@ -423,9 +423,9 @@ WAIT_WINDOW_S = 300  # the wait chart averages over students who got food in the
 
 
 def _recent_wait(w: Simulation) -> float:
-    """Average wait (door to food) of students who got food in the last 5 minutes."""
+    """Average queue wait (scanner + serving station + seat) of students who got food in the last 5 minutes."""
     lo = w.t - WAIT_WINDOW_S
-    waits = [(s.seated_at - s.arrived_at) / 60 for s in reversed(w.students)
+    waits = [s.queue_wait_min for s in reversed(w.students)
              if s.seated_at is not None and lo < s.seated_at <= w.t]
     return round(mean(waits), 1) if waits else 0.0
 
@@ -452,7 +452,7 @@ def _counts(students, t: float) -> dict:
 
 
 def _world(w: Simulation, history: list) -> dict:
-    waits = [(s.seated_at - s.arrived_at) / 60 for s in w.students if s.seated_at is not None]
+    waits = [s.queue_wait_min for s in w.students if s.seated_at is not None]
     return {
         "expected": w.slot.expected_students,
         **_counts(w.students, w.t),

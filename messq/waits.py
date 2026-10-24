@@ -25,8 +25,22 @@ class HallState:
     backlog: float  # estimated people waiting to be served
     occupancy: float  # estimated people inside (entries in last N min)
     food: FoodState
-    food_out_for_min: float = 0.0  # minutes since a star dish was marked "out"
-    food_penalty_min: float = 0.0  # weighted delay for other trays low/out (engine.food_penalty_min)
+    food_out_for_min: float = 0.0  # star dish out: minutes since the kitchen was called for it
+    food_penalty_min: float = 0.0  # fixed extra delay (minutes); tests and simple callers
+    # Trays running low or out (not a star dish that is out): (weight, minutes of food left,
+    # expected minutes until the refill). See tray_delay().
+    trays_short: tuple[tuple[float, float, float], ...] = ()
+    food_remaining_min: float | None = None  # star dish out: expected minutes until the refill (engine)
+
+
+def tray_delay(trays_short, at_counter_min: float) -> float:
+    """Expected extra minutes for a student who reaches the serving counter in
+    `at_counter_min`, from trays that are running low or out. A tray with F minutes
+    of food left and its refill expected in R minutes is empty between F and R: a
+    student arriving in that gap waits R - t for it; before F or after R, nothing.
+    Each tray counts by its priority-matrix weight."""
+    t = max(0.0, at_counter_min)
+    return sum(w * (r - t) for w, f, r in trays_short if f <= t < r)
 
 
 @dataclass(frozen=True)
@@ -61,7 +75,9 @@ def predict_wait(
 
     food_delay = 0.0
     if state.food is FoodState.OUT:
-        remaining = max(1.0, mess.expected_refill_min - state.food_out_for_min)
+        remaining = (state.food_remaining_min if state.food_remaining_min is not None
+                     else mess.refill_remaining_min(state.food_out_for_min))
+        remaining = max(1.0, remaining)
         # Nobody is served until the refill: the queue keeps growing meanwhile.
         backlog = state.backlog + lam * remaining
         food_delay = max(0.0, remaining - walk)
@@ -71,9 +87,11 @@ def predict_wait(
 
     growth = max(0.0, lam - cap) * horizon / 2  # average extra queue over the horizon
     queue = (backlog + growth) / cap + mmc_wait(min(lam, RHO_CAP * cap), mu, mess.counters)
+    if state.food is not FoodState.OUT:
+        food_delay += tray_delay(state.trays_short, walk + queue)
 
     seated = max(0.0, state.occupancy - state.backlog)
-    turnover = mess.seats / eng.stay_mean_min  # seats freed per minute when full
+    turnover = mess.seats / eng.eat_mean_min  # seats freed per minute when full (a seat is held while eating)
     projected = seated + (min(lam, cap) - seated / eng.stay_mean_min) * horizon / 2
     seat = max(0.0, projected - mess.seats) / turnover
 

@@ -17,7 +17,7 @@ from . import routing
 from .config import AppConfig, MessConfig
 from .estimator import Deduplicator, MessEstimator
 from .events import FoodSignal, FoodState, ScanEvent
-from .waits import HallState, WaitBreakdown, predict_wait
+from .waits import HallState, WaitBreakdown, predict_wait, tray_delay
 
 FRESH_BATCH_MIN = 10  # after a "refilled" tap, screens may say "fresh batch just out" for this long
 _SEVERITY = {FoodState.OK: 0, FoodState.LOW: 1, FoodState.OUT: 2}
@@ -106,6 +106,9 @@ class Engine:
         self._est = {m.id: MessEstimator(e.stay_mean_min * 60, e.rate_window_min * 60) for m in cfg.messes}
         self._trays = {(m.id, item): (FoodState.OK, -1e9) for m in cfg.messes for item in m.items}
         self._fresh_since = {m.id: -1e9 for m in cfg.messes}
+        # When the kitchen was called for each tray: the "running low" tap (or "out" if
+        # nobody tapped low). The refill clock runs from the call, not from "out".
+        self._called: dict[tuple[str, str], float] = {}
         self.food_log: deque[FoodSignal] = deque(maxlen=500)
         self._dedupe = Deduplicator()
         self._shares: dict[str, float] | None = None
@@ -139,7 +142,13 @@ class Engine:
         was_short = any(self.tray_state(m.id, i, sig.ts)[0] is not FoodState.OK for i in items)
         for item in items:
             if (m.id, item) in self._trays:
+                prev, _ = self.tray_state(m.id, item, sig.ts)
                 self._trays[(m.id, item)] = (sig.state, sig.ts)
+                if sig.state is FoodState.OK:
+                    self._called.pop((m.id, item), None)
+                elif (m.id, item) not in self._called or self._call_expired(m, item, sig.ts):
+                    # A new call. (A "running low" that merely expired keeps its call time.)
+                    self._called[(m.id, item)] = sig.ts
         if sig.state is FoodState.OK and was_short:
             self._fresh_since[m.id] = sig.ts
         self.food_log.append(sig)
@@ -152,11 +161,29 @@ class Engine:
         state, since = self._trays[(mess_id, item)]
         age_min = (now - since) / 60.0
         e = self.cfg.engine
-        if state is FoodState.OUT and age_min > self.cfg.mess(mess_id).food_refill_time_min + e.food_out_grace_min:
+        called_min = (now - self._called.get((mess_id, item), since)) / 60.0
+        if state is FoodState.OUT and called_min > self.cfg.mess(mess_id).food_refill_time_min + e.food_out_grace_min:
             return FoodState.OK, since
         if state is FoodState.LOW and age_min > e.food_low_expiry_min:
             return FoodState.OK, since
         return state, since
+
+    def _call_expired(self, m: MessConfig, item: str, now: float) -> bool:
+        called = self._called.get((m.id, item))
+        return called is None or (now - called) / 60.0 > m.food_refill_time_min + self.cfg.engine.food_out_grace_min
+
+    def refill_remaining_min(self, mess_id: str, item: str, now: float) -> float:
+        """Expected minutes until the refill arrives, counted from the kitchen call and
+        given that no refill has been reported yet (see MessConfig.refill_remaining_min)."""
+        called = self._called.get((mess_id, item))
+        elapsed = 0.0 if called is None else (now - called) / 60.0
+        return self.cfg.mess(mess_id).refill_remaining_min(elapsed)
+
+    def outage_remaining_min(self, mess_id: str, now: float) -> float:
+        """A star dish is out: expected minutes until it is back (0 if none is out)."""
+        return max((self.refill_remaining_min(mess_id, item, now) for item in self.cfg.mess(mess_id).items
+                    if self.cfg.tray(item).star and self.tray_state(mess_id, item, now)[0] is FoodState.OUT),
+                   default=0.0)
 
     def food_state(self, mess_id: str, now: float) -> tuple[FoodState, float]:
         """Whole-hall state. OUT only when a star dish is out (students are then sent
@@ -167,25 +194,33 @@ class Engine:
             st, ts = self.tray_state(mess_id, item, now)
             if st is FoodState.OUT and not self.cfg.tray(item).star:
                 st = FoodState.LOW
+            if st is FoodState.OUT:
+                ts = self._called.get((mess_id, item), ts)  # the refill clock started at the call
             if _SEVERITY[st] > _SEVERITY[worst]:
                 worst, since = st, ts
         return worst, since
 
-    def food_penalty_min(self, mess_id: str, now: float) -> float:
-        """Extra minutes added to a mess's predicted wait for trays that are low or out,
-        weighted by the priority matrix. A star dish that is OUT is not counted here:
-        it closes the mess for routing instead (food_state -> OUT)."""
-        m, e = self.cfg.mess(mess_id), self.cfg.engine
-        refill = m.expected_refill_min
-        total = 0.0
-        for item in m.items:
-            st, _ = self.tray_state(mess_id, item, now)
+    def trays_short(self, mess_id: str, now: float) -> tuple[tuple[float, float, float], ...]:
+        """(weight, minutes of food left, expected minutes until the refill) for every tray
+        running low, or out (except a star dish that is out: that is an outage)."""
+        e = self.cfg.engine
+        out = []
+        for item in self.cfg.mess(mess_id).items:
+            st, since = self.tray_state(mess_id, item, now)
             tray = self.cfg.tray(item)
-            if st is FoodState.OUT and not tray.star:
-                total += tray.weight * refill
-            elif st is FoodState.LOW:
-                total += tray.weight * e.food_low_share * refill
-        return total
+            if st is FoodState.OK or (st is FoodState.OUT and tray.star) or tray.weight <= 0:
+                continue
+            left = 0.0 if st is FoodState.OUT else max(0.0, e.low_food_left_min - (now - since) / 60.0)
+            out.append((tray.weight, left, self.refill_remaining_min(mess_id, item, now)))
+        return tuple(out)
+
+    def food_penalty_min(self, mess_id: str, now: float, at_counter_min: float = 0.0) -> float:
+        """Extra minutes added to a mess's predicted wait for trays that are low or out,
+        weighted by the priority matrix, for a student reaching the counter in
+        `at_counter_min` (waits.tray_delay): a tray costs time only if that student
+        arrives after it empties and before its refill. Refill times run from the
+        kitchen call and are updated as time passes. A star dish that is OUT is handled as an outage instead (food_state -> OUT)."""
+        return tray_delay(self.trays_short(mess_id, now), at_counter_min)
 
     def trays(self, mess_id: str, now: float) -> list[tuple[str, FoodState, float]]:
         return [(item, *self.tray_state(mess_id, item, now)) for item in self.cfg.mess(mess_id).items]
@@ -194,7 +229,9 @@ class Engine:
     def update(self, now: float) -> None:
         self.now = now
         for m in self.cfg.messes:
-            cap = 0.0 if self.food_state(m.id, now)[0] is FoodState.OUT else m.capacity_per_min
+            # No serving while a star dish is out, but only until its refill is due: a
+            # forgotten "refilled" tap must not freeze the queue estimate.
+            cap = 0.0 if self.outage_remaining_min(m.id, now) > 0 else m.capacity_per_min
             self._est[m.id].advance(now, cap)
         due = self._last_route_ts is None or now - self._last_route_ts >= self.cfg.engine.routing_update_s
         if due:
@@ -209,7 +246,8 @@ class Engine:
             occupancy=est.occupancy(now),
             food=food,
             food_out_for_min=(now - since) / 60.0 if food is FoodState.OUT else 0.0,
-            food_penalty_min=self.food_penalty_min(m.id, now),
+            food_remaining_min=self.outage_remaining_min(m.id, now),
+            trays_short=self.trays_short(m.id, now),
         )
 
     def _route(self, now: float) -> None:
@@ -279,7 +317,7 @@ class Engine:
                     wait=wb,
                     status=status,
                     share=shares[m.id],
-                    visit_min=wb.wait + wb.service + e.stay_mean_min,
+                    visit_min=e.entry_min + wb.wait + wb.service + e.stay_mean_min,
                     scanner_load=rate / m.scan_capacity_per_min,
                 )
             )

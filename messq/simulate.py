@@ -24,6 +24,7 @@ from .simulation import SimResult, simulate
 METRICS = [
     ("mean_wait_min", "avg wait", "{:.1f}"),
     ("p90_wait_min", "p90 wait", "{:.1f}"),
+    ("mean_throughput_min", "throughput", "{:.1f}"),
     ("peak_queue", "peak queue", "{:.0f}"),
     ("outages", "run-outs", "{:.1f}"),
     ("outage_minutes", "run-out min", "{:.1f}"),
@@ -121,16 +122,18 @@ def main(argv: list[str] | None = None) -> None:
         path = Path(args.csv)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", newline="") as f:
-            fields = [k for k in asdict(rows[0]) if k not in ("snapshots", "hall_counts")]
-            fields += [f"students_{m.id}" for m in cfg.messes]
+            fields = [k for k in asdict(rows[0]) if k not in ("snapshots", "hall_counts", "util", "peak_load", "students_list")]
+            fields += [f"{p}_{m.id}" for p in ("students", "util", "peak_load") for m in cfg.messes]
             w = csv.DictWriter(f, fieldnames=fields)
             w.writeheader()
             for r in rows:
                 d = {k: v for k, v in asdict(r).items() if k in fields}
                 d.update({f"students_{k}": v for k, v in r.hall_counts.items()})
+                d.update({f"util_{k}": round(v, 3) for k, v in r.util.items()})
+                d.update({f"peak_load_{k}": round(v, 3) for k, v in r.peak_load.items()})
                 w.writerow(d)
         print(f"\nPer-run results written to {path}")
-    print("\nWaits are minutes from scanning in at the hall to sitting down with food (±95% CI).")
+    print("\nWait = minutes queueing (scanner + serving station + seat); throughput = door to leaving (±95% CI).")
     print("All inputs are simulated; numbers marked ASSUMED in the config drive these results.")
 
 

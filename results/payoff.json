@@ -1,0 +1,1232 @@
+{
+ "runs": 20,
+ "alternatives": [
+  "A1 No system (today)",
+  "A2 Door screens, queue information only",
+  "A3 Door screens + food status (proposal)",
+  "A4 3rd serving station at Central (no screens)",
+  "A5 Proposal + 3rd serving station"
+ ],
+ "states": [
+  "S1 Normal day (-20% students)",
+  "S2 Busy day (2,960 students)",
+  "S3 Surge + late refills (+20%, batch never ready)"
+ ],
+ "cells": [
+  {
+   "row": "A1 No system (today)",
+   "col": "S1 Normal day (-20% students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 1.78,
+    "ci95": 0.435
+   },
+   "p90_wait_min": {
+    "mean": 5.052,
+    "ci95": 1.099
+   },
+   "mean_throughput_min": {
+    "mean": 18.333,
+    "ci95": 0.437
+   },
+   "p90_throughput_min": {
+    "mean": 21.773,
+    "ci95": 1.078
+   },
+   "mean_total_min": {
+    "mean": 18.333,
+    "ci95": 0.437
+   },
+   "quiet_throughput_min": {
+    "mean": 16.56,
+    "ci95": 0.047
+   },
+   "peak_throughput_min": {
+    "mean": 19.293,
+    "ci95": 0.59
+   },
+   "outages": {
+    "mean": 0.45,
+    "ci95": 0.301
+   },
+   "outage_minutes": {
+    "mean": 1.633,
+    "ci95": 1.14
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 116.9,
+    "ci95": 22.467
+   },
+   "peak_scan_queue": {
+    "mean": 9.75,
+    "ci95": 0.723
+   },
+   "util_A": {
+    "mean": 0.557,
+    "ci95": 0.005
+   },
+   "util_B": {
+    "mean": 0.098,
+    "ci95": 0.002
+   },
+   "peak_load_A": {
+    "mean": 1.12,
+    "ci95": 0.018
+   },
+   "peak_load_B": {
+    "mean": 0.203,
+    "ci95": 0.005
+   },
+   "students": {
+    "mean": 2353.85,
+    "ci95": 19.28
+   }
+  },
+  {
+   "row": "A1 No system (today)",
+   "col": "S2 Busy day (2,960 students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 8.016,
+    "ci95": 0.633
+   },
+   "p90_wait_min": {
+    "mean": 20.045,
+    "ci95": 1.533
+   },
+   "mean_throughput_min": {
+    "mean": 24.568,
+    "ci95": 0.634
+   },
+   "p90_throughput_min": {
+    "mean": 36.436,
+    "ci95": 1.511
+   },
+   "mean_total_min": {
+    "mean": 24.568,
+    "ci95": 0.634
+   },
+   "quiet_throughput_min": {
+    "mean": 16.566,
+    "ci95": 0.038
+   },
+   "peak_throughput_min": {
+    "mean": 25.64,
+    "ci95": 0.874
+   },
+   "outages": {
+    "mean": 0.6,
+    "ci95": 0.298
+   },
+   "outage_minutes": {
+    "mean": 2.767,
+    "ci95": 1.407
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 409.75,
+    "ci95": 23.888
+   },
+   "peak_scan_queue": {
+    "mean": 22.1,
+    "ci95": 3.506
+   },
+   "util_A": {
+    "mean": 0.701,
+    "ci95": 0.006
+   },
+   "util_B": {
+    "mean": 0.123,
+    "ci95": 0.004
+   },
+   "peak_load_A": {
+    "mean": 1.403,
+    "ci95": 0.019
+   },
+   "peak_load_B": {
+    "mean": 0.248,
+    "ci95": 0.008
+   },
+   "students": {
+    "mean": 2966.1,
+    "ci95": 19.131
+   }
+  },
+  {
+   "row": "A1 No system (today)",
+   "col": "S3 Surge + late refills (+20%, batch never ready)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 18.75,
+    "ci95": 0.503
+   },
+   "p90_wait_min": {
+    "mean": 42.954,
+    "ci95": 1.106
+   },
+   "mean_throughput_min": {
+    "mean": 35.295,
+    "ci95": 0.504
+   },
+   "p90_throughput_min": {
+    "mean": 59.449,
+    "ci95": 1.097
+   },
+   "mean_total_min": {
+    "mean": 35.295,
+    "ci95": 0.504
+   },
+   "quiet_throughput_min": {
+    "mean": 16.538,
+    "ci95": 0.041
+   },
+   "peak_throughput_min": {
+    "mean": 35.935,
+    "ci95": 0.539
+   },
+   "outages": {
+    "mean": 3,
+    "ci95": 0.0
+   },
+   "outage_minutes": {
+    "mean": 14.879,
+    "ci95": 0.358
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 860.1,
+    "ci95": 20.265
+   },
+   "peak_scan_queue": {
+    "mean": 129.35,
+    "ci95": 12.957
+   },
+   "util_A": {
+    "mean": 0.737,
+    "ci95": 0.003
+   },
+   "util_B": {
+    "mean": 0.147,
+    "ci95": 0.004
+   },
+   "peak_load_A": {
+    "mean": 1.509,
+    "ci95": 0.006
+   },
+   "peak_load_B": {
+    "mean": 0.297,
+    "ci95": 0.007
+   },
+   "students": {
+    "mean": 3529,
+    "ci95": 24.081
+   }
+  },
+  {
+   "row": "A2 Door screens, queue information only",
+   "col": "S1 Normal day (-20% students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.728,
+    "ci95": 0.212
+   },
+   "p90_wait_min": {
+    "mean": 2.256,
+    "ci95": 0.714
+   },
+   "mean_throughput_min": {
+    "mean": 17.284,
+    "ci95": 0.214
+   },
+   "p90_throughput_min": {
+    "mean": 19.267,
+    "ci95": 0.613
+   },
+   "mean_total_min": {
+    "mean": 17.297,
+    "ci95": 0.215
+   },
+   "quiet_throughput_min": {
+    "mean": 16.56,
+    "ci95": 0.047
+   },
+   "peak_throughput_min": {
+    "mean": 17.89,
+    "ci95": 0.351
+   },
+   "outages": {
+    "mean": 0.3,
+    "ci95": 0.25
+   },
+   "outage_minutes": {
+    "mean": 1.098,
+    "ci95": 0.861
+   },
+   "redirected": {
+    "mean": 64.8,
+    "ci95": 10.997
+   },
+   "unsuccessful_rate": {
+    "mean": 0.076,
+    "ci95": 0.074
+   },
+   "compliance_rate": {
+    "mean": 0.615,
+    "ci95": 0.02
+   },
+   "peak_queue": {
+    "mean": 55.95,
+    "ci95": 14.549
+   },
+   "peak_scan_queue": {
+    "mean": 9.15,
+    "ci95": 0.64
+   },
+   "util_A": {
+    "mean": 0.536,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.117,
+    "ci95": 0.003
+   },
+   "peak_load_A": {
+    "mean": 1.027,
+    "ci95": 0.005
+   },
+   "peak_load_B": {
+    "mean": 0.299,
+    "ci95": 0.016
+   },
+   "students": {
+    "mean": 2353.85,
+    "ci95": 19.28
+   }
+  },
+  {
+   "row": "A2 Door screens, queue information only",
+   "col": "S2 Busy day (2,960 students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 1.369,
+    "ci95": 0.364
+   },
+   "p90_wait_min": {
+    "mean": 3.494,
+    "ci95": 0.913
+   },
+   "mean_throughput_min": {
+    "mean": 17.925,
+    "ci95": 0.368
+   },
+   "p90_throughput_min": {
+    "mean": 20.545,
+    "ci95": 0.905
+   },
+   "mean_total_min": {
+    "mean": 17.981,
+    "ci95": 0.368
+   },
+   "quiet_throughput_min": {
+    "mean": 16.566,
+    "ci95": 0.038
+   },
+   "peak_throughput_min": {
+    "mean": 18.525,
+    "ci95": 0.484
+   },
+   "outages": {
+    "mean": 0.9,
+    "ci95": 0.374
+   },
+   "outage_minutes": {
+    "mean": 4.882,
+    "ci95": 2.025
+   },
+   "redirected": {
+    "mean": 333.75,
+    "ci95": 12.588
+   },
+   "unsuccessful_rate": {
+    "mean": 0.063,
+    "ci95": 0.046
+   },
+   "compliance_rate": {
+    "mean": 0.604,
+    "ci95": 0.009
+   },
+   "peak_queue": {
+    "mean": 92.95,
+    "ci95": 18.518
+   },
+   "peak_scan_queue": {
+    "mean": 12.25,
+    "ci95": 1.136
+   },
+   "util_A": {
+    "mean": 0.604,
+    "ci95": 0.006
+   },
+   "util_B": {
+    "mean": 0.217,
+    "ci95": 0.005
+   },
+   "peak_load_A": {
+    "mean": 1.046,
+    "ci95": 0.004
+   },
+   "peak_load_B": {
+    "mean": 0.634,
+    "ci95": 0.019
+   },
+   "students": {
+    "mean": 2966.1,
+    "ci95": 19.131
+   }
+  },
+  {
+   "row": "A2 Door screens, queue information only",
+   "col": "S3 Surge + late refills (+20%, batch never ready)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 5.702,
+    "ci95": 0.243
+   },
+   "p90_wait_min": {
+    "mean": 11.684,
+    "ci95": 0.466
+   },
+   "mean_throughput_min": {
+    "mean": 22.249,
+    "ci95": 0.244
+   },
+   "p90_throughput_min": {
+    "mean": 28.432,
+    "ci95": 0.479
+   },
+   "mean_total_min": {
+    "mean": 22.341,
+    "ci95": 0.245
+   },
+   "quiet_throughput_min": {
+    "mean": 16.538,
+    "ci95": 0.041
+   },
+   "peak_throughput_min": {
+    "mean": 23.757,
+    "ci95": 0.273
+   },
+   "outages": {
+    "mean": 4,
+    "ci95": 0.0
+   },
+   "outage_minutes": {
+    "mean": 36.407,
+    "ci95": 0.635
+   },
+   "redirected": {
+    "mean": 652.6,
+    "ci95": 19.781
+   },
+   "unsuccessful_rate": {
+    "mean": 0.584,
+    "ci95": 0.04
+   },
+   "compliance_rate": {
+    "mean": 0.606,
+    "ci95": 0.007
+   },
+   "peak_queue": {
+    "mean": 238.95,
+    "ci95": 9.768
+   },
+   "peak_scan_queue": {
+    "mean": 16.1,
+    "ci95": 1.101
+   },
+   "util_A": {
+    "mean": 0.653,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.327,
+    "ci95": 0.006
+   },
+   "peak_load_A": {
+    "mean": 1.071,
+    "ci95": 0.007
+   },
+   "peak_load_B": {
+    "mean": 0.918,
+    "ci95": 0.018
+   },
+   "students": {
+    "mean": 3529,
+    "ci95": 24.081
+   }
+  },
+  {
+   "row": "A3 Door screens + food status (proposal)",
+   "col": "S1 Normal day (-20% students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.547,
+    "ci95": 0.097
+   },
+   "p90_wait_min": {
+    "mean": 1.626,
+    "ci95": 0.282
+   },
+   "mean_throughput_min": {
+    "mean": 17.097,
+    "ci95": 0.094
+   },
+   "p90_throughput_min": {
+    "mean": 18.68,
+    "ci95": 0.203
+   },
+   "mean_total_min": {
+    "mean": 17.115,
+    "ci95": 0.094
+   },
+   "quiet_throughput_min": {
+    "mean": 16.56,
+    "ci95": 0.047
+   },
+   "peak_throughput_min": {
+    "mean": 17.618,
+    "ci95": 0.148
+   },
+   "outages": {
+    "mean": 0.25,
+    "ci95": 0.195
+   },
+   "outage_minutes": {
+    "mean": 1.018,
+    "ci95": 0.821
+   },
+   "redirected": {
+    "mean": 84.8,
+    "ci95": 21.786
+   },
+   "unsuccessful_rate": {
+    "mean": 0.043,
+    "ci95": 0.04
+   },
+   "compliance_rate": {
+    "mean": 0.611,
+    "ci95": 0.018
+   },
+   "peak_queue": {
+    "mean": 50.05,
+    "ci95": 5.978
+   },
+   "peak_scan_queue": {
+    "mean": 9.15,
+    "ci95": 0.656
+   },
+   "util_A": {
+    "mean": 0.533,
+    "ci95": 0.007
+   },
+   "util_B": {
+    "mean": 0.122,
+    "ci95": 0.006
+   },
+   "peak_load_A": {
+    "mean": 1.006,
+    "ci95": 0.017
+   },
+   "peak_load_B": {
+    "mean": 0.331,
+    "ci95": 0.033
+   },
+   "students": {
+    "mean": 2353.85,
+    "ci95": 19.28
+   }
+  },
+  {
+   "row": "A3 Door screens + food status (proposal)",
+   "col": "S2 Busy day (2,960 students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.808,
+    "ci95": 0.107
+   },
+   "p90_wait_min": {
+    "mean": 2.171,
+    "ci95": 0.263
+   },
+   "mean_throughput_min": {
+    "mean": 17.363,
+    "ci95": 0.108
+   },
+   "p90_throughput_min": {
+    "mean": 19.195,
+    "ci95": 0.239
+   },
+   "mean_total_min": {
+    "mean": 17.427,
+    "ci95": 0.108
+   },
+   "quiet_throughput_min": {
+    "mean": 16.566,
+    "ci95": 0.038
+   },
+   "peak_throughput_min": {
+    "mean": 17.931,
+    "ci95": 0.177
+   },
+   "outages": {
+    "mean": 0.7,
+    "ci95": 0.25
+   },
+   "outage_minutes": {
+    "mean": 3.903,
+    "ci95": 1.471
+   },
+   "redirected": {
+    "mean": 379.95,
+    "ci95": 24.646
+   },
+   "unsuccessful_rate": {
+    "mean": 0.081,
+    "ci95": 0.057
+   },
+   "compliance_rate": {
+    "mean": 0.605,
+    "ci95": 0.01
+   },
+   "peak_queue": {
+    "mean": 69.75,
+    "ci95": 9.638
+   },
+   "peak_scan_queue": {
+    "mean": 13.2,
+    "ci95": 1.698
+   },
+   "util_A": {
+    "mean": 0.593,
+    "ci95": 0.009
+   },
+   "util_B": {
+    "mean": 0.227,
+    "ci95": 0.009
+   },
+   "peak_load_A": {
+    "mean": 1.03,
+    "ci95": 0.017
+   },
+   "peak_load_B": {
+    "mean": 0.674,
+    "ci95": 0.031
+   },
+   "students": {
+    "mean": 2966.1,
+    "ci95": 19.131
+   }
+  },
+  {
+   "row": "A3 Door screens + food status (proposal)",
+   "col": "S3 Surge + late refills (+20%, batch never ready)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 5.644,
+    "ci95": 0.299
+   },
+   "p90_wait_min": {
+    "mean": 13.316,
+    "ci95": 0.814
+   },
+   "mean_throughput_min": {
+    "mean": 22.19,
+    "ci95": 0.299
+   },
+   "p90_throughput_min": {
+    "mean": 30.007,
+    "ci95": 0.814
+   },
+   "mean_total_min": {
+    "mean": 22.295,
+    "ci95": 0.299
+   },
+   "quiet_throughput_min": {
+    "mean": 16.538,
+    "ci95": 0.041
+   },
+   "peak_throughput_min": {
+    "mean": 23.906,
+    "ci95": 0.269
+   },
+   "outages": {
+    "mean": 4,
+    "ci95": 0.0
+   },
+   "outage_minutes": {
+    "mean": 37.256,
+    "ci95": 0.704
+   },
+   "redirected": {
+    "mean": 741.8,
+    "ci95": 24.606
+   },
+   "unsuccessful_rate": {
+    "mean": 0.197,
+    "ci95": 0.073
+   },
+   "compliance_rate": {
+    "mean": 0.608,
+    "ci95": 0.006
+   },
+   "peak_queue": {
+    "mean": 272.3,
+    "ci95": 15.192
+   },
+   "peak_scan_queue": {
+    "mean": 65.2,
+    "ci95": 12.492
+   },
+   "util_A": {
+    "mean": 0.646,
+    "ci95": 0.011
+   },
+   "util_B": {
+    "mean": 0.332,
+    "ci95": 0.009
+   },
+   "peak_load_A": {
+    "mean": 1.18,
+    "ci95": 0.033
+   },
+   "peak_load_B": {
+    "mean": 0.883,
+    "ci95": 0.029
+   },
+   "students": {
+    "mean": 3529,
+    "ci95": 24.081
+   }
+  },
+  {
+   "row": "A4 3rd serving station at Central (no screens)",
+   "col": "S1 Normal day (-20% students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.126,
+    "ci95": 0.094
+   },
+   "p90_wait_min": {
+    "mean": 0.534,
+    "ci95": 0.454
+   },
+   "mean_throughput_min": {
+    "mean": 16.679,
+    "ci95": 0.097
+   },
+   "p90_throughput_min": {
+    "mean": 18.092,
+    "ci95": 0.296
+   },
+   "mean_total_min": {
+    "mean": 16.679,
+    "ci95": 0.097
+   },
+   "quiet_throughput_min": {
+    "mean": 16.557,
+    "ci95": 0.047
+   },
+   "peak_throughput_min": {
+    "mean": 16.869,
+    "ci95": 0.266
+   },
+   "outages": {
+    "mean": 0.2,
+    "ci95": 0.18
+   },
+   "outage_minutes": {
+    "mean": 0.77,
+    "ci95": 0.799
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 24.3,
+    "ci95": 18.152
+   },
+   "peak_scan_queue": {
+    "mean": 9.55,
+    "ci95": 0.759
+   },
+   "util_A": {
+    "mean": 0.37,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.098,
+    "ci95": 0.002
+   },
+   "peak_load_A": {
+    "mean": 0.746,
+    "ci95": 0.012
+   },
+   "peak_load_B": {
+    "mean": 0.203,
+    "ci95": 0.005
+   },
+   "students": {
+    "mean": 2353.85,
+    "ci95": 19.28
+   }
+  },
+  {
+   "row": "A4 3rd serving station at Central (no screens)",
+   "col": "S2 Busy day (2,960 students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 2.008,
+    "ci95": 0.769
+   },
+   "p90_wait_min": {
+    "mean": 6.749,
+    "ci95": 2.335
+   },
+   "mean_throughput_min": {
+    "mean": 18.565,
+    "ci95": 0.77
+   },
+   "p90_throughput_min": {
+    "mean": 23.562,
+    "ci95": 2.177
+   },
+   "mean_total_min": {
+    "mean": 18.565,
+    "ci95": 0.77
+   },
+   "quiet_throughput_min": {
+    "mean": 16.566,
+    "ci95": 0.041
+   },
+   "peak_throughput_min": {
+    "mean": 19.322,
+    "ci95": 1.205
+   },
+   "outages": {
+    "mean": 0.85,
+    "ci95": 0.327
+   },
+   "outage_minutes": {
+    "mean": 8.576,
+    "ci95": 3.506
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 195.15,
+    "ci95": 63.746
+   },
+   "peak_scan_queue": {
+    "mean": 23.25,
+    "ci95": 3.735
+   },
+   "util_A": {
+    "mean": 0.468,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.123,
+    "ci95": 0.004
+   },
+   "peak_load_A": {
+    "mean": 0.935,
+    "ci95": 0.012
+   },
+   "peak_load_B": {
+    "mean": 0.248,
+    "ci95": 0.008
+   },
+   "students": {
+    "mean": 2966.1,
+    "ci95": 19.131
+   }
+  },
+  {
+   "row": "A4 3rd serving station at Central (no screens)",
+   "col": "S3 Surge + late refills (+20%, batch never ready)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 11.572,
+    "ci95": 0.458
+   },
+   "p90_wait_min": {
+    "mean": 26.768,
+    "ci95": 0.642
+   },
+   "mean_throughput_min": {
+    "mean": 28.121,
+    "ci95": 0.459
+   },
+   "p90_throughput_min": {
+    "mean": 43.595,
+    "ci95": 0.704
+   },
+   "mean_total_min": {
+    "mean": 28.121,
+    "ci95": 0.459
+   },
+   "quiet_throughput_min": {
+    "mean": 16.534,
+    "ci95": 0.037
+   },
+   "peak_throughput_min": {
+    "mean": 28.772,
+    "ci95": 0.541
+   },
+   "outages": {
+    "mean": 3,
+    "ci95": 0.0
+   },
+   "outage_minutes": {
+    "mean": 36.128,
+    "ci95": 0.517
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 687.5,
+    "ci95": 14.875
+   },
+   "peak_scan_queue": {
+    "mean": 127.05,
+    "ci95": 14.694
+   },
+   "util_A": {
+    "mean": 0.536,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.147,
+    "ci95": 0.004
+   },
+   "peak_load_A": {
+    "mean": 1.006,
+    "ci95": 0.003
+   },
+   "peak_load_B": {
+    "mean": 0.297,
+    "ci95": 0.007
+   },
+   "students": {
+    "mean": 3529,
+    "ci95": 24.081
+   }
+  },
+  {
+   "row": "A5 Proposal + 3rd serving station",
+   "col": "S1 Normal day (-20% students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.062,
+    "ci95": 0.023
+   },
+   "p90_wait_min": {
+    "mean": 0.154,
+    "ci95": 0.026
+   },
+   "mean_throughput_min": {
+    "mean": 16.613,
+    "ci95": 0.024
+   },
+   "p90_throughput_min": {
+    "mean": 17.866,
+    "ci95": 0.027
+   },
+   "mean_total_min": {
+    "mean": 16.615,
+    "ci95": 0.026
+   },
+   "quiet_throughput_min": {
+    "mean": 16.557,
+    "ci95": 0.047
+   },
+   "peak_throughput_min": {
+    "mean": 16.686,
+    "ci95": 0.064
+   },
+   "outages": {
+    "mean": 0.2,
+    "ci95": 0.18
+   },
+   "outage_minutes": {
+    "mean": 0.77,
+    "ci95": 0.799
+   },
+   "redirected": {
+    "mean": 10,
+    "ci95": 11.034
+   },
+   "unsuccessful_rate": {
+    "mean": 0.021,
+    "ci95": 0.041
+   },
+   "compliance_rate": {
+    "mean": 0.632,
+    "ci95": 0.117
+   },
+   "peak_queue": {
+    "mean": 15.45,
+    "ci95": 8.331
+   },
+   "peak_scan_queue": {
+    "mean": 9.35,
+    "ci95": 0.743
+   },
+   "util_A": {
+    "mean": 0.368,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.101,
+    "ci95": 0.004
+   },
+   "peak_load_A": {
+    "mean": 0.735,
+    "ci95": 0.016
+   },
+   "peak_load_B": {
+    "mean": 0.22,
+    "ci95": 0.02
+   },
+   "students": {
+    "mean": 2353.85,
+    "ci95": 19.28
+   }
+  },
+  {
+   "row": "A5 Proposal + 3rd serving station",
+   "col": "S2 Busy day (2,960 students)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.706,
+    "ci95": 0.355
+   },
+   "p90_wait_min": {
+    "mean": 1.911,
+    "ci95": 0.931
+   },
+   "mean_throughput_min": {
+    "mean": 17.257,
+    "ci95": 0.356
+   },
+   "p90_throughput_min": {
+    "mean": 19.074,
+    "ci95": 0.835
+   },
+   "mean_total_min": {
+    "mean": 17.275,
+    "ci95": 0.358
+   },
+   "quiet_throughput_min": {
+    "mean": 16.566,
+    "ci95": 0.041
+   },
+   "peak_throughput_min": {
+    "mean": 17.911,
+    "ci95": 0.711
+   },
+   "outages": {
+    "mean": 0.75,
+    "ci95": 0.314
+   },
+   "outage_minutes": {
+    "mean": 7.16,
+    "ci95": 3.16
+   },
+   "redirected": {
+    "mean": 107,
+    "ci95": 46.361
+   },
+   "unsuccessful_rate": {
+    "mean": 0.083,
+    "ci95": 0.163
+   },
+   "compliance_rate": {
+    "mean": 0.599,
+    "ci95": 0.011
+   },
+   "peak_queue": {
+    "mean": 85.85,
+    "ci95": 29.185
+   },
+   "peak_scan_queue": {
+    "mean": 21.9,
+    "ci95": 3.412
+   },
+   "util_A": {
+    "mean": 0.449,
+    "ci95": 0.011
+   },
+   "util_B": {
+    "mean": 0.154,
+    "ci95": 0.014
+   },
+   "peak_load_A": {
+    "mean": 0.901,
+    "ci95": 0.023
+   },
+   "peak_load_B": {
+    "mean": 0.397,
+    "ci95": 0.063
+   },
+   "students": {
+    "mean": 2966.1,
+    "ci95": 19.131
+   }
+  },
+  {
+   "row": "A5 Proposal + 3rd serving station",
+   "col": "S3 Surge + late refills (+20%, batch never ready)",
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 3.722,
+    "ci95": 0.618
+   },
+   "p90_wait_min": {
+    "mean": 11.505,
+    "ci95": 2.327
+   },
+   "mean_throughput_min": {
+    "mean": 20.275,
+    "ci95": 0.618
+   },
+   "p90_throughput_min": {
+    "mean": 28.009,
+    "ci95": 2.233
+   },
+   "mean_total_min": {
+    "mean": 20.357,
+    "ci95": 0.613
+   },
+   "quiet_throughput_min": {
+    "mean": 16.534,
+    "ci95": 0.037
+   },
+   "peak_throughput_min": {
+    "mean": 21.636,
+    "ci95": 1.044
+   },
+   "outages": {
+    "mean": 3.8,
+    "ci95": 0.229
+   },
+   "outage_minutes": {
+    "mean": 46.726,
+    "ci95": 4.043
+   },
+   "redirected": {
+    "mean": 582,
+    "ci95": 50.698
+   },
+   "unsuccessful_rate": {
+    "mean": 0.076,
+    "ci95": 0.041
+   },
+   "compliance_rate": {
+    "mean": 0.603,
+    "ci95": 0.008
+   },
+   "peak_queue": {
+    "mean": 291.4,
+    "ci95": 43.5
+   },
+   "peak_scan_queue": {
+    "mean": 92.8,
+    "ci95": 17.072
+   },
+   "util_A": {
+    "mean": 0.461,
+    "ci95": 0.009
+   },
+   "util_B": {
+    "mean": 0.286,
+    "ci95": 0.011
+   },
+   "peak_load_A": {
+    "mean": 0.931,
+    "ci95": 0.019
+   },
+   "peak_load_B": {
+    "mean": 0.749,
+    "ci95": 0.022
+   },
+   "students": {
+    "mean": 3529,
+    "ci95": 24.081
+   }
+  }
+ ]
+}

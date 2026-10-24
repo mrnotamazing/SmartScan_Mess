@@ -9,15 +9,18 @@
 rate_window_min = 5           # window for the arrival-rate estimate (scans/min)
 horizon_min = 5               # how far ahead a recommendation is assumed to apply
 normal_visit_min = 18         # MEASURED (approx.): scan to leaving on a NORMAL day. Surges add queue time.
-stay_mean_min = 17            # derived (calibrated in the simulator): the ~18 min normal visit minus ~1 min of normal queueing and serving.
-                              # The queue part is estimated live, so a surge lengthens the visit automatically.
+stay_mean_min = 16            # derived: time inside AFTER getting food = food line (~1 min) + eating (12-15) + disposal (1-2).
+                              # Queue time is estimated live, so a surge lengthens the visit automatically.
+eat_mean_min = 13.5           # GROUP ESTIMATE: eating takes 12-15 min; a seat is held only while eating
+entry_min = 0.45              # derived: face scan (~2 s) + collecting a plate (15-35 s), with no queue
 routing_update_s = 30         # how often the recommended split is recomputed
 routing_smoothing = 0.5       # EMA weight on the newest split (1 = no smoothing)
 min_share = 0.05              # never send less than 5% to any open hall (keeps estimates alive)
 amber_wait_min = 5            # status thresholds on predicted wait (excluding walk)
 red_wait_min = 10
-food_low_share = 0.25         # ASSUMED: a tray marked "running low" counts as 1/4 of a run-out (the chance it
-                              #   empties before a student arriving now is served). Weighted by the tray (see [[tray]]).
+low_food_left_min = 20       # ASSUMED (protocol): the manager taps "running low" (= calls the kitchen) with about
+                              #   20 minutes of that food left. Its delay is the expected gap between the tray emptying
+                              #   and the refill arriving: 0 if the refill comes first. Weighted by the tray (see [[tray]]).
 food_out_grace_min = 5        # an "out" mark expires this long after the expected refill time
 food_low_expiry_min = 20      # a "low" mark expires after this long (in case the manager forgets "refilled")
 assumed_compliance = 1.0      # set < 1 to over-correct for students who ignore advice
@@ -84,8 +87,11 @@ items = ["Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sam
 step_s = 5                    # simulation tick = scanner poll interval
 compliance = 0.6              # ASSUMED: share of students who follow the advice
 staff_signal_prob = 0.9       # chance kitchen staff actually tap "tray low"/"out"/"refilled"
-stay_mean_min = 17            # true time spent eating (lognormal); plus queueing gives ~18 min on a normal day
-stay_sd_min = 5
+# The four stages of a visit (throughput time 17-25 min, longer in a surge). Uniform ranges:
+plate_pickup_s = [15, 35]     # 1. scan the face (scan_time_s per mess) then collect a plate: up to ~45 s with the scan queue
+food_line_s = [40, 80]        # 2. after the serving station, moving along the food line (the station itself is the bottleneck)
+eat_min = [12, 15]            # 3. GROUP ESTIMATE: eating at a table
+dispose_min = [1, 2]          # 4. GROUP ESTIMATE: disposing of leftovers and the plate, 2 min at most (seat already free)
 service_cv = 0.6              # variability of serving time (1.0 = exponential, as M/M/c assumes)
 
 [simulation.habit_share]      # ASSUMED (pure assumption, group's estimate): where students go by habit without advice
@@ -120,10 +126,12 @@ spread_min = 30
 # Tray weights, from the ABC/XYZ priority matrix (MDS_dataset.xlsx, "Menu & Ratings").
 # The mess manager marks a tray "running low", "out" or "refilled"; the weight decides how
 # much that changes the advice on the door screens:
-#   * a STAR DISH that runs OUT closes that mess for routing: students are sent to the other
-#     mess, whatever the dish is (matrix: "the one item everyone notices when it is gone");
-#   * any other tray that is OUT adds  weight x expected refill time  to that mess's wait;
-#   * any tray "running low" adds  weight x food_low_share x expected refill time.
+#   * a STAR DISH that runs OUT, whatever the dish, is an outage: that mess serves nobody until the
+#     refill (matrix: "the one item everyone notices when it is gone"), so students are sent to the
+#     other mess for as long as that is faster;
+#   * any other tray OUT adds  weight x expected minutes until its refill  to that mess's wait;
+#   * any tray "running low" adds  weight x expected gap between emptying and the refill (often 0).
+#   Refill times are counted from the kitchen call and updated as time passes without a refill.
 # Weights are the group's reading of the matrix (to confirm with the CT manager):
 #   class A (cost of running out High) above class C; within A, items students come for
 #   (star dish) above items made continuously (chapati), one-per-plate sweets and fresh sides;

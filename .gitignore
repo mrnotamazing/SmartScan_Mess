@@ -5,4 +5,8 @@ __pycache__/
 .env
 results/*
 !results/.gitkeep
+# the scenario results the workbook is built from (python -m messq.scenarios)
+!results/scenarios.json
+!results/payoff.json
+!results/reconcile.json
 live_sheets/

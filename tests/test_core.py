@@ -248,17 +248,24 @@ def test_advice_beats_no_advice_on_default_config(cfg):
 
 
 def test_tray_weights_from_priority_matrix(cfg):
-    """A star dish out closes the mess for routing; other trays only add a weighted delay."""
+    """A star dish out is an outage; other trays and "running low" add a weighted delay."""
     from messq.engine import Engine
     from messq.events import FoodSignal
 
-    refill = cfg.mess("A").expected_refill_min
+    m = cfg.mess("A")
     eng = Engine(cfg)
     eng.food_signal(FoodSignal(0, "A", FoodState.OUT, "Rice"))  # base food out
     assert eng.food_state("A", 10)[0] is FoodState.LOW
-    assert eng.food_penalty_min("A", 10) == pytest.approx(0.1 * refill)
-    eng.food_signal(FoodSignal(20, "A", FoodState.LOW, "Special rice"))  # star dish running low
-    assert eng.food_penalty_min("A", 30) == pytest.approx(0.1 * refill + 1.0 * cfg.engine.food_low_share * refill)
+    assert eng.food_penalty_min("A", 10) == pytest.approx(0.1 * m.refill_remaining_min(10 / 60))
+    eng.food_signal(FoodSignal(20, "A", FoodState.LOW, "Special rice"))  # star dish running low, just called
+    # served within a few minutes: long before the ~20 min of food runs out, so no extra delay
+    assert eng.food_penalty_min("A", 30, at_counter_min=3) == pytest.approx(0.1 * m.refill_remaining_min(30 / 60) - 0.1 * 3)
+    # 18 min later, no refill: the tray empties in ~2 min and the late refill is ~12 min away,
+    # so someone reaching the counter in 5 min waits for it (weighted by the star dish's 1.0)
+    late = 20 + 18 * 60
+    rem = m.refill_remaining_min(18)
+    rice = 0.1 * (m.refill_remaining_min(late / 60) - 5)  # rice is still out too
+    assert eng.food_penalty_min("A", late, at_counter_min=5) == pytest.approx(1.0 * (rem - 5) + rice, abs=0.05)
     eng.food_signal(FoodSignal(40, "A", FoodState.OUT, "Special rice"))  # any star dish out -> route away
     assert eng.food_state("A", 50)[0] is FoodState.OUT
     eng.update(60)
@@ -267,3 +274,15 @@ def test_tray_weights_from_priority_matrix(cfg):
     w = {name: t.weight for name, t in cfg.trays.items()}
     assert w["Gravy sabji"] == w["Special rice"] == 1.0 > w["Roti"] > w["Dessert"] >= w["Curd / raita"] > w["Dal"]
     assert {t.cls for t in cfg.trays.values() if t.star} == {"AZ"}
+
+
+def test_no_one_is_served_during_a_run_out(cfg):
+    """After a run-out, the queue restarts at the refill, not retroactively."""
+    from messq.engine import Policy
+    from messq.simulation import simulate
+
+    r = simulate(cfg, cfg.simulation.slot("lunch"), Policy.NONE, seed=3, keep_students=True)
+    for h in ("A", "B"):
+        starts = sorted(s.service_start for s in r.students_list if s.hall == h and s.service_start is not None)
+        # two stations at ~10/min: never more than ~2 service starts in the same 3 seconds
+        assert all(starts[i + 6] - starts[i] > 3 for i in range(len(starts) - 6))

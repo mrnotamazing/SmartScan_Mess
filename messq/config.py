@@ -41,6 +41,21 @@ class MessConfig:
         ready = sum(self.food_ready_refill_min) / 2
         return self.food_ready_prob * ready + (1 - self.food_ready_prob) * self.food_refill_time_min
 
+    def refill_remaining_min(self, elapsed_min: float) -> float:
+        """Expected minutes still to wait for a refill, given `elapsed_min` since the
+        kitchen was called and no refill seen yet. Mixture of the two cases: already
+        made (uniform food_ready_refill_min) with probability food_ready_prob, else
+        made from scratch (food_refill_time_min). At 0 this is expected_refill_min."""
+        e = max(0.0, elapsed_min)
+        lo, hi = self.food_ready_refill_min
+        p_ready = self.food_ready_prob * (1.0 if e <= lo else max(0.0, (hi - e) / (hi - lo)) if hi > lo else 0.0)
+        p_cook = (1 - self.food_ready_prob) * (1.0 if e < self.food_refill_time_min else 0.0)
+        if p_ready + p_cook == 0:
+            return 0.0
+        rem_ready = (max(e, lo) + hi) / 2 - e if e < hi else 0.0
+        rem_cook = self.food_refill_time_min - e
+        return (p_ready * rem_ready + p_cook * rem_cook) / (p_ready + p_cook)
+
     @property
     def capacity_per_min(self) -> float:
         """Maximum serving rate of the hall (students/min) while food is available."""
@@ -67,14 +82,16 @@ class TrayConfig:
 class EngineConfig:
     rate_window_min: float = 5.0
     horizon_min: float = 5.0
-    stay_mean_min: float = 17.0
+    stay_mean_min: float = 16.0  # inside after getting food: food line + eating + disposal
+    eat_mean_min: float = 13.5  # seat held while eating (seat turnover)
+    entry_min: float = 0.45  # scan + collect a plate, with no queue
     normal_visit_min: float = 18.0
     routing_update_s: float = 30.0
     routing_smoothing: float = 0.5
     min_share: float = 0.05
     amber_wait_min: float = 5.0
     red_wait_min: float = 10.0
-    food_low_share: float = 0.25  # a "running low" tray counts as this share of a run-out
+    low_food_left_min: float = 20.0  # "running low" is tapped with about this many minutes of that food left
     food_out_grace_min: float = 5.0
     food_low_expiry_min: float = 20.0
     assumed_compliance: float = 1.0
@@ -119,9 +136,12 @@ class SimConfig:
     step_s: float = 5.0
     compliance: float = 0.6
     staff_signal_prob: float = 0.9
-    stay_mean_min: float = 17.0
-    normal_visit_min: float = 18.0
-    stay_sd_min: float = 6.0
+    # The four stages of a visit (uniform ranges): scan + collect a plate; walk the
+    # food line after the serving station; eat at a table; dispose of plate and leftovers.
+    plate_pickup_s: tuple[float, float] = (15.0, 35.0)
+    food_line_s: tuple[float, float] = (40.0, 80.0)
+    eat_min: tuple[float, float] = (12.0, 15.0)
+    dispose_min: tuple[float, float] = (1.0, 2.0)
     service_cv: float = 0.6
 
     def slot(self, name: str) -> MealSlot:

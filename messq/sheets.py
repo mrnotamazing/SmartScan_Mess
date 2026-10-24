@@ -33,7 +33,7 @@ def log_rows(sim: Simulation, mess_id: str) -> list[list]:
     rows = []
     scanned = (s for s in sim.students if s.hall == mess_id and s.scanned_at is not None and s.scanned_at <= sim.t)
     for s in sorted(scanned, key=lambda s: s.scanned_at):
-        wait = round((s.seated_at - s.arrived_at) / 60, 1) if s.seated_at is not None and s.seated_at <= sim.t else ""
+        wait = round(s.queue_wait_min, 1) if s.seated_at is not None and s.seated_at <= sim.t else ""
         note = f"walked over from {names[s.habit]} (screen)" if s.hall != s.habit else ""
         inside = round((s.left_at - s.scanned_at) / 60, 1) if s.left_at is not None and s.left_at <= sim.t else ""
         rows.append([_clock(sim.slot.start, s.scanned_at), s.name or "(hidden)", f"ID {s.key[:6]}", wait, inside, note])
@@ -64,7 +64,7 @@ def _slots(sim: Simulation, interval_min: int):
 
 
 def _avg_wait(studs, t: float) -> float | str:
-    w = [(s.seated_at - s.arrived_at) / 60 for s in studs if s.seated_at is not None and s.seated_at <= t]
+    w = [s.queue_wait_min for s in studs if s.seated_at is not None and s.seated_at <= t]
     return round(mean(w), 1) if w else ""
 
 

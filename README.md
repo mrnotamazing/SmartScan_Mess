@@ -168,10 +168,14 @@ Be upfront that it is a simulation with assumed numbers. The pilot exists to mea
 
 ```bash
 pip install pytest                 # only needed for the tests
-python -m pytest                   # 40 tests
+python -m pytest                   # 44 tests
 
 python -m messq.simulate --trace   # one simulated lunch, as the screen would show it, in the terminal
 python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilibrium routing
+python -m messq.scenarios          # the four scenarios + stress tests -> results/scenarios.json
+python -m messq.scenarios --payoff # alternatives x kinds of day      -> results/payoff.json
+python -m messq.scenarios --reconcile  # spreadsheet-like -> full model -> results/reconcile.json
+pip install openpyxl scipy && python tools/build_workbook.py   # rebuild docs/MDS_Decision_Workbook.xlsx from those results
 python -m messq.simulate --slot dinner --runs 50 --compliance 0.2 0.4 0.6 0.8 1.0
 python -m messq.simulate --replay samples/sample_day_log.csv              # list meals in a log
 python -m messq.simulate --replay samples/sample_day_log.csv --session 1  # replay one under each policy
@@ -212,11 +216,16 @@ Per-run results are written to `results/simulation_runs.csv`, ready for the anal
 | Curd / raita | Fresh side | AZ | 0.3 |
 | Dry sabji, Dal, Rice, Sambar / rasam | Base food | CZ Buffered Issue | 0.1 |
 
-* A **star dish OUT** (any star dish, whatever it is that day) closes that mess for routing: the
-  screens send students to the other mess until it is refilled.
-* Any **other tray OUT** adds *weight × expected refill time* (≈17 min) to that mess's predicted wait.
-* Any tray **running low** adds *weight × 0.25 × expected refill time*. The 0.25 (assumed) is the
-  chance it empties before a student arriving now is served. A star dish running low adds ≈4 min.
+* A **star dish OUT** (any star dish, whatever it is that day) is an outage: that mess serves nobody
+  until the refill, so the screens send students to the other mess for as long as that is faster.
+* Any **other tray OUT**, or any tray **running low**, costs a student time only if they would reach the
+  counter after it empties and before its refill: they wait *weight × (refill time − their arrival)*.
+  "Running low" is tapped when the mess calls the kitchen, with about 20 minutes of food left (protocol,
+  `engine.low_food_left_min`), so a student who will be served within 20 minutes loses nothing.
+* **The refill clock runs from the kitchen call**, and the expected time still to wait is updated as
+  time passes: after 15 minutes with no refill, the 10–14 minute "already made" case is ruled out, so
+  about 15 more minutes remain. A forgotten "refilled" tap can't freeze the advice: the engine assumes
+  serving resumes once the refill must have arrived.
 * Table items (salt, pickle, fryums: class CX, "free issue") aren't tracked.
 
 The weights are the group's reading of the matrix and should be confirmed with the CT manager.
@@ -232,8 +241,8 @@ a *soft* "In a hurry? Munch Mess is ~4 min faster", or "come on in". It never su
 unless it saves at least `layout.min_saving_min` (2 min) after the walk. The older single
 shared screen is still available as `layout.mode = "hallway"`.
 
-**Kitchen trays.** Each mess has trays (`items` in the config). Only the main tray running out
-stops service; another tray out counts as "busy". "All refilled" resets every tray and lights up
+**Food trays.** Each mess has trays (`items` in the config). A star dish running out stops service;
+other trays add a weighted delay (above). "All refilled" resets every tray and lights up
 "✨ Fresh batch just out" on the door screens for 10 minutes.
 
 **Partial compliance.** If you know (from a no-screen baseline) where
@@ -252,88 +261,72 @@ with information rather than new capacity). With the simulated peak, total capac
 
 ## Results (default config)
 
-**Measured inputs:** lunch 11:30–14:30; 2,960 students (= plates served) across Central CT and Munch Mess;
-seats 900 / 500; 2 serving stations and 1 face scanner per mess; ~18 min scan-to-leaving on a normal day;
-restocking after the mess calls the kitchen ("running low"): 30 min in total if the kitchen has to make it
-and send it, 10–14 min if it is already made and only has to be sent.
-**Assumed:** 85% go to Central by habit; ~10 students/min per serving station (~6 s each; it must be about
-this fast for 2 stations to serve ~2,500 Central students in 3 hours); 2 s per face scan; the arrival curve's
-shape; food batch sizes and call levels.
-**Group estimate:** the next batch is already made about 70% of the time when the mess calls.
+**Measured:** lunch 11:30–14:30; 2,960 students (= plates served); seats 900 / 500; 2 serving stations and 1
+face scanner per mess; ~18 min scan to leaving on a normal day; refill 30 min after the "running low" call
+if it must be made, 10–14 min if already made.
+**Group estimates:** throughput 17–25 min depending on the surge; eating 12–15 min; disposal ≤ 2 min;
+scanning + plate ≤ ~45 s; the next batch is already made ~70% of the time.
+**Assumed:** 85% go to Central by habit; ~10 students/min per serving station (it must be about this fast for
+2 stations to serve ~2,500 Central students in 3 hours); 2 s per face scan; 15–35 s to collect a plate;
+40–80 s along the food line; the arrival curve's shape; food batch sizes and call levels.
 
-Every policy sees the same students (paired comparison), ±95% CI.
-Wait = minutes from reaching the mess door (including any queue at the scanner) to sitting down with food.
+**A visit has four stages** (simulator): scan + collect a plate → queue for a serving station, served,
+walk the food line → eat at a table (wait for a seat if full) → dispose of the plate. **Queue wait** =
+time queueing for the scanner, a station and a seat. **Throughput** = door to leaving. Simulated
+throughput: ~16.6 min in the quiet first 30 minutes, ~25.6 min at today's peak (group: 17–25).
 
-### Door screens (the default layout), simulated lunch, 20 runs per row
+### Four scenarios, busy day, 60% follow the screens, 20 simulated lunches each (same students)
 
-| Policy | Students who follow | Avg wait | p90 wait | Peak queue | Food run-outs | Walked to the other mess |
-|---|---|---|---|---|---|---|
-| No screens (habit 85/15) | – | 7.2 ± 0.4 | 17.6 ± 0.9 | 405 ± 16 | 0.8 | 0% |
-| "Switch if it saves ≥2 min" (greedy) | 60% | 1.0 ± 0.2 | 2.8 ± 0.5 | 83 ± 13 | 0.3 | 16% |
-| Equilibrium split | 30% | 1.6 ± 0.3 | 4.8 ± 0.9 | 122 ± 15 | 0.8 | 13% |
-| Equilibrium split | 60% | 1.1 ± 0.3 | 3.1 ± 0.9 | 94 ± 19 | 0.5 | 15% |
-| Equilibrium split | 100% | 1.0 ± 0.1 | 2.6 ± 0.4 | 82 ± 11 | 0.5 | 17% |
+`python -m messq.scenarios` reproduces this (→ `results/scenarios.json`).
 
-How much the restock matters (`food_ready_prob`, the chance the next batch is already made
-when the mess calls; group estimate 70%), equilibrium split at 60%:
+| Scenario | Queue wait (min) ± 95% CI | p90 wait | Throughput | p90 throughput | Stations busy Central / Munch | Run-outs | Redirected | Unsuccessful redirects |
+|---|---|---|---|---|---|---|---|---|
+| 1 Current system | 8.02 ± 0.63 | 20.0 | 24.6 | 36.4 | 70% / 12% | 0.6 | 0 | – |
+| 2 Screens, queue information only | 1.37 ± 0.36 | 3.5 | 17.9 | 20.5 | 60% / 22% | 0.9 | 334 | 6% |
+| **3 Screens + food status (proposal)** | 0.81 ± 0.11 | 2.2 | 17.4 | 19.2 | 59% / 23% | 0.7 | 380 | 8% |
+| Naive: go to the shorter queue | 0.99 ± 0.16 | 2.8 | 17.5 | 19.7 | 60% / 22% | 0.8 | 375 | 6% |
 
-| Next batch already made? | Restock time | Run-outs, no screens | Run-outs, screens | Avg wait, no screens → screens |
-|---|---|---|---|---|
-| Never | 30 min | 2.0 | 2.1 | 7.0 → 1.1 |
-| Half the time | 30 or 10–14 min | 1.3 | 1.1 | 7.1 → 1.0 |
-| 70% of the time (default) | 30 or 10–14 min | 0.8 | 0.5 | 7.2 → 1.1 |
-| Always | 10–14 min | 0 | 0 | 7.2 → 0.9 |
+An *unsuccessful redirect* is a redirected student whose wait plus walk was longer than the average wait of
+students who stayed at the mess they left and arrived within 2 minutes.
 
-Without screens the simulated p90 wait (~17 min) is close to the ~15 min delay observed in Phase 1,
-which suggests the assumed numbers are in the right range.
+### Stress tests (average queue wait, minutes)
 
-### One shared hallway screen (`layout.mode = "hallway"`): earlier inputs
+| Changed input | 1 Current | 2 Queue only | 3 Proposal |
+|---|---|---|---|
+| Demand +20% (3,552 students) | 15.71 | 2.67 | 2.73 |
+| Sharper peak (spread 25 min, not 35) | 16.88 | 4.16 | 3.45 |
+| Only 30% follow the screens | 8.02 | 1.70 | 1.51 |
+| Everyone follows the screens | 8.02 | 1.26 | 0.92 |
+| Slower serving: 8 students/min per station | 16.09 | 1.76 | 1.66 |
+| Faster serving: 12 students/min per station | 4.05 | 2.17 | 0.78 |
+| More stock-outs: next batch never ready | 10.41 | 3.07 | 1.91 |
+| No stock-outs: next batch always ready | 6.90 | 0.71 | 0.70 |
+| Slower eating: 15-18 min | 8.02 | 1.37 | 0.81 |
 
-These two tables were run with the earlier placeholder inputs (1,600 students, 3 lines at 4/min, habit
-65/35, 12:30–14:30). They are kept because the herding comparison still holds.
+The proposal cuts the wait in every stress test (by at least ~80%). It beats "queue information only" in
+most; on a sharp demand surge the two tie, because Munch then fills whichever signal is used.
 
-| Policy | Compliance | Avg wait | p90 wait | Peak queue | Food run-outs | Occupancy est. error |
-|---|---|---|---|---|---|---|
-| No advice (habit 65/35) | – | 5.6 ± 0.4 | 15.3 ± 1.0 | 198 ± 13 | 1.3 | 36 people |
-| Greedy ("go to emptier") | 60% | 2.0 ± 0.2 | 4.4 ± 0.5 | 67 ± 6 | 1.4 | 12 |
-| Equilibrium split | 30% | 2.3 ± 0.2 | 6.3 ± 0.7 | 89 ± 9 | 1.5 | 14 |
-| Equilibrium split | 60% | 2.0 ± 0.2 | 4.8 ± 0.6 | 71 ± 8 | 1.6 | 12 |
-| Equilibrium split | 100% | 1.9 ± 0.2 | 4.4 ± 0.5 | 64 ± 6 | 1.4 | 12 |
+### What the analysis found (under the ASSUMED parameters)
 
-Same thing, but with students reading the advice **5 minutes before they
-arrive** (e.g. on their phone in the hostel), so feedback lags:
+1. **Capacity is enough in total but used unevenly.** At the peak ~34 students/min arrive against 40/min
+   of serving, but Central gets ~29/min against 20/min while Munch gets ~5/min.
+2. **The LP optimum redirects about 11% of students** (337 of 2,960), close to the simulator's ~380. The LP
+   is a fluid lower bound (0.06 min average) because it has no randomness and perfect foresight.
+3. **Food is the binding constraint below ~780 star-dish portions at Munch.** Under that, each extra
+   portion saves about 40 student-minutes (the LP's shadow price): routing and food allocation must be
+   planned together.
+4. **Using food status the right way matters.** An earlier rule that penalised "running low" for everyone
+   sent students away for nothing; charging the delay only to students who would reach an empty tray, and
+   running the refill clock from the call, cut unsuccessful redirects and made food status help.
+5. **The spreadsheet and the simulator agree when they make the same assumptions** (6.87 vs 6.80 min
+   without screens). With screens the spreadsheet (0.42) is optimistic because it routes with perfect
+   knowledge (workbook: Reconciliation).
+6. **A 3rd serving station alone does best on quiet days**; the proposal does best on busy and surge days;
+   both together is best everywhere but costs a station's staff every day (workbook: S7 Payoff Matrix).
+7. **Earlier results understated run-outs.** A simulator bug let a queue be served "in the past" after a
+   refill; fixed, run-outs now cost the time they should (today's average wait 7.2 → 8.0 min).
 
-| Policy | Compliance | Avg wait | p90 wait | Peak queue |
-|---|---|---|---|---|
-| No advice | – | 5.6 ± 0.5 | 15.5 ± 1.3 | 200 ± 17 |
-| Greedy | 60% | 3.0 ± 0.3 | 6.9 ± 0.5 | 111 ± 10 |
-| Greedy | 100% | **4.3 ± 0.3** | 8.8 ± 0.5 | 141 ± 8 |
-| Equilibrium split | 60% | 2.0 ± 0.2 | 5.4 ± 0.5 | 79 ± 7 |
-| Equilibrium split | 100% | **1.9 ± 0.3** | 4.5 ± 0.9 | 67 ± 12 |
-
-What this says (under the ASSUMED parameters):
-
-1. With the corrected inputs, door screens cut the average wait from about 7 to about 1–1.5 minutes,
-   and the p90 wait from about 17 to about 4 minutes.
-2. **About 1 in 7 students walks to the other mess** (13–17%). Because 85% start at Central, rebalancing
-   needs more movement than the earlier 65/35 guess did.
-3. At the doors, a simple "switch if it saves ≥2 min" rule does as well as the equilibrium split.
-   Feedback is fast (30 s walk) and the threshold stops herding. The equilibrium split matters
-   when advice is read early, e.g. on phones.
-4. Greedy advice herds when the advice lags (hallway tables): it gets *worse* as more students obey it.
-5. **Routing and food interact.** When the next batch is rarely ready, run-outs stay about the same
-   with screens (Munch feeds more students and a 30-minute call-back cannot keep up). When food is
-   usually ready, screens cut run-outs, because a star dish marked "out" sends students elsewhere at once. Student routing and food
-   allocation have to be planned together (see the LP allocation in `docs/MDS_Decision_Workbook.xlsx`).
-6. **Run-outs are a kitchen-timing problem, not a queue problem.** If the next batch is always made
-   before the mess calls (10–14 min to send instead of 30), run-outs disappear in the model. Average
-   waits barely change, because the serving stations, not the food, set the queue.
-7. **The single face scanner is close to its limit at peak.** At an assumed 2 s per scan it handles about
-   30 students/min; peak arrivals at Central are close to that, so a queue of 20–25 people can form
-   *outside* the scanner, which the system cannot see. The dashboard shows each scanner's load. Time the
-   scan with a stopwatch.
-8. A missed "refilled" tap is dangerous. Before tap expiry was added, one missed tap kept a hall marked
-   empty and sent every student to the other hall. Taps now expire, and that case is a regression test.
+Older tables (hallway layout, earlier placeholder inputs) are in the git history.
 
 ## Configuration
 
