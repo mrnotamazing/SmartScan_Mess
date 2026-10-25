@@ -82,10 +82,10 @@ class TrayConfig:
 class EngineConfig:
     rate_window_min: float = 5.0
     horizon_min: float = 5.0
-    stay_mean_min: float = 16.0  # inside after getting food: food line + eating + disposal
-    eat_mean_min: float = 13.5  # seat held while eating (seat turnover)
-    entry_min: float = 0.45  # scan + collect a plate, with no queue
-    normal_visit_min: float = 18.0
+    stay_mean_min: float = 19.0  # inside after getting food: food line + eating + disposal
+    eat_mean_min: float = 16.0  # seat held while eating (seat turnover)
+    entry_min: float = 0.63  # scan + collect a plate, with no queue
+    normal_visit_min: float = 20.0
     routing_update_s: float = 30.0
     routing_smoothing: float = 0.5
     min_share: float = 0.05
@@ -195,9 +195,9 @@ class SimConfig:
     staff_signal_prob: float = 0.9
     # The four stages of a visit (uniform ranges): scan + collect a plate; walk the
     # food line after the serving station; eat at a table; dispose of plate and leftovers.
-    plate_pickup_s: tuple[float, float] = (15.0, 35.0)
-    food_line_s: tuple[float, float] = (40.0, 80.0)
-    eat_min: tuple[float, float] = (12.0, 15.0)
+    plate_pickup_s: tuple[float, float] = (28.0, 43.0)
+    food_line_s: tuple[float, float] = (54.0, 114.0)
+    eat_min: tuple[float, float] = (14.0, 18.0)
     dispose_min: tuple[float, float] = (1.0, 2.0)
     service_cv: float = 0.6
 

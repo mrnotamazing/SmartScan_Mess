@@ -191,9 +191,9 @@ ROWS = [
     ("c_B", "Serving stations: Munch Mess", 2, "stations", "Measured", "Group observation", OCT, "S15, LP, Decision Rule", "0"),
     ("sc_A", "Face scanners at the entrance: Central CT", 1, "scanners", "Measured", "Group observation", OCT, "S15", "0"),
     ("sc_B", "Face scanners at the entrance: Munch Mess", 1, "scanners", "Measured", "Group observation", OCT, "S15", "0"),
-    ("visit", "Normal visit, scan to leaving (quiet times)", 18, "minutes", "Measured", "Group observation on a normal day", OCT, "Checks (calibration)", "0"),
-    ("thr_lo", "Throughput time range: low (quiet)", 17, "minutes", "Group estimate", "Group: door to leaving takes 17–25 min depending on the surge", OCT, "Checks (calibration)", "0"),
-    ("thr_hi", "Throughput time range: high (surge)", 25, "minutes", "Group estimate", "As above", OCT, "Checks (calibration)", "0"),
+    ("visit", "Normal visit, scan to leaving (quiet times)", 20, "minutes", "Group estimate", "Group: about 20 min on a normal day", OCT, "Checks (calibration)", "0"),
+    ("thr_lo", "Throughput time range: low (quiet)", 17, "minutes", "Group estimate", "Group: door to leaving takes 17–35 min depending on the rush", OCT, "Checks (calibration)", "0"),
+    ("thr_hi", "Throughput time range: high (surge)", 35, "minutes", "Group estimate", "As above", OCT, "Checks (calibration)", "0"),
     ("lead_call", "Refill after the 'running low' call if the food must be made (make + send)", 30, "minutes", "Measured",
      "Group: the 30 min starts when the mess calls the kitchen", OCT, "Decision Rule, S18, simulator", "0"),
     ("send_lo", "Refill if the food is already made: sending only (low)", 10, "minutes", "Measured", "Group: 10–14 min", OCT, "Decision Rule, simulator", "0"),
@@ -201,14 +201,14 @@ ROWS = [
     ("delay_obs", "Delay faced by students at the peak (observed)", 15, "minutes", "Measured", "Phase 1 deck: ~15 min", SEP, "Checks (calibration)", "0"),
     ("sec", "THE FOUR STAGES OF A VISIT (group estimates where given, else assumed)"),
     ("scan_s", "Stage 1: one face scan", 2, "seconds", "Assumed", "Stopwatch at the scanner, or gaps between scans in the logs", "—", "S15, simulator", "0.0"),
-    ("plate_lo", "Stage 1: collect a plate after the scan (low)", 15, "seconds", "Assumed", "Group: scanning + plate takes up to ~45 s. Time it", "—", "S15, simulator", "0"),
-    ("plate_hi", "Stage 1: collect a plate after the scan (high)", 35, "seconds", "Assumed", "As above", "—", "S15, simulator", "0"),
+    ("plate_lo", "Stage 1: collect a plate after the scan (low)", 28, "seconds", "Group estimate", "Group: scan + plate takes 30–45 s", "—", "S15, simulator", "0"),
+    ("plate_hi", "Stage 1: collect a plate after the scan (high)", 43, "seconds", "Group estimate", "As above", "—", "S15, simulator", "0"),
     ("mu", "Stage 2: service rate per serving station", 10, "students/min", "Assumed",
      "≈6 s per student. Must be about this fast for 2 stations to serve ~2,360 Central students, mostly within two hours. Stopwatch 20–30 students", "—", "S15, LP, Decision Rule, simulator", "0.0"),
-    ("line_lo", "Stage 2: walk the rest of the food line after the station (low)", 40, "seconds", "Assumed", "Time a few students from station to table", "—", "S15, simulator", "0"),
-    ("line_hi", "Stage 2: walk the rest of the food line (high)", 80, "seconds", "Assumed", "As above", "—", "S15, simulator", "0"),
-    ("eat_lo", "Stage 3: eating at a table (low)", 12, "minutes", "Group estimate", "Group: 12–15 min", OCT, "S15, simulator", "0"),
-    ("eat_hi", "Stage 3: eating at a table (high)", 15, "minutes", "Group estimate", "As above", OCT, "S15, simulator", "0"),
+    ("line_lo", "Stage 2: rest of food collection after the station (low)", 54, "seconds", "Group estimate", "Group: collecting food takes 1–2 min without a queue, incl. ~6 s at the station", "—", "S15, simulator", "0"),
+    ("line_hi", "Stage 2: rest of food collection (high)", 114, "seconds", "Group estimate", "As above", "—", "S15, simulator", "0"),
+    ("eat_lo", "Stage 3: eating at a table (low)", 14, "minutes", "Group estimate", "Group: 14–18 min", OCT, "S15, simulator", "0"),
+    ("eat_hi", "Stage 3: eating at a table (high)", 18, "minutes", "Group estimate", "As above", OCT, "S15, simulator", "0"),
     ("disp_lo", "Stage 4: dispose of leftovers and the plate (low)", 1, "minutes", "Group estimate", "Group: 2 min at most", OCT, "S15, simulator", "0.0"),
     ("disp_hi", "Stage 4: dispose of leftovers and the plate (high)", 2, "minutes", "Group estimate", "As above", OCT, "S15, simulator", "0.0"),
     ("sec", "BEHAVIOUR AND DEMAND"),
@@ -217,7 +217,7 @@ ROWS = [
     ("comply", "Share of students who follow the screen", 0.6, "share", "Assumed", "The pilot measures it; stress-tested at 30% and 100%", "—", "S15, LP, scenarios", "0%"),
     ("walk", "Walk between the two mess doors", 0.5, "minutes", "Assumed", "30 s; walk it with a stopwatch", "—", "LP, Decision Rule, simulator", "0.0"),
     ("lag_m", "Minutes from the start of a department's lunch break to the mess door: mean", LUNCH.lag_mean_min, "minutes", "Calibrated",
-     "Chosen so the no-screen simulation fits the 17–25 min visit and ~15 min peak delay. Logs + timetable measure it", "—", "Arrival Curve, simulator", "0"),
+     "Chosen so the no-screen simulation fits the 17–35 min visit and ~15 min peak delay. Logs + timetable measure it", "—", "Arrival Curve, simulator", "0"),
     ("lag_sd", "Same lag: spread (standard deviation); cut off at the end of the break", LUNCH.lag_sd_min, "minutes", "Calibrated",
      "Stress-tested at 15 ± 10 min (everyone rushes at the bell)", "—", "Arrival Curve, simulator", "0"),
     *DEPT_ROWS,
@@ -1185,7 +1185,7 @@ why = [
     "Without screens it matches S15; with screens it is worse than S15's perfect routing",
     "Real serving is more regular than exponential: slightly shorter queues",
     "A single 2 s scanner rarely limits flow: almost no change",
-    "Seats rarely fill (eating 12–15 min): no change",
+    "Seats rarely fill (eating 14–18 min): no change",
     "Run-outs stop service until the refill: today's waits rise; the screens absorb most of it",
 ]
 for i, step in enumerate(RECON["steps"]):
@@ -1227,11 +1227,11 @@ table(ws, 4, 1, ["Component", "How it is modelled", "Parameters (Inputs / config
     ["Where students head", "Each student heads to Central with probability h (habit), else Munch", "habit share h", "Assumed"],
     ["Advice at the door", "The screen at the mess they reach asks a share of students to walk to the other mess (none in scenario 1)", "Decision Rule; min saving 2 min", "Policy"],
     ["Compliance", "Each advised student follows with probability κ; followers walk 30 s to the other door", "comply κ, walk", "Assumed"],
-    ["Stage 1: entrance", "FCFS queue for the face scanner (2 s each, cv 0.3), then collecting a plate (uniform 15–35 s). The scan time is what the biometric log records", "scan_s, plate_lo/hi", "Assumed"],
-    ["Stage 2: food", "FCFS queue for 2 serving stations; service time gamma with mean 6 s and cv 0.6 (M/G/c); then walking the food line (uniform 40–80 s)", "mu, line_lo/hi, service_cv", "Stations measured; times assumed"],
+    ["Stage 1: entrance", "FCFS queue for the face scanner (2 s each, cv 0.3), then collecting a plate (uniform 28–43 s; 30–45 s with the scan). The scan time is what the biometric log records", "scan_s, plate_lo/hi", "Assumed"],
+    ["Stage 2: food", "FCFS queue for 2 serving stations; service time gamma with mean 6 s and cv 0.6 (M/G/c); then the rest of food collection (uniform 54–114 s; 1–2 min in all)", "mu, line_lo/hi, service_cv", "Stations measured; times assumed"],
     ["Food stock", "Star dish in batches (Central 900, Munch 500). At the call level the mess calls the kitchen; refill arrives in 10–14 min (70%) or 30 min. At zero stock nobody is served until the refill", "food_batch, refill trigger, ready_p, lead times", "Lead times measured; batches assumed"],
     ["Manager taps", "'Running low' at the call, 'out' at zero, 'refilled' on arrival; each tap made 90% of the time (forgotten taps expire)", "staff_signal_prob 0.9", "Assumed"],
-    ["Stage 3: eating", "Take a seat if free (900 / 492), else wait; eat for uniform 12–15 min", "seats, eat_lo/hi", "Seats measured; eating group estimate"],
+    ["Stage 3: eating", "Take a seat if free (900 / 492), else wait; eat for uniform 14–18 min", "seats, eat_lo/hi", "Seats measured; eating group estimate"],
     ["Stage 4: disposal", "Dispose of plate and leftovers, uniform 1–2 min (the seat is already free)", "disp_lo/hi", "Group estimate"],
     ["What the system sees", "Only scans and the manager's taps. Arrival rate from the last 5 min of scans; queue by a fluid model; wait by M/M/c + fluid growth + food delay", "rate window 5 min, horizon 5 min", "Design"],
     ["Routing", "Equal-wait (Wardrop) split found by bisection; at each door ask (h − p)/(h·κ) of students to switch, only if it saves ≥ 2 min after the walk", "min_save", "Design"],
@@ -1241,7 +1241,7 @@ table(ws, 4, 1, ["Component", "How it is modelled", "Parameters (Inputs / config
 ], wrap_cols=(1, 2, 3))
 for rr in range(5, 21):
     ws.row_dimensions[rr].height = 44
-note(ws, "A22", "Validation so far: the simulated normal visit and peak throughput fall in the measured 17–25 min range (Checks), the no-screen 90th percentile wait is "
+note(ws, "A22", "Validation so far: the simulated normal visit and peak throughput fall in the group's 17–35 min range (Checks), the no-screen 90th percentile wait is "
      "close to the ~15 min observed, and the spreadsheet-like simulator reproduces S15 without screens (Reconciliation). Not yet validated: the arrival curve, "
      "the habit split and the service rate (Data Collection).", "D22", 44)
 
@@ -1336,7 +1336,7 @@ checks = [
     ("LP improves on today", f"={LPR['avg_opt']}-{LPR['avg_base']}", "=IF(B16<0,\"OK\",\"CHECK\")", ""),
     ("Response: a faster serving rate lowers the M/M/c wait (λ = 17/min, c = 2)", "=_wq(17,1.1*%MU%)-_wq(17,%MU%)", "=IF(B17<0,\"OK\",\"CHECK\")", "Outputs move in the right direction"),
     ("With screens, Munch's peak utilisation stays below 100% (S15)", f"={QS_PEAKRHO_WB}", "=IF(B18<1,\"OK\",\"CHECK\")", "Redistribution must not overload Munch"),
-    ("Throughput with no queues is within the measured range", f"={REF['thr0']}", f"=IF(AND(B19>={REF['thr_lo']}-1,B19<={REF['thr_hi']}),\"OK\",\"CHECK\")", "17–25 min (group); quiet visit ~18"),
+    ("Throughput with no queues is within the measured range", f"={REF['thr0']}", f"=IF(AND(B19>={REF['thr_lo']}-1,B19<={REF['thr_hi']}),\"OK\",\"CHECK\")", "17–35 min (group); quiet visit ~18"),
     ("Simulated throughput for students who met no queue (today)", sim_quiet, f"=IF(AND(B20>={REF['thr_lo']}-1,B20<={REF['thr_hi']}),\"OK\",\"CHECK\")", "Simulator calibration"),
     ("Simulated throughput at the peak (today)", sim_peak, f"=IF(AND(B21>={REF['thr_lo']},B21<={REF['thr_hi']}+3),\"OK\",\"CHECK\")", "Group: up to ~25 min in a surge"),
     ("Spreadsheet vs spreadsheet-like simulator, without screens", f"={q(RC)}!$B${RC_GAP}", f"=IF(ABS(B22)<=0.15*{q(RC)}!$B$6,\"OK\",\"CHECK\")", "The two models agree within 15% under the same assumptions"),
@@ -1392,7 +1392,7 @@ for k_, line in enumerate([
 put(ws, "A14", "Status tags", bold=True)
 table(ws, 15, 1, ["Tag", "Meaning", "Example"], [
     ["Measured", "From field work, CT or the group", "2,960 students; seats 900 / 492; 2 stations + 1 scanner per mess"],
-    ["Group estimate", "The group's figure, not yet timed", "Eating 12–15 min; disposal ≤ 2 min; food ready 70% of the time"],
+    ["Group estimate", "The group's figure, not yet timed", "Eating 14–18 min; disposal ≤ 2 min; food ready 70% of the time"],
     ["Assumed", "A placeholder until measured", "10 students/min per station; MIT lab share; DLHS/MILHS size"],
     ["Calibrated", "Not measured: chosen so the model reproduces what was observed", "Lag from the start of a lunch break to the mess door"],
     ["Simulated", "Output of the simulator, 20 lunches per row", f"Average wait {W1:.1f} → {W3:.1f} min on a busy day"],

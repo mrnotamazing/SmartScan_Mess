@@ -73,7 +73,7 @@ def stress_tests(cfg: AppConfig) -> list[tuple[str, AppConfig, float]]:
         ("Faster serving: 12 students/min per station", _with_messes(cfg, service_rate_per_counter_per_min=12.0), comp),
         ("More stock-outs: next batch never ready", _with_messes(cfg, food_ready_prob=0.0), comp),
         ("No stock-outs: next batch always ready", _with_messes(cfg, food_ready_prob=1.0), comp),
-        ("Slower eating: 15-18 min", _with_sim(cfg, eat_min=(15.0, 18.0)), comp),
+        ("Slower eating: 17-21 min", _with_sim(cfg, eat_min=(17.0, 21.0)), comp),
     ]
 
 

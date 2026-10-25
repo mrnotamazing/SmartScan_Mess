@@ -9,40 +9,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 4.385,
-    "ci95": 0.525
+    "mean": 4.31,
+    "ci95": 0.634
    },
    "p90_wait_min": {
-    "mean": 13.472,
-    "ci95": 1.14
+    "mean": 13.906,
+    "ci95": 1.58
    },
    "mean_throughput_min": {
-    "mean": 20.935,
-    "ci95": 0.526
+    "mean": 23.94,
+    "ci95": 0.632
    },
    "p90_throughput_min": {
-    "mean": 29.805,
-    "ci95": 1.125
+    "mean": 33.212,
+    "ci95": 1.543
    },
    "mean_total_min": {
-    "mean": 20.935,
-    "ci95": 0.526
+    "mean": 23.94,
+    "ci95": 0.632
    },
    "quiet_throughput_min": {
-    "mean": 16.728,
-    "ci95": 0.02
+    "mean": 19.821,
+    "ci95": 0.027
    },
    "peak_throughput_min": {
-    "mean": 22.727,
-    "ci95": 0.863
+    "mean": 25.587,
+    "ci95": 0.949
    },
    "outages": {
     "mean": 0.45,
-    "ci95": 0.224
+    "ci95": 0.301
    },
    "outage_minutes": {
-    "mean": 2.269,
-    "ci95": 1.132
+    "mean": 2.023,
+    "ci95": 1.38
    },
    "redirected": {
     "mean": 0,
@@ -57,27 +57,27 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 292,
-    "ci95": 22.862
+    "mean": 299.2,
+    "ci95": 29.861
    },
    "peak_scan_queue": {
-    "mean": 25.1,
-    "ci95": 3.157
+    "mean": 24.85,
+    "ci95": 2.592
    },
    "util_A": {
-    "mean": 0.654,
-    "ci95": 0.005
+    "mean": 0.658,
+    "ci95": 0.007
    },
    "util_B": {
-    "mean": 0.166,
-    "ci95": 0.003
+    "mean": 0.165,
+    "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.342,
+    "mean": 1.345,
     "ci95": 0.01
    },
    "peak_load_B": {
-    "mean": 0.348,
+    "mean": 0.347,
     "ci95": 0.009
    },
    "students": {
@@ -92,75 +92,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.299,
-    "ci95": 0.326
+    "mean": 1.191,
+    "ci95": 0.328
    },
    "p90_wait_min": {
-    "mean": 3.443,
-    "ci95": 0.756
+    "mean": 3.126,
+    "ci95": 0.757
    },
    "mean_throughput_min": {
-    "mean": 17.852,
-    "ci95": 0.325
+    "mean": 20.815,
+    "ci95": 0.33
    },
    "p90_throughput_min": {
-    "mean": 20.377,
-    "ci95": 0.769
+    "mean": 23.38,
+    "ci95": 0.733
    },
    "mean_total_min": {
-    "mean": 17.892,
-    "ci95": 0.325
+    "mean": 20.856,
+    "ci95": 0.331
    },
    "quiet_throughput_min": {
-    "mean": 16.755,
-    "ci95": 0.023
+    "mean": 19.846,
+    "ci95": 0.02
    },
    "peak_throughput_min": {
-    "mean": 18.297,
-    "ci95": 0.449
+    "mean": 21.183,
+    "ci95": 0.433
    },
    "outages": {
-    "mean": 0.6,
-    "ci95": 0.298
+    "mean": 0.45,
+    "ci95": 0.265
    },
    "outage_minutes": {
-    "mean": 2.828,
-    "ci95": 1.386
+    "mean": 2.296,
+    "ci95": 1.454
    },
    "redirected": {
-    "mean": 239.5,
-    "ci95": 10.79
+    "mean": 239,
+    "ci95": 10.424
    },
    "unsuccessful_rate": {
-    "mean": 0.007,
-    "ci95": 0.007
+    "mean": 0.016,
+    "ci95": 0.015
    },
    "compliance_rate": {
-    "mean": 0.613,
-    "ci95": 0.01
+    "mean": 0.61,
+    "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 95.95,
-    "ci95": 18.737
+    "mean": 88.7,
+    "ci95": 18.341
    },
    "peak_scan_queue": {
-    "mean": 12.8,
-    "ci95": 1.308
+    "mean": 12.55,
+    "ci95": 1.159
    },
    "util_A": {
-    "mean": 0.588,
-    "ci95": 0.005
+    "mean": 0.591,
+    "ci95": 0.004
    },
    "util_B": {
-    "mean": 0.234,
+    "mean": 0.232,
     "ci95": 0.005
    },
    "peak_load_A": {
-    "mean": 1.039,
-    "ci95": 0.005
+    "mean": 1.04,
+    "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.683,
+    "mean": 0.684,
     "ci95": 0.013
    },
    "students": {
@@ -175,76 +175,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.814,
-    "ci95": 0.09
+    "mean": 0.798,
+    "ci95": 0.101
    },
    "p90_wait_min": {
-    "mean": 2.247,
-    "ci95": 0.227
+    "mean": 2.104,
+    "ci95": 0.205
    },
    "mean_throughput_min": {
-    "mean": 17.365,
-    "ci95": 0.091
+    "mean": 20.423,
+    "ci95": 0.102
    },
    "p90_throughput_min": {
-    "mean": 19.166,
-    "ci95": 0.208
+    "mean": 22.423,
+    "ci95": 0.18
    },
    "mean_total_min": {
-    "mean": 17.414,
-    "ci95": 0.09
+    "mean": 20.467,
+    "ci95": 0.103
    },
    "quiet_throughput_min": {
-    "mean": 16.764,
-    "ci95": 0.017
+    "mean": 19.861,
+    "ci95": 0.019
    },
    "peak_throughput_min": {
-    "mean": 17.715,
-    "ci95": 0.12
+    "mean": 20.74,
+    "ci95": 0.105
    },
    "outages": {
-    "mean": 0.7,
-    "ci95": 0.351
+    "mean": 0.35,
+    "ci95": 0.214
    },
    "outage_minutes": {
-    "mean": 3.178,
-    "ci95": 1.57
+    "mean": 1.674,
+    "ci95": 1.034
    },
    "redirected": {
-    "mean": 286.05,
-    "ci95": 24.017
+    "mean": 260.95,
+    "ci95": 17.454
    },
    "unsuccessful_rate": {
-    "mean": 0.028,
-    "ci95": 0.018
-   },
-   "compliance_rate": {
-    "mean": 0.609,
+    "mean": 0.015,
     "ci95": 0.011
    },
+   "compliance_rate": {
+    "mean": 0.612,
+    "ci95": 0.01
+   },
    "peak_queue": {
-    "mean": 65.05,
-    "ci95": 6.434
+    "mean": 62.95,
+    "ci95": 6.798
    },
    "peak_scan_queue": {
-    "mean": 13,
-    "ci95": 1.19
+    "mean": 12.35,
+    "ci95": 1.085
    },
    "util_A": {
-    "mean": 0.576,
-    "ci95": 0.009
+    "mean": 0.584,
+    "ci95": 0.007
    },
    "util_B": {
-    "mean": 0.244,
-    "ci95": 0.008
-   },
-   "peak_load_A": {
-    "mean": 1.037,
+    "mean": 0.237,
     "ci95": 0.006
    },
+   "peak_load_A": {
+    "mean": 1.034,
+    "ci95": 0.007
+   },
    "peak_load_B": {
-    "mean": 0.697,
-    "ci95": 0.017
+    "mean": 0.688,
+    "ci95": 0.016
    },
    "students": {
     "mean": 2957.95,
@@ -258,76 +258,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.741,
-    "ci95": 0.073
+    "mean": 0.76,
+    "ci95": 0.101
    },
    "p90_wait_min": {
-    "mean": 2.001,
-    "ci95": 0.161
+    "mean": 2.008,
+    "ci95": 0.265
    },
    "mean_throughput_min": {
-    "mean": 17.294,
-    "ci95": 0.073
+    "mean": 20.383,
+    "ci95": 0.1
    },
    "p90_throughput_min": {
-    "mean": 18.962,
-    "ci95": 0.14
+    "mean": 22.355,
+    "ci95": 0.23
    },
    "mean_total_min": {
-    "mean": 17.341,
-    "ci95": 0.073
+    "mean": 20.429,
+    "ci95": 0.101
    },
    "quiet_throughput_min": {
-    "mean": 16.787,
-    "ci95": 0.022
+    "mean": 19.867,
+    "ci95": 0.025
    },
    "peak_throughput_min": {
-    "mean": 17.627,
-    "ci95": 0.112
+    "mean": 20.654,
+    "ci95": 0.152
    },
    "outages": {
     "mean": 0.5,
     "ci95": 0.266
    },
    "outage_minutes": {
-    "mean": 2.148,
-    "ci95": 1.144
+    "mean": 2.265,
+    "ci95": 1.239
    },
    "redirected": {
-    "mean": 276.95,
-    "ci95": 21.488
+    "mean": 271.3,
+    "ci95": 19.267
    },
    "unsuccessful_rate": {
-    "mean": 0.045,
-    "ci95": 0.027
+    "mean": 0.051,
+    "ci95": 0.046
    },
    "compliance_rate": {
-    "mean": 0.609,
-    "ci95": 0.012
-   },
-   "peak_queue": {
-    "mean": 58.5,
-    "ci95": 4.085
-   },
-   "peak_scan_queue": {
-    "mean": 13.3,
-    "ci95": 0.889
-   },
-   "util_A": {
-    "mean": 0.578,
+    "mean": 0.611,
     "ci95": 0.009
    },
+   "peak_queue": {
+    "mean": 58.8,
+    "ci95": 5.699
+   },
+   "peak_scan_queue": {
+    "mean": 13.65,
+    "ci95": 1.242
+   },
+   "util_A": {
+    "mean": 0.583,
+    "ci95": 0.005
+   },
    "util_B": {
-    "mean": 0.243,
-    "ci95": 0.007
+    "mean": 0.241,
+    "ci95": 0.006
    },
    "peak_load_A": {
-    "mean": 1.032,
+    "mean": 1.035,
     "ci95": 0.007
    },
    "peak_load_B": {
-    "mean": 0.692,
-    "ci95": 0.016
+    "mean": 0.697,
+    "ci95": 0.015
    },
    "students": {
     "mean": 2957.95,
@@ -341,40 +341,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 11.414,
-    "ci95": 0.933
+    "mean": 12.046,
+    "ci95": 0.736
    },
    "p90_wait_min": {
-    "mean": 30.666,
-    "ci95": 2.027
+    "mean": 32.16,
+    "ci95": 1.579
    },
    "mean_throughput_min": {
-    "mean": 27.962,
-    "ci95": 0.934
+    "mean": 31.671,
+    "ci95": 0.737
    },
    "p90_throughput_min": {
-    "mean": 47.039,
-    "ci95": 2.028
+    "mean": 51.523,
+    "ci95": 1.577
    },
    "mean_total_min": {
-    "mean": 27.962,
-    "ci95": 0.934
+    "mean": 31.671,
+    "ci95": 0.737
    },
    "quiet_throughput_min": {
-    "mean": 16.65,
-    "ci95": 0.022
+    "mean": 19.737,
+    "ci95": 0.02
    },
    "peak_throughput_min": {
-    "mean": 32.326,
-    "ci95": 1.252
+    "mean": 36.279,
+    "ci95": 1.087
    },
    "outages": {
-    "mean": 0.7,
-    "ci95": 0.288
+    "mean": 1,
+    "ci95": 0.246
    },
    "outage_minutes": {
-    "mean": 3.665,
-    "ci95": 1.472
+    "mean": 5.072,
+    "ci95": 1.285
    },
    "redirected": {
     "mean": 0,
@@ -389,24 +389,24 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 635.25,
-    "ci95": 37.339
+    "mean": 657.95,
+    "ci95": 36.035
    },
    "peak_scan_queue": {
-    "mean": 129.55,
-    "ci95": 8.781
+    "mean": 131.95,
+    "ci95": 9.322
    },
    "util_A": {
-    "mean": 0.776,
-    "ci95": 0.007
+    "mean": 0.781,
+    "ci95": 0.008
    },
    "util_B": {
-    "mean": 0.2,
-    "ci95": 0.003
+    "mean": 0.201,
+    "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.495,
-    "ci95": 0.006
+    "mean": 1.497,
+    "ci95": 0.007
    },
    "peak_load_B": {
     "mean": 0.418,
@@ -424,75 +424,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 2.805,
-    "ci95": 0.515
+    "mean": 2.165,
+    "ci95": 0.385
    },
    "p90_wait_min": {
-    "mean": 7.488,
-    "ci95": 1.454
+    "mean": 6.011,
+    "ci95": 1.066
    },
    "mean_throughput_min": {
-    "mean": 19.35,
-    "ci95": 0.516
+    "mean": 21.791,
+    "ci95": 0.385
    },
    "p90_throughput_min": {
-    "mean": 24.12,
-    "ci95": 1.465
+    "mean": 25.785,
+    "ci95": 1.057
    },
    "mean_total_min": {
-    "mean": 19.429,
-    "ci95": 0.516
+    "mean": 21.87,
+    "ci95": 0.385
    },
    "quiet_throughput_min": {
-    "mean": 16.821,
-    "ci95": 0.033
+    "mean": 19.91,
+    "ci95": 0.03
    },
    "peak_throughput_min": {
-    "mean": 20.298,
-    "ci95": 0.581
+    "mean": 22.568,
+    "ci95": 0.481
    },
    "outages": {
-    "mean": 1.25,
-    "ci95": 0.49
+    "mean": 0.8,
+    "ci95": 0.365
    },
    "outage_minutes": {
-    "mean": 10.003,
-    "ci95": 4.254
+    "mean": 6.295,
+    "ci95": 3.305
    },
    "redirected": {
-    "mean": 563,
-    "ci95": 20.64
+    "mean": 562.2,
+    "ci95": 20.637
    },
    "unsuccessful_rate": {
-    "mean": 0.1,
-    "ci95": 0.057
+    "mean": 0.084,
+    "ci95": 0.062
    },
    "compliance_rate": {
-    "mean": 0.605,
+    "mean": 0.603,
     "ci95": 0.009
    },
    "peak_queue": {
-    "mean": 191.65,
-    "ci95": 30.438
+    "mean": 167.6,
+    "ci95": 28.382
    },
    "peak_scan_queue": {
-    "mean": 19.1,
-    "ci95": 1.435
+    "mean": 20.2,
+    "ci95": 2.885
    },
    "util_A": {
-    "mean": 0.628,
+    "mean": 0.626,
     "ci95": 0.004
    },
    "util_B": {
-    "mean": 0.356,
-    "ci95": 0.007
+    "mean": 0.358,
+    "ci95": 0.008
    },
    "peak_load_A": {
-    "mean": 1.127,
-    "ci95": 0.01
+    "mean": 1.128,
+    "ci95": 0.009
    },
    "peak_load_B": {
-    "mean": 0.986,
+    "mean": 0.992,
     "ci95": 0.01
    },
    "students": {
@@ -507,75 +507,75 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 2.039,
-    "ci95": 0.379
+    "mean": 2.023,
+    "ci95": 0.472
    },
    "p90_wait_min": {
-    "mean": 5.562,
-    "ci95": 1.367
+    "mean": 5.599,
+    "ci95": 1.476
    },
    "mean_throughput_min": {
-    "mean": 18.587,
-    "ci95": 0.38
+    "mean": 21.645,
+    "ci95": 0.472
    },
    "p90_throughput_min": {
-    "mean": 22.256,
-    "ci95": 1.287
+    "mean": 25.458,
+    "ci95": 1.406
    },
    "mean_total_min": {
-    "mean": 18.673,
-    "ci95": 0.381
+    "mean": 21.728,
+    "ci95": 0.473
    },
    "quiet_throughput_min": {
-    "mean": 16.83,
-    "ci95": 0.029
+    "mean": 19.933,
+    "ci95": 0.026
    },
    "peak_throughput_min": {
-    "mean": 19.297,
-    "ci95": 0.469
+    "mean": 22.411,
+    "ci95": 0.515
    },
    "outages": {
-    "mean": 1.2,
-    "ci95": 0.417
+    "mean": 1.05,
+    "ci95": 0.414
    },
    "outage_minutes": {
-    "mean": 8.851,
-    "ci95": 3.334
+    "mean": 9.138,
+    "ci95": 4.041
    },
    "redirected": {
-    "mean": 613.95,
-    "ci95": 41.407
+    "mean": 587.9,
+    "ci95": 28.447
    },
    "unsuccessful_rate": {
-    "mean": 0.077,
-    "ci95": 0.056
+    "mean": 0.082,
+    "ci95": 0.035
    },
    "compliance_rate": {
-    "mean": 0.604,
-    "ci95": 0.01
+    "mean": 0.603,
+    "ci95": 0.008
    },
    "peak_queue": {
-    "mean": 143.05,
-    "ci95": 27.627
+    "mean": 150.8,
+    "ci95": 29.992
    },
    "peak_scan_queue": {
-    "mean": 23.2,
-    "ci95": 6.632
+    "mean": 23.15,
+    "ci95": 3.533
    },
    "util_A": {
-    "mean": 0.617,
-    "ci95": 0.011
+    "mean": 0.625,
+    "ci95": 0.009
    },
    "util_B": {
-    "mean": 0.364,
-    "ci95": 0.013
+    "mean": 0.358,
+    "ci95": 0.009
    },
    "peak_load_A": {
-    "mean": 1.135,
-    "ci95": 0.031
+    "mean": 1.141,
+    "ci95": 0.023
    },
    "peak_load_B": {
-    "mean": 0.968,
+    "mean": 0.975,
     "ci95": 0.029
    },
    "students": {
@@ -590,40 +590,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 8.855,
-    "ci95": 0.929
+    "mean": 8.524,
+    "ci95": 0.877
    },
    "p90_wait_min": {
-    "mean": 23.235,
-    "ci95": 2.04
+    "mean": 22.574,
+    "ci95": 2.087
    },
    "mean_throughput_min": {
-    "mean": 25.406,
-    "ci95": 0.93
+    "mean": 28.146,
+    "ci95": 0.878
    },
    "p90_throughput_min": {
-    "mean": 39.679,
-    "ci95": 2.045
+    "mean": 42.12,
+    "ci95": 2.067
    },
    "mean_total_min": {
-    "mean": 25.406,
-    "ci95": 0.93
+    "mean": 28.146,
+    "ci95": 0.878
    },
    "quiet_throughput_min": {
-    "mean": 16.646,
-    "ci95": 0.019
+    "mean": 19.711,
+    "ci95": 0.015
    },
    "peak_throughput_min": {
-    "mean": 29.742,
-    "ci95": 1.469
+    "mean": 32.225,
+    "ci95": 1.403
    },
    "outages": {
-    "mean": 0.7,
-    "ci95": 0.288
+    "mean": 0.55,
+    "ci95": 0.265
    },
    "outage_minutes": {
-    "mean": 3.338,
-    "ci95": 1.472
+    "mean": 2.898,
+    "ci95": 1.435
    },
    "redirected": {
     "mean": 0,
@@ -638,23 +638,23 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 460.8,
-    "ci95": 36.913
+    "mean": 450.05,
+    "ci95": 37.565
    },
    "peak_scan_queue": {
-    "mean": 162.55,
-    "ci95": 12.668
+    "mean": 164.35,
+    "ci95": 13.384
    },
    "util_A": {
-    "mean": 0.657,
+    "mean": 0.656,
     "ci95": 0.008
    },
    "util_B": {
-    "mean": 0.165,
+    "mean": 0.164,
     "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.452,
+    "mean": 1.458,
     "ci95": 0.016
    },
    "peak_load_B": {
@@ -673,76 +673,76 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.931,
-    "ci95": 0.228
+    "mean": 2.046,
+    "ci95": 0.267
    },
    "p90_wait_min": {
-    "mean": 5.169,
-    "ci95": 0.615
+    "mean": 5.255,
+    "ci95": 0.577
    },
    "mean_throughput_min": {
-    "mean": 18.481,
-    "ci95": 0.227
+    "mean": 21.662,
+    "ci95": 0.267
    },
    "p90_throughput_min": {
-    "mean": 21.758,
-    "ci95": 0.572
+    "mean": 25.092,
+    "ci95": 0.567
    },
    "mean_total_min": {
-    "mean": 18.558,
-    "ci95": 0.228
+    "mean": 21.739,
+    "ci95": 0.268
    },
    "quiet_throughput_min": {
-    "mean": 16.826,
-    "ci95": 0.019
+    "mean": 19.883,
+    "ci95": 0.022
    },
    "peak_throughput_min": {
-    "mean": 19.654,
-    "ci95": 0.337
+    "mean": 22.881,
+    "ci95": 0.355
    },
    "outages": {
-    "mean": 1,
-    "ci95": 0.45
+    "mean": 1.1,
+    "ci95": 0.345
    },
    "outage_minutes": {
-    "mean": 7.709,
-    "ci95": 4.006
+    "mean": 8.212,
+    "ci95": 3.349
    },
    "redirected": {
-    "mean": 459.7,
-    "ci95": 14.783
+    "mean": 459.65,
+    "ci95": 15.02
    },
    "unsuccessful_rate": {
-    "mean": 0.025,
+    "mean": 0.023,
     "ci95": 0.017
    },
    "compliance_rate": {
-    "mean": 0.61,
-    "ci95": 0.009
+    "mean": 0.607,
+    "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 140.35,
-    "ci95": 13.514
+    "mean": 141.15,
+    "ci95": 13.057
    },
    "peak_scan_queue": {
-    "mean": 22.3,
-    "ci95": 2.897
+    "mean": 26.4,
+    "ci95": 5.283
    },
    "util_A": {
-    "mean": 0.527,
+    "mean": 0.526,
     "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.29,
+    "mean": 0.294,
     "ci95": 0.006
    },
    "peak_load_A": {
     "mean": 1.139,
-    "ci95": 0.016
+    "ci95": 0.017
    },
    "peak_load_B": {
-    "mean": 0.869,
-    "ci95": 0.017
+    "mean": 0.873,
+    "ci95": 0.018
    },
    "students": {
     "mean": 2956.05,
@@ -756,63 +756,63 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.78,
-    "ci95": 0.186
+    "mean": 1.684,
+    "ci95": 0.138
    },
    "p90_wait_min": {
-    "mean": 4.83,
-    "ci95": 0.465
+    "mean": 4.395,
+    "ci95": 0.306
    },
    "mean_throughput_min": {
-    "mean": 18.328,
-    "ci95": 0.189
+    "mean": 21.309,
+    "ci95": 0.14
    },
    "p90_throughput_min": {
-    "mean": 21.436,
-    "ci95": 0.449
+    "mean": 24.295,
+    "ci95": 0.269
    },
    "mean_total_min": {
-    "mean": 18.408,
-    "ci95": 0.19
+    "mean": 21.389,
+    "ci95": 0.14
    },
    "quiet_throughput_min": {
-    "mean": 16.823,
-    "ci95": 0.021
+    "mean": 19.9,
+    "ci95": 0.028
    },
    "peak_throughput_min": {
-    "mean": 19.494,
-    "ci95": 0.285
+    "mean": 22.395,
+    "ci95": 0.253
    },
    "outages": {
     "mean": 0.75,
     "ci95": 0.345
    },
    "outage_minutes": {
-    "mean": 5.419,
-    "ci95": 3.17
+    "mean": 5.678,
+    "ci95": 2.959
    },
    "redirected": {
-    "mean": 473.25,
-    "ci95": 15.613
+    "mean": 472.95,
+    "ci95": 17.476
    },
    "unsuccessful_rate": {
-    "mean": 0.032,
+    "mean": 0.029,
     "ci95": 0.021
    },
    "compliance_rate": {
-    "mean": 0.604,
+    "mean": 0.606,
     "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 133.45,
-    "ci95": 7.279
+    "mean": 126.5,
+    "ci95": 7.239
    },
    "peak_scan_queue": {
-    "mean": 23.5,
-    "ci95": 3.405
+    "mean": 23.15,
+    "ci95": 3.695
    },
    "util_A": {
-    "mean": 0.527,
+    "mean": 0.524,
     "ci95": 0.006
    },
    "util_B": {
@@ -820,12 +820,12 @@
     "ci95": 0.006
    },
    "peak_load_A": {
-    "mean": 1.135,
-    "ci95": 0.02
+    "mean": 1.131,
+    "ci95": 0.019
    },
    "peak_load_B": {
-    "mean": 0.87,
-    "ci95": 0.016
+    "mean": 0.88,
+    "ci95": 0.017
    },
    "students": {
     "mean": 2956.05,
@@ -839,40 +839,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 6.002,
-    "ci95": 0.346
+    "mean": 5.955,
+    "ci95": 0.388
    },
    "p90_wait_min": {
-    "mean": 19.854,
-    "ci95": 1.252
+    "mean": 19.684,
+    "ci95": 1.189
    },
    "mean_throughput_min": {
-    "mean": 22.558,
-    "ci95": 0.345
+    "mean": 25.582,
+    "ci95": 0.392
    },
    "p90_throughput_min": {
-    "mean": 36.193,
-    "ci95": 1.255
+    "mean": 38.971,
+    "ci95": 1.21
    },
    "mean_total_min": {
-    "mean": 22.558,
-    "ci95": 0.345
+    "mean": 25.582,
+    "ci95": 0.392
    },
    "quiet_throughput_min": {
-    "mean": 16.693,
-    "ci95": 0.022
+    "mean": 19.767,
+    "ci95": 0.018
    },
    "peak_throughput_min": {
-    "mean": 23.996,
-    "ci95": 0.437
+    "mean": 27.015,
+    "ci95": 0.557
    },
    "outages": {
-    "mean": 0.65,
-    "ci95": 0.257
+    "mean": 0.7,
+    "ci95": 0.288
    },
    "outage_minutes": {
-    "mean": 2.358,
-    "ci95": 0.997
+    "mean": 2.387,
+    "ci95": 1.151
    },
    "redirected": {
     "mean": 0,
@@ -887,23 +887,23 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 407.65,
-    "ci95": 20.63
+    "mean": 407.35,
+    "ci95": 21.175
    },
    "peak_scan_queue": {
-    "mean": 86.6,
-    "ci95": 7.903
+    "mean": 89.8,
+    "ci95": 8.082
    },
    "util_A": {
     "mean": 0.651,
-    "ci95": 0.006
+    "ci95": 0.005
    },
    "util_B": {
     "mean": 0.164,
-    "ci95": 0.002
+    "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.493,
+    "mean": 1.49,
     "ci95": 0.008
    },
    "peak_load_B": {
@@ -922,72 +922,72 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.4,
-    "ci95": 0.2
+    "mean": 1.406,
+    "ci95": 0.234
    },
    "p90_wait_min": {
-    "mean": 4.009,
-    "ci95": 0.44
+    "mean": 4.303,
+    "ci95": 0.666
    },
    "mean_throughput_min": {
-    "mean": 17.952,
-    "ci95": 0.201
+    "mean": 21.027,
+    "ci95": 0.235
    },
    "p90_throughput_min": {
-    "mean": 20.771,
-    "ci95": 0.451
+    "mean": 24.169,
+    "ci95": 0.633
    },
    "mean_total_min": {
-    "mean": 18.011,
-    "ci95": 0.201
+    "mean": 21.086,
+    "ci95": 0.235
    },
    "quiet_throughput_min": {
-    "mean": 16.762,
-    "ci95": 0.023
+    "mean": 19.837,
+    "ci95": 0.018
    },
    "peak_throughput_min": {
-    "mean": 18.731,
-    "ci95": 0.285
+    "mean": 21.85,
+    "ci95": 0.33
    },
    "outages": {
-    "mean": 1,
-    "ci95": 0.318
+    "mean": 1.1,
+    "ci95": 0.281
    },
    "outage_minutes": {
-    "mean": 4.216,
-    "ci95": 1.584
+    "mean": 4.068,
+    "ci95": 1.385
    },
    "redirected": {
-    "mean": 344.25,
-    "ci95": 12.299
+    "mean": 343.6,
+    "ci95": 11.806
    },
    "unsuccessful_rate": {
-    "mean": 0.076,
-    "ci95": 0.079
+    "mean": 0.149,
+    "ci95": 0.107
    },
    "compliance_rate": {
-    "mean": 0.606,
-    "ci95": 0.009
+    "mean": 0.605,
+    "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 108.4,
-    "ci95": 9.358
+    "mean": 111.05,
+    "ci95": 12.47
    },
    "peak_scan_queue": {
-    "mean": 16.45,
-    "ci95": 1.63
+    "mean": 16.9,
+    "ci95": 1.614
    },
    "util_A": {
-    "mean": 0.553,
-    "ci95": 0.005
-   },
-   "util_B": {
-    "mean": 0.262,
+    "mean": 0.555,
     "ci95": 0.004
    },
+   "util_B": {
+    "mean": 0.257,
+    "ci95": 0.005
+   },
    "peak_load_A": {
-    "mean": 1.11,
-    "ci95": 0.009
+    "mean": 1.107,
+    "ci95": 0.008
    },
    "peak_load_B": {
     "mean": 0.91,
@@ -1005,76 +1005,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.134,
-    "ci95": 0.144
+    "mean": 1.341,
+    "ci95": 0.362
    },
    "p90_wait_min": {
-    "mean": 3.471,
-    "ci95": 0.395
+    "mean": 4.504,
+    "ci95": 1.585
    },
    "mean_throughput_min": {
-    "mean": 17.681,
-    "ci95": 0.144
+    "mean": 20.972,
+    "ci95": 0.362
    },
    "p90_throughput_min": {
-    "mean": 20.141,
-    "ci95": 0.372
+    "mean": 24.294,
+    "ci95": 1.571
    },
    "mean_total_min": {
-    "mean": 17.746,
-    "ci95": 0.144
+    "mean": 21.035,
+    "ci95": 0.362
    },
    "quiet_throughput_min": {
-    "mean": 16.75,
-    "ci95": 0.022
+    "mean": 19.841,
+    "ci95": 0.021
    },
    "peak_throughput_min": {
-    "mean": 18.501,
-    "ci95": 0.241
+    "mean": 21.823,
+    "ci95": 0.374
    },
    "outages": {
-    "mean": 1.1,
-    "ci95": 0.4
+    "mean": 1.15,
+    "ci95": 0.356
    },
    "outage_minutes": {
-    "mean": 5.383,
-    "ci95": 2.811
+    "mean": 4.152,
+    "ci95": 1.792
    },
    "redirected": {
-    "mean": 384.8,
-    "ci95": 21.275
+    "mean": 370.4,
+    "ci95": 18.182
    },
    "unsuccessful_rate": {
-    "mean": 0.067,
-    "ci95": 0.058
+    "mean": 0.064,
+    "ci95": 0.032
    },
    "compliance_rate": {
-    "mean": 0.606,
-    "ci95": 0.009
+    "mean": 0.61,
+    "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 92.1,
-    "ci95": 8.542
+    "mean": 110.45,
+    "ci95": 26.985
    },
    "peak_scan_queue": {
-    "mean": 17.15,
-    "ci95": 3.161
+    "mean": 22.95,
+    "ci95": 7.592
    },
    "util_A": {
-    "mean": 0.542,
-    "ci95": 0.006
+    "mean": 0.551,
+    "ci95": 0.007
    },
    "util_B": {
-    "mean": 0.271,
-    "ci95": 0.006
+    "mean": 0.265,
+    "ci95": 0.008
    },
    "peak_load_A": {
-    "mean": 1.106,
-    "ci95": 0.016
+    "mean": 1.127,
+    "ci95": 0.033
    },
    "peak_load_B": {
-    "mean": 0.914,
-    "ci95": 0.023
+    "mean": 0.882,
+    "ci95": 0.035
    },
    "students": {
     "mean": 2933.1,
@@ -1088,40 +1088,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 8.864,
-    "ci95": 0.87
+    "mean": 8.778,
+    "ci95": 0.585
    },
    "p90_wait_min": {
-    "mean": 17.369,
-    "ci95": 1.543
+    "mean": 17.315,
+    "ci95": 1.142
    },
    "mean_throughput_min": {
-    "mean": 25.413,
-    "ci95": 0.871
+    "mean": 28.401,
+    "ci95": 0.584
    },
    "p90_throughput_min": {
-    "mean": 33.85,
-    "ci95": 1.555
+    "mean": 37.051,
+    "ci95": 1.114
    },
    "mean_total_min": {
-    "mean": 25.413,
-    "ci95": 0.871
+    "mean": 28.401,
+    "ci95": 0.584
    },
    "quiet_throughput_min": {
-    "mean": 16.657,
-    "ci95": 0.016
+    "mean": 19.737,
+    "ci95": 0.017
    },
    "peak_throughput_min": {
-    "mean": 24.316,
-    "ci95": 0.702
+    "mean": 27.212,
+    "ci95": 0.512
    },
    "outages": {
-    "mean": 0.4,
-    "ci95": 0.22
+    "mean": 0.5,
+    "ci95": 0.266
    },
    "outage_minutes": {
-    "mean": 1.951,
-    "ci95": 1.086
+    "mean": 2.616,
+    "ci95": 1.448
    },
    "redirected": {
     "mean": 0,
@@ -1136,28 +1136,28 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 366.1,
-    "ci95": 29.767
+    "mean": 362.6,
+    "ci95": 21.443
    },
    "peak_scan_queue": {
-    "mean": 31.3,
-    "ci95": 7.017
+    "mean": 30.25,
+    "ci95": 6.703
    },
    "util_A": {
-    "mean": 0.656,
-    "ci95": 0.007
+    "mean": 0.653,
+    "ci95": 0.006
    },
    "util_B": {
-    "mean": 0.166,
-    "ci95": 0.004
+    "mean": 0.167,
+    "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.411,
+    "mean": 1.413,
     "ci95": 0.022
    },
    "peak_load_B": {
-    "mean": 0.351,
-    "ci95": 0.01
+    "mean": 0.352,
+    "ci95": 0.009
    },
    "students": {
     "mean": 2956.45,
@@ -1171,63 +1171,63 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.275,
-    "ci95": 0.227
+    "mean": 1.203,
+    "ci95": 0.298
    },
    "p90_wait_min": {
-    "mean": 3.036,
-    "ci95": 0.627
+    "mean": 2.992,
+    "ci95": 0.735
    },
    "mean_throughput_min": {
-    "mean": 17.823,
-    "ci95": 0.226
+    "mean": 20.83,
+    "ci95": 0.298
    },
    "p90_throughput_min": {
-    "mean": 19.972,
-    "ci95": 0.519
+    "mean": 23.237,
+    "ci95": 0.632
    },
    "mean_total_min": {
-    "mean": 17.876,
-    "ci95": 0.226
+    "mean": 20.882,
+    "ci95": 0.299
    },
    "quiet_throughput_min": {
-    "mean": 16.787,
-    "ci95": 0.021
+    "mean": 19.87,
+    "ci95": 0.024
    },
    "peak_throughput_min": {
-    "mean": 18.033,
-    "ci95": 0.207
+    "mean": 20.954,
+    "ci95": 0.153
    },
    "outages": {
     "mean": 0.8,
-    "ci95": 0.27
+    "ci95": 0.336
    },
    "outage_minutes": {
-    "mean": 5.865,
-    "ci95": 2.157
+    "mean": 4.689,
+    "ci95": 2.21
    },
    "redirected": {
-    "mean": 311.8,
-    "ci95": 16.571
+    "mean": 311.6,
+    "ci95": 16.742
    },
    "unsuccessful_rate": {
-    "mean": 0.102,
-    "ci95": 0.064
+    "mean": 0.064,
+    "ci95": 0.042
    },
    "compliance_rate": {
-    "mean": 0.602,
-    "ci95": 0.009
+    "mean": 0.605,
+    "ci95": 0.008
    },
    "peak_queue": {
-    "mean": 102.6,
-    "ci95": 17.514
+    "mean": 86,
+    "ci95": 15.351
    },
    "peak_scan_queue": {
-    "mean": 13.2,
-    "ci95": 2.014
+    "mean": 13.3,
+    "ci95": 2.006
    },
    "util_A": {
-    "mean": 0.57,
+    "mean": 0.568,
     "ci95": 0.005
    },
    "util_B": {
@@ -1235,11 +1235,11 @@
     "ci95": 0.005
    },
    "peak_load_A": {
-    "mean": 1.054,
+    "mean": 1.053,
     "ci95": 0.008
    },
    "peak_load_B": {
-    "mean": 0.737,
+    "mean": 0.738,
     "ci95": 0.022
    },
    "students": {
@@ -1254,76 +1254,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.289,
-    "ci95": 0.296
+    "mean": 0.953,
+    "ci95": 0.17
    },
    "p90_wait_min": {
-    "mean": 3.648,
-    "ci95": 1.006
+    "mean": 2.531,
+    "ci95": 0.484
    },
    "mean_throughput_min": {
-    "mean": 17.841,
-    "ci95": 0.295
+    "mean": 20.582,
+    "ci95": 0.169
    },
    "p90_throughput_min": {
-    "mean": 20.489,
-    "ci95": 0.876
+    "mean": 22.794,
+    "ci95": 0.394
    },
    "mean_total_min": {
-    "mean": 17.898,
-    "ci95": 0.295
+    "mean": 20.64,
+    "ci95": 0.171
    },
    "quiet_throughput_min": {
-    "mean": 16.79,
-    "ci95": 0.02
+    "mean": 19.863,
+    "ci95": 0.018
    },
    "peak_throughput_min": {
-    "mean": 18.088,
-    "ci95": 0.269
+    "mean": 20.981,
+    "ci95": 0.186
    },
    "outages": {
-    "mean": 0.9,
-    "ci95": 0.315
+    "mean": 0.75,
+    "ci95": 0.345
    },
    "outage_minutes": {
-    "mean": 7.048,
-    "ci95": 2.695
+    "mean": 4.364,
+    "ci95": 2.412
    },
    "redirected": {
-    "mean": 336.05,
-    "ci95": 22.882
+    "mean": 344.8,
+    "ci95": 28.82
    },
    "unsuccessful_rate": {
-    "mean": 0.063,
-    "ci95": 0.049
+    "mean": 0.04,
+    "ci95": 0.029
    },
    "compliance_rate": {
-    "mean": 0.606,
-    "ci95": 0.011
+    "mean": 0.608,
+    "ci95": 0.009
    },
    "peak_queue": {
-    "mean": 99.7,
-    "ci95": 22.622
+    "mean": 74.9,
+    "ci95": 15.779
    },
    "peak_scan_queue": {
-    "mean": 15.4,
-    "ci95": 2.831
+    "mean": 13.55,
+    "ci95": 1.709
    },
    "util_A": {
-    "mean": 0.565,
-    "ci95": 0.007
+    "mean": 0.561,
+    "ci95": 0.004
    },
    "util_B": {
-    "mean": 0.252,
+    "mean": 0.26,
     "ci95": 0.007
    },
    "peak_load_A": {
-    "mean": 1.071,
-    "ci95": 0.016
+    "mean": 1.054,
+    "ci95": 0.008
    },
    "peak_load_B": {
-    "mean": 0.729,
-    "ci95": 0.02
+    "mean": 0.741,
+    "ci95": 0.024
    },
    "students": {
     "mean": 2956.45,
@@ -1337,40 +1337,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 3.16,
-    "ci95": 0.216
+    "mean": 3.275,
+    "ci95": 0.231
    },
    "p90_wait_min": {
-    "mean": 11.948,
-    "ci95": 1.048
+    "mean": 12.306,
+    "ci95": 1.07
    },
    "mean_throughput_min": {
-    "mean": 19.712,
-    "ci95": 0.214
+    "mean": 22.896,
+    "ci95": 0.233
    },
    "p90_throughput_min": {
-    "mean": 28.274,
-    "ci95": 1.038
+    "mean": 31.633,
+    "ci95": 1.054
    },
    "mean_total_min": {
-    "mean": 19.712,
-    "ci95": 0.214
+    "mean": 22.896,
+    "ci95": 0.233
    },
    "quiet_throughput_min": {
-    "mean": 16.705,
-    "ci95": 0.016
+    "mean": 19.773,
+    "ci95": 0.019
    },
    "peak_throughput_min": {
-    "mean": 21.155,
-    "ci95": 0.246
+    "mean": 24.445,
+    "ci95": 0.236
    },
    "outages": {
     "mean": 0.5,
-    "ci95": 0.225
+    "ci95": 0.302
    },
    "outage_minutes": {
-    "mean": 1.596,
-    "ci95": 0.943
+    "mean": 1.963,
+    "ci95": 1.174
    },
    "redirected": {
     "mean": 0,
@@ -1385,27 +1385,27 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 262.05,
-    "ci95": 17.86
+    "mean": 273.6,
+    "ci95": 20.754
    },
    "peak_scan_queue": {
-    "mean": 24.45,
-    "ci95": 3.241
+    "mean": 25.05,
+    "ci95": 3.508
    },
    "util_A": {
-    "mean": 0.651,
-    "ci95": 0.004
+    "mean": 0.653,
+    "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.166,
+    "mean": 0.165,
     "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.341,
-    "ci95": 0.019
+    "mean": 1.342,
+    "ci95": 0.017
    },
    "peak_load_B": {
-    "mean": 0.349,
+    "mean": 0.348,
     "ci95": 0.009
    },
    "students": {
@@ -1420,75 +1420,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.652,
-    "ci95": 0.112
+    "mean": 0.694,
+    "ci95": 0.131
    },
    "p90_wait_min": {
-    "mean": 2.217,
-    "ci95": 0.443
+    "mean": 2.184,
+    "ci95": 0.43
    },
    "mean_throughput_min": {
-    "mean": 17.202,
-    "ci95": 0.112
+    "mean": 20.316,
+    "ci95": 0.129
    },
    "p90_throughput_min": {
-    "mean": 18.999,
-    "ci95": 0.34
+    "mean": 22.437,
+    "ci95": 0.338
    },
    "mean_total_min": {
-    "mean": 17.238,
-    "ci95": 0.111
+    "mean": 20.352,
+    "ci95": 0.13
    },
    "quiet_throughput_min": {
-    "mean": 16.736,
-    "ci95": 0.013
+    "mean": 19.799,
+    "ci95": 0.014
    },
    "peak_throughput_min": {
-    "mean": 17.619,
-    "ci95": 0.117
+    "mean": 20.641,
+    "ci95": 0.106
    },
    "outages": {
-    "mean": 0.4,
-    "ci95": 0.22
+    "mean": 0.5,
+    "ci95": 0.302
    },
    "outage_minutes": {
-    "mean": 1.074,
-    "ci95": 0.812
+    "mean": 2.089,
+    "ci95": 1.329
    },
    "redirected": {
-    "mean": 211.25,
-    "ci95": 10.712
+    "mean": 211.05,
+    "ci95": 10.685
    },
    "unsuccessful_rate": {
-    "mean": 0.012,
-    "ci95": 0.017
+    "mean": 0.008,
+    "ci95": 0.009
    },
    "compliance_rate": {
-    "mean": 0.612,
-    "ci95": 0.012
+    "mean": 0.607,
+    "ci95": 0.011
    },
    "peak_queue": {
-    "mean": 64.95,
-    "ci95": 13.194
+    "mean": 76.75,
+    "ci95": 15.829
    },
    "peak_scan_queue": {
-    "mean": 14.5,
-    "ci95": 1.807
+    "mean": 13,
+    "ci95": 2.161
    },
    "util_A": {
-    "mean": 0.593,
-    "ci95": 0.006
-   },
-   "util_B": {
-    "mean": 0.224,
+    "mean": 0.592,
     "ci95": 0.004
    },
+   "util_B": {
+    "mean": 0.223,
+    "ci95": 0.003
+   },
    "peak_load_A": {
-    "mean": 1.039,
+    "mean": 1.036,
     "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.683,
+    "mean": 0.685,
     "ci95": 0.017
    },
    "students": {
@@ -1503,76 +1503,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.621,
-    "ci95": 0.076
+    "mean": 0.56,
+    "ci95": 0.069
    },
    "p90_wait_min": {
-    "mean": 2.043,
-    "ci95": 0.273
+    "mean": 1.903,
+    "ci95": 0.255
    },
    "mean_throughput_min": {
-    "mean": 17.168,
-    "ci95": 0.077
+    "mean": 20.188,
+    "ci95": 0.068
    },
    "p90_throughput_min": {
-    "mean": 18.887,
-    "ci95": 0.198
+    "mean": 22.096,
+    "ci95": 0.145
    },
    "mean_total_min": {
-    "mean": 17.207,
-    "ci95": 0.077
+    "mean": 20.227,
+    "ci95": 0.068
    },
    "quiet_throughput_min": {
-    "mean": 16.725,
-    "ci95": 0.018
+    "mean": 19.805,
+    "ci95": 0.02
    },
    "peak_throughput_min": {
-    "mean": 17.623,
-    "ci95": 0.128
+    "mean": 20.65,
+    "ci95": 0.104
    },
    "outages": {
-    "mean": 0.5,
-    "ci95": 0.266
+    "mean": 0.35,
+    "ci95": 0.214
    },
    "outage_minutes": {
-    "mean": 1.438,
-    "ci95": 0.949
+    "mean": 1.198,
+    "ci95": 0.884
    },
    "redirected": {
-    "mean": 231.65,
-    "ci95": 18.469
+    "mean": 229.45,
+    "ci95": 16.329
    },
    "unsuccessful_rate": {
-    "mean": 0.036,
-    "ci95": 0.04
+    "mean": 0.065,
+    "ci95": 0.063
    },
    "compliance_rate": {
-    "mean": 0.603,
+    "mean": 0.61,
     "ci95": 0.008
    },
    "peak_queue": {
-    "mean": 61.25,
-    "ci95": 6.681
+    "mean": 55.35,
+    "ci95": 5.478
    },
    "peak_scan_queue": {
-    "mean": 14.2,
-    "ci95": 1.895
+    "mean": 13.9,
+    "ci95": 2.05
    },
    "util_A": {
-    "mean": 0.587,
-    "ci95": 0.007
-   },
-   "util_B": {
-    "mean": 0.229,
+    "mean": 0.588,
     "ci95": 0.005
    },
+   "util_B": {
+    "mean": 0.23,
+    "ci95": 0.004
+   },
    "peak_load_A": {
-    "mean": 1.034,
-    "ci95": 0.008
+    "mean": 1.031,
+    "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.699,
-    "ci95": 0.021
+    "mean": 0.698,
+    "ci95": 0.019
    },
    "students": {
     "mean": 2947.4,
@@ -1586,40 +1586,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.897,
-    "ci95": 0.395
+    "mean": 1.654,
+    "ci95": 0.415
    },
    "p90_wait_min": {
-    "mean": 5.744,
-    "ci95": 1.07
+    "mean": 5.023,
+    "ci95": 1.0
    },
    "mean_throughput_min": {
-    "mean": 18.451,
-    "ci95": 0.395
+    "mean": 21.28,
+    "ci95": 0.415
    },
    "p90_throughput_min": {
-    "mean": 22.321,
-    "ci95": 0.984
+    "mean": 24.706,
+    "ci95": 0.916
    },
    "mean_total_min": {
-    "mean": 18.451,
-    "ci95": 0.395
+    "mean": 21.28,
+    "ci95": 0.415
    },
    "quiet_throughput_min": {
-    "mean": 16.738,
-    "ci95": 0.023
+    "mean": 19.825,
+    "ci95": 0.029
    },
    "peak_throughput_min": {
-    "mean": 19.023,
-    "ci95": 0.517
+    "mean": 21.749,
+    "ci95": 0.565
    },
    "outages": {
-    "mean": 0.75,
-    "ci95": 0.28
+    "mean": 0.5,
+    "ci95": 0.266
    },
    "outage_minutes": {
-    "mean": 3.409,
-    "ci95": 1.423
+    "mean": 1.936,
+    "ci95": 1.114
    },
    "redirected": {
     "mean": 0,
@@ -1634,24 +1634,24 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 135.05,
-    "ci95": 20.942
+    "mean": 122.05,
+    "ci95": 20.033
    },
    "peak_scan_queue": {
-    "mean": 10.45,
-    "ci95": 1.397
+    "mean": 10.25,
+    "ci95": 1.23
    },
    "util_A": {
-    "mean": 0.651,
-    "ci95": 0.006
+    "mean": 0.655,
+    "ci95": 0.007
    },
    "util_B": {
-    "mean": 0.165,
+    "mean": 0.164,
     "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.115,
-    "ci95": 0.018
+    "mean": 1.114,
+    "ci95": 0.017
    },
    "peak_load_B": {
     "mean": 0.29,
@@ -1669,76 +1669,76 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.904,
-    "ci95": 0.217
+    "mean": 0.851,
+    "ci95": 0.176
    },
    "p90_wait_min": {
-    "mean": 2.884,
-    "ci95": 0.697
+    "mean": 2.836,
+    "ci95": 0.622
    },
    "mean_throughput_min": {
-    "mean": 17.452,
-    "ci95": 0.213
+    "mean": 20.473,
+    "ci95": 0.178
    },
    "p90_throughput_min": {
-    "mean": 19.628,
-    "ci95": 0.537
+    "mean": 22.739,
+    "ci95": 0.404
    },
    "mean_total_min": {
-    "mean": 17.466,
-    "ci95": 0.214
+    "mean": 20.487,
+    "ci95": 0.177
    },
    "quiet_throughput_min": {
-    "mean": 16.751,
-    "ci95": 0.025
+    "mean": 19.84,
+    "ci95": 0.018
    },
    "peak_throughput_min": {
-    "mean": 17.565,
-    "ci95": 0.211
+    "mean": 20.617,
+    "ci95": 0.162
    },
    "outages": {
-    "mean": 0.7,
-    "ci95": 0.288
+    "mean": 0.5,
+    "ci95": 0.225
    },
    "outage_minutes": {
-    "mean": 3.151,
-    "ci95": 1.315
+    "mean": 2.061,
+    "ci95": 0.977
    },
    "redirected": {
-    "mean": 81.85,
-    "ci95": 11.89
+    "mean": 81,
+    "ci95": 11.839
    },
    "unsuccessful_rate": {
-    "mean": 0.035,
-    "ci95": 0.023
+    "mean": 0.041,
+    "ci95": 0.043
    },
    "compliance_rate": {
-    "mean": 0.597,
+    "mean": 0.609,
     "ci95": 0.019
    },
    "peak_queue": {
-    "mean": 82.1,
-    "ci95": 16.003
+    "mean": 74.75,
+    "ci95": 15.428
    },
    "peak_scan_queue": {
-    "mean": 9.45,
-    "ci95": 0.905
+    "mean": 9.75,
+    "ci95": 1.034
    },
    "util_A": {
-    "mean": 0.628,
+    "mean": 0.633,
     "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.189,
+    "mean": 0.187,
     "ci95": 0.005
    },
    "peak_load_A": {
-    "mean": 1.018,
-    "ci95": 0.004
+    "mean": 1.019,
+    "ci95": 0.005
    },
    "peak_load_B": {
-    "mean": 0.381,
-    "ci95": 0.016
+    "mean": 0.378,
+    "ci95": 0.015
    },
    "students": {
     "mean": 2947.85,
@@ -1752,76 +1752,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.56,
-    "ci95": 0.076
+    "mean": 0.548,
+    "ci95": 0.062
    },
    "p90_wait_min": {
-    "mean": 1.629,
-    "ci95": 0.258
+    "mean": 1.467,
+    "ci95": 0.159
    },
    "mean_throughput_min": {
-    "mean": 17.112,
-    "ci95": 0.077
+    "mean": 20.173,
+    "ci95": 0.065
    },
    "p90_throughput_min": {
-    "mean": 18.676,
-    "ci95": 0.192
+    "mean": 21.999,
+    "ci95": 0.104
    },
    "mean_total_min": {
-    "mean": 17.133,
-    "ci95": 0.079
+    "mean": 20.194,
+    "ci95": 0.067
    },
    "quiet_throughput_min": {
-    "mean": 16.774,
-    "ci95": 0.015
+    "mean": 19.849,
+    "ci95": 0.017
    },
    "peak_throughput_min": {
-    "mean": 17.257,
-    "ci95": 0.107
+    "mean": 20.302,
+    "ci95": 0.09
    },
    "outages": {
-    "mean": 0.75,
-    "ci95": 0.345
+    "mean": 0.55,
+    "ci95": 0.301
    },
    "outage_minutes": {
-    "mean": 3.076,
-    "ci95": 1.551
+    "mean": 2.241,
+    "ci95": 1.318
    },
    "redirected": {
-    "mean": 121.25,
-    "ci95": 20.351
+    "mean": 121.05,
+    "ci95": 30.25
    },
    "unsuccessful_rate": {
-    "mean": 0.074,
-    "ci95": 0.038
+    "mean": 0.072,
+    "ci95": 0.044
    },
    "compliance_rate": {
-    "mean": 0.598,
-    "ci95": 0.021
+    "mean": 0.595,
+    "ci95": 0.013
    },
    "peak_queue": {
-    "mean": 57.9,
-    "ci95": 10.122
+    "mean": 51.4,
+    "ci95": 6.638
    },
    "peak_scan_queue": {
-    "mean": 9.8,
-    "ci95": 0.991
+    "mean": 9.4,
+    "ci95": 0.771
    },
    "util_A": {
-    "mean": 0.615,
-    "ci95": 0.007
+    "mean": 0.619,
+    "ci95": 0.009
    },
    "util_B": {
-    "mean": 0.2,
-    "ci95": 0.006
+    "mean": 0.197,
+    "ci95": 0.01
    },
    "peak_load_A": {
-    "mean": 1.013,
-    "ci95": 0.007
+    "mean": 1.012,
+    "ci95": 0.008
    },
    "peak_load_B": {
-    "mean": 0.409,
-    "ci95": 0.024
+    "mean": 0.421,
+    "ci95": 0.028
    },
    "students": {
     "mean": 2947.85,
@@ -1835,40 +1835,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 5.193,
-    "ci95": 0.748
+    "mean": 5.757,
+    "ci95": 0.626
    },
    "p90_wait_min": {
-    "mean": 14.204,
-    "ci95": 1.949
+    "mean": 14.914,
+    "ci95": 1.384
    },
    "mean_throughput_min": {
-    "mean": 21.737,
-    "ci95": 0.748
+    "mean": 25.381,
+    "ci95": 0.624
    },
    "p90_throughput_min": {
-    "mean": 30.611,
-    "ci95": 1.883
+    "mean": 34.496,
+    "ci95": 1.336
    },
    "mean_total_min": {
-    "mean": 21.737,
-    "ci95": 0.748
+    "mean": 25.381,
+    "ci95": 0.624
    },
    "quiet_throughput_min": {
-    "mean": 16.643,
+    "mean": 19.724,
     "ci95": 0.015
    },
    "peak_throughput_min": {
-    "mean": 22.615,
-    "ci95": 0.872
+    "mean": 26.819,
+    "ci95": 0.916
    },
    "outages": {
-    "mean": 0.5,
-    "ci95": 0.333
+    "mean": 0.55,
+    "ci95": 0.224
    },
    "outage_minutes": {
-    "mean": 2.313,
-    "ci95": 1.559
+    "mean": 2.351,
+    "ci95": 0.982
    },
    "redirected": {
     "mean": 0,
@@ -1883,23 +1883,23 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 293.95,
-    "ci95": 27.63
+    "mean": 320.55,
+    "ci95": 26.794
    },
    "peak_scan_queue": {
-    "mean": 16.2,
-    "ci95": 2.224
+    "mean": 15.5,
+    "ci95": 2.282
    },
    "util_A": {
-    "mean": 0.655,
-    "ci95": 0.006
+    "mean": 0.658,
+    "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.167,
+    "mean": 0.165,
     "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.318,
+    "mean": 1.317,
     "ci95": 0.017
    },
    "peak_load_B": {
@@ -1918,75 +1918,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.035,
-    "ci95": 0.327
+    "mean": 1.571,
+    "ci95": 0.392
    },
    "p90_wait_min": {
-    "mean": 2.731,
-    "ci95": 0.824
+    "mean": 4.209,
+    "ci95": 1.039
    },
    "mean_throughput_min": {
-    "mean": 17.588,
-    "ci95": 0.325
+    "mean": 21.199,
+    "ci95": 0.394
    },
    "p90_throughput_min": {
-    "mean": 19.819,
-    "ci95": 0.782
+    "mean": 24.477,
+    "ci95": 0.983
    },
    "mean_total_min": {
-    "mean": 17.629,
-    "ci95": 0.326
+    "mean": 21.24,
+    "ci95": 0.394
    },
    "quiet_throughput_min": {
-    "mean": 16.713,
-    "ci95": 0.026
+    "mean": 19.769,
+    "ci95": 0.025
    },
    "peak_throughput_min": {
-    "mean": 18.185,
-    "ci95": 0.478
+    "mean": 22.016,
+    "ci95": 0.571
    },
    "outages": {
-    "mean": 0.95,
-    "ci95": 0.389
+    "mean": 1.3,
+    "ci95": 0.405
    },
    "outage_minutes": {
-    "mean": 4.651,
-    "ci95": 2.095
+    "mean": 6.285,
+    "ci95": 2.192
    },
    "redirected": {
     "mean": 244.75,
-    "ci95": 11.914
+    "ci95": 11.949
    },
    "unsuccessful_rate": {
-    "mean": 0.122,
-    "ci95": 0.07
+    "mean": 0.073,
+    "ci95": 0.048
    },
    "compliance_rate": {
-    "mean": 0.61,
-    "ci95": 0.009
+    "mean": 0.604,
+    "ci95": 0.011
    },
    "peak_queue": {
-    "mean": 76.95,
-    "ci95": 15.292
+    "mean": 101.25,
+    "ci95": 18.929
    },
    "peak_scan_queue": {
     "mean": 11.15,
-    "ci95": 1.122
+    "ci95": 1.018
    },
    "util_A": {
-    "mean": 0.589,
-    "ci95": 0.005
+    "mean": 0.59,
+    "ci95": 0.004
    },
    "util_B": {
     "mean": 0.234,
     "ci95": 0.005
    },
    "peak_load_A": {
-    "mean": 1.043,
-    "ci95": 0.003
+    "mean": 1.046,
+    "ci95": 0.004
    },
    "peak_load_B": {
-    "mean": 0.636,
+    "mean": 0.634,
     "ci95": 0.018
    },
    "students": {
@@ -2001,76 +2001,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.857,
-    "ci95": 0.232
+    "mean": 0.879,
+    "ci95": 0.228
    },
    "p90_wait_min": {
-    "mean": 2.546,
-    "ci95": 0.731
+    "mean": 2.54,
+    "ci95": 0.686
    },
    "mean_throughput_min": {
-    "mean": 17.404,
-    "ci95": 0.231
+    "mean": 20.504,
+    "ci95": 0.224
    },
    "p90_throughput_min": {
-    "mean": 19.478,
-    "ci95": 0.639
+    "mean": 22.865,
+    "ci95": 0.592
    },
    "mean_total_min": {
-    "mean": 17.451,
-    "ci95": 0.234
+    "mean": 20.554,
+    "ci95": 0.226
    },
    "quiet_throughput_min": {
-    "mean": 16.714,
-    "ci95": 0.022
+    "mean": 19.793,
+    "ci95": 0.024
    },
    "peak_throughput_min": {
-    "mean": 18.123,
-    "ci95": 0.458
+    "mean": 21.154,
+    "ci95": 0.357
    },
    "outages": {
-    "mean": 0.8,
-    "ci95": 0.305
+    "mean": 0.95,
+    "ci95": 0.438
    },
    "outage_minutes": {
-    "mean": 4.553,
-    "ci95": 2.317
+    "mean": 4.747,
+    "ci95": 2.472
    },
    "redirected": {
-    "mean": 278.5,
-    "ci95": 26.566
+    "mean": 296.35,
+    "ci95": 29.279
    },
    "unsuccessful_rate": {
-    "mean": 0.095,
-    "ci95": 0.045
+    "mean": 0.094,
+    "ci95": 0.06
    },
    "compliance_rate": {
-    "mean": 0.606,
-    "ci95": 0.008
-   },
-   "peak_queue": {
-    "mean": 69.4,
-    "ci95": 17.869
-   },
-   "peak_scan_queue": {
-    "mean": 13.25,
-    "ci95": 2.408
-   },
-   "util_A": {
-    "mean": 0.581,
-    "ci95": 0.005
-   },
-   "util_B": {
-    "mean": 0.241,
+    "mean": 0.604,
     "ci95": 0.007
    },
+   "peak_queue": {
+    "mean": 74.85,
+    "ci95": 14.882
+   },
+   "peak_scan_queue": {
+    "mean": 12.7,
+    "ci95": 1.526
+   },
+   "util_A": {
+    "mean": 0.575,
+    "ci95": 0.007
+   },
+   "util_B": {
+    "mean": 0.246,
+    "ci95": 0.009
+   },
    "peak_load_A": {
-    "mean": 1.043,
-    "ci95": 0.008
+    "mean": 1.032,
+    "ci95": 0.015
    },
    "peak_load_B": {
-    "mean": 0.639,
-    "ci95": 0.024
+    "mean": 0.684,
+    "ci95": 0.039
    },
    "students": {
     "mean": 2966.1,
@@ -2084,40 +2084,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 4.385,
-    "ci95": 0.525
+    "mean": 4.31,
+    "ci95": 0.634
    },
    "p90_wait_min": {
-    "mean": 13.472,
-    "ci95": 1.14
+    "mean": 13.906,
+    "ci95": 1.58
    },
    "mean_throughput_min": {
-    "mean": 20.935,
-    "ci95": 0.526
+    "mean": 23.94,
+    "ci95": 0.632
    },
    "p90_throughput_min": {
-    "mean": 29.805,
-    "ci95": 1.125
+    "mean": 33.212,
+    "ci95": 1.543
    },
    "mean_total_min": {
-    "mean": 20.935,
-    "ci95": 0.526
+    "mean": 23.94,
+    "ci95": 0.632
    },
    "quiet_throughput_min": {
-    "mean": 16.728,
-    "ci95": 0.02
+    "mean": 19.821,
+    "ci95": 0.027
    },
    "peak_throughput_min": {
-    "mean": 22.727,
-    "ci95": 0.863
+    "mean": 25.587,
+    "ci95": 0.949
    },
    "outages": {
     "mean": 0.45,
-    "ci95": 0.224
+    "ci95": 0.301
    },
    "outage_minutes": {
-    "mean": 2.269,
-    "ci95": 1.132
+    "mean": 2.023,
+    "ci95": 1.38
    },
    "redirected": {
     "mean": 0,
@@ -2132,27 +2132,27 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 292,
-    "ci95": 22.862
+    "mean": 299.2,
+    "ci95": 29.861
    },
    "peak_scan_queue": {
-    "mean": 25.1,
-    "ci95": 3.157
+    "mean": 24.85,
+    "ci95": 2.592
    },
    "util_A": {
-    "mean": 0.654,
-    "ci95": 0.005
+    "mean": 0.658,
+    "ci95": 0.007
    },
    "util_B": {
-    "mean": 0.166,
-    "ci95": 0.003
+    "mean": 0.165,
+    "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.342,
+    "mean": 1.345,
     "ci95": 0.01
    },
    "peak_load_B": {
-    "mean": 0.348,
+    "mean": 0.347,
     "ci95": 0.009
    },
    "students": {
@@ -2167,75 +2167,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.493,
-    "ci95": 0.32
+    "mean": 1.176,
+    "ci95": 0.293
    },
    "p90_wait_min": {
-    "mean": 3.962,
-    "ci95": 0.73
+    "mean": 3.379,
+    "ci95": 0.724
    },
    "mean_throughput_min": {
-    "mean": 18.042,
-    "ci95": 0.321
+    "mean": 20.802,
+    "ci95": 0.29
    },
    "p90_throughput_min": {
-    "mean": 20.935,
-    "ci95": 0.756
+    "mean": 23.371,
+    "ci95": 0.673
    },
    "mean_total_min": {
-    "mean": 18.081,
-    "ci95": 0.321
+    "mean": 20.84,
+    "ci95": 0.29
    },
    "quiet_throughput_min": {
-    "mean": 16.734,
-    "ci95": 0.02
+    "mean": 19.83,
+    "ci95": 0.023
    },
    "peak_throughput_min": {
-    "mean": 18.499,
-    "ci95": 0.417
+    "mean": 21.327,
+    "ci95": 0.366
    },
    "outages": {
-    "mean": 0.75,
-    "ci95": 0.314
+    "mean": 0.3,
+    "ci95": 0.25
    },
    "outage_minutes": {
-    "mean": 3.675,
-    "ci95": 1.563
+    "mean": 1.426,
+    "ci95": 1.18
    },
    "redirected": {
-    "mean": 227.3,
-    "ci95": 10.121
+    "mean": 227.6,
+    "ci95": 10.119
    },
    "unsuccessful_rate": {
-    "mean": 0.005,
-    "ci95": 0.006
+    "mean": 0.0,
+    "ci95": 0.001
    },
    "compliance_rate": {
-    "mean": 0.305,
-    "ci95": 0.008
+    "mean": 0.304,
+    "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 115,
-    "ci95": 19.736
+    "mean": 89.65,
+    "ci95": 16.993
    },
    "peak_scan_queue": {
-    "mean": 12.2,
-    "ci95": 1.125
+    "mean": 11.6,
+    "ci95": 1.15
    },
    "util_A": {
-    "mean": 0.59,
+    "mean": 0.593,
     "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.23,
-    "ci95": 0.004
+    "mean": 0.228,
+    "ci95": 0.005
    },
    "peak_load_A": {
     "mean": 1.072,
-    "ci95": 0.007
+    "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.664,
+    "mean": 0.667,
     "ci95": 0.012
    },
    "students": {
@@ -2250,75 +2250,75 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.001,
-    "ci95": 0.107
+    "mean": 1.104,
+    "ci95": 0.134
    },
    "p90_wait_min": {
-    "mean": 2.852,
-    "ci95": 0.308
+    "mean": 3.014,
+    "ci95": 0.338
    },
    "mean_throughput_min": {
-    "mean": 17.547,
-    "ci95": 0.105
+    "mean": 20.731,
+    "ci95": 0.133
    },
    "p90_throughput_min": {
-    "mean": 19.662,
-    "ci95": 0.264
+    "mean": 23.18,
+    "ci95": 0.328
    },
    "mean_total_min": {
-    "mean": 17.591,
-    "ci95": 0.107
+    "mean": 20.775,
+    "ci95": 0.135
    },
    "quiet_throughput_min": {
-    "mean": 16.738,
-    "ci95": 0.023
+    "mean": 19.824,
+    "ci95": 0.02
    },
    "peak_throughput_min": {
-    "mean": 17.97,
-    "ci95": 0.164
+    "mean": 21.108,
+    "ci95": 0.165
    },
    "outages": {
-    "mean": 0.55,
-    "ci95": 0.301
+    "mean": 0.65,
+    "ci95": 0.257
    },
    "outage_minutes": {
-    "mean": 2.651,
-    "ci95": 1.439
+    "mean": 3.157,
+    "ci95": 1.22
    },
    "redirected": {
-    "mean": 259.8,
-    "ci95": 20.128
+    "mean": 262.05,
+    "ci95": 18.007
    },
    "unsuccessful_rate": {
-    "mean": 0.005,
-    "ci95": 0.005
+    "mean": 0.001,
+    "ci95": 0.002
    },
    "compliance_rate": {
-    "mean": 0.304,
+    "mean": 0.309,
     "ci95": 0.006
    },
    "peak_queue": {
-    "mean": 83.9,
-    "ci95": 9.046
+    "mean": 95.4,
+    "ci95": 11.24
    },
    "peak_scan_queue": {
-    "mean": 11.2,
-    "ci95": 1.041
+    "mean": 10.9,
+    "ci95": 1.222
    },
    "util_A": {
-    "mean": 0.581,
-    "ci95": 0.007
+    "mean": 0.584,
+    "ci95": 0.005
    },
    "util_B": {
     "mean": 0.238,
     "ci95": 0.007
    },
    "peak_load_A": {
-    "mean": 1.061,
-    "ci95": 0.012
+    "mean": 1.068,
+    "ci95": 0.008
    },
    "peak_load_B": {
-    "mean": 0.674,
+    "mean": 0.676,
     "ci95": 0.012
    },
    "students": {
@@ -2333,40 +2333,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 4.385,
-    "ci95": 0.525
+    "mean": 4.31,
+    "ci95": 0.634
    },
    "p90_wait_min": {
-    "mean": 13.472,
-    "ci95": 1.14
+    "mean": 13.906,
+    "ci95": 1.58
    },
    "mean_throughput_min": {
-    "mean": 20.935,
-    "ci95": 0.526
+    "mean": 23.94,
+    "ci95": 0.632
    },
    "p90_throughput_min": {
-    "mean": 29.805,
-    "ci95": 1.125
+    "mean": 33.212,
+    "ci95": 1.543
    },
    "mean_total_min": {
-    "mean": 20.935,
-    "ci95": 0.526
+    "mean": 23.94,
+    "ci95": 0.632
    },
    "quiet_throughput_min": {
-    "mean": 16.728,
-    "ci95": 0.02
+    "mean": 19.821,
+    "ci95": 0.027
    },
    "peak_throughput_min": {
-    "mean": 22.727,
-    "ci95": 0.863
+    "mean": 25.587,
+    "ci95": 0.949
    },
    "outages": {
     "mean": 0.45,
-    "ci95": 0.224
+    "ci95": 0.301
    },
    "outage_minutes": {
-    "mean": 2.269,
-    "ci95": 1.132
+    "mean": 2.023,
+    "ci95": 1.38
    },
    "redirected": {
     "mean": 0,
@@ -2381,27 +2381,27 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 292,
-    "ci95": 22.862
+    "mean": 299.2,
+    "ci95": 29.861
    },
    "peak_scan_queue": {
-    "mean": 25.1,
-    "ci95": 3.157
+    "mean": 24.85,
+    "ci95": 2.592
    },
    "util_A": {
-    "mean": 0.654,
-    "ci95": 0.005
+    "mean": 0.658,
+    "ci95": 0.007
    },
    "util_B": {
-    "mean": 0.166,
-    "ci95": 0.003
+    "mean": 0.165,
+    "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.342,
+    "mean": 1.345,
     "ci95": 0.01
    },
    "peak_load_B": {
-    "mean": 0.348,
+    "mean": 0.347,
     "ci95": 0.009
    },
    "students": {
@@ -2416,76 +2416,76 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.124,
-    "ci95": 0.274
+    "mean": 1.159,
+    "ci95": 0.335
    },
    "p90_wait_min": {
-    "mean": 2.887,
-    "ci95": 0.702
+    "mean": 2.963,
+    "ci95": 0.773
    },
    "mean_throughput_min": {
-    "mean": 17.677,
-    "ci95": 0.272
+    "mean": 20.782,
+    "ci95": 0.333
    },
    "p90_throughput_min": {
-    "mean": 19.945,
-    "ci95": 0.66
+    "mean": 23.311,
+    "ci95": 0.751
    },
    "mean_total_min": {
-    "mean": 17.718,
-    "ci95": 0.272
+    "mean": 20.823,
+    "ci95": 0.333
    },
    "quiet_throughput_min": {
-    "mean": 16.794,
-    "ci95": 0.016
+    "mean": 19.867,
+    "ci95": 0.02
    },
    "peak_throughput_min": {
-    "mean": 18.003,
-    "ci95": 0.419
+    "mean": 21.159,
+    "ci95": 0.443
    },
    "outages": {
-    "mean": 0.55,
-    "ci95": 0.224
+    "mean": 0.5,
+    "ci95": 0.266
    },
    "outage_minutes": {
-    "mean": 2.817,
-    "ci95": 1.158
+    "mean": 2.365,
+    "ci95": 1.295
    },
    "redirected": {
-    "mean": 243.2,
-    "ci95": 10.546
+    "mean": 243.1,
+    "ci95": 10.862
    },
    "unsuccessful_rate": {
-    "mean": 0.032,
-    "ci95": 0.032
+    "mean": 0.034,
+    "ci95": 0.027
    },
    "compliance_rate": {
     "mean": 1.0,
     "ci95": 0.0
    },
    "peak_queue": {
-    "mean": 88.55,
-    "ci95": 17.835
+    "mean": 88.25,
+    "ci95": 18.452
    },
    "peak_scan_queue": {
-    "mean": 14.95,
-    "ci95": 1.168
+    "mean": 15.8,
+    "ci95": 1.549
    },
    "util_A": {
-    "mean": 0.585,
-    "ci95": 0.006
+    "mean": 0.59,
+    "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.234,
+    "mean": 0.232,
     "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.036,
+    "mean": 1.035,
     "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.683,
-    "ci95": 0.012
+    "mean": 0.685,
+    "ci95": 0.013
    },
    "students": {
     "mean": 2957.95,
@@ -2499,76 +2499,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.704,
-    "ci95": 0.085
+    "mean": 0.756,
+    "ci95": 0.103
    },
    "p90_wait_min": {
-    "mean": 1.873,
-    "ci95": 0.242
+    "mean": 2.004,
+    "ci95": 0.269
    },
    "mean_throughput_min": {
-    "mean": 17.253,
-    "ci95": 0.086
+    "mean": 20.373,
+    "ci95": 0.103
    },
    "p90_throughput_min": {
-    "mean": 18.868,
-    "ci95": 0.193
+    "mean": 22.34,
+    "ci95": 0.202
    },
    "mean_total_min": {
-    "mean": 17.301,
-    "ci95": 0.085
+    "mean": 20.423,
+    "ci95": 0.104
    },
    "quiet_throughput_min": {
-    "mean": 16.796,
-    "ci95": 0.018
+    "mean": 19.868,
+    "ci95": 0.014
    },
    "peak_throughput_min": {
-    "mean": 17.566,
-    "ci95": 0.131
+    "mean": 20.684,
+    "ci95": 0.15
    },
    "outages": {
-    "mean": 0.6,
-    "ci95": 0.33
+    "mean": 0.75,
+    "ci95": 0.314
    },
    "outage_minutes": {
-    "mean": 2.673,
-    "ci95": 1.499
+    "mean": 3.629,
+    "ci95": 1.751
    },
    "redirected": {
-    "mean": 284.2,
-    "ci95": 16.908
+    "mean": 299.15,
+    "ci95": 24.076
    },
    "unsuccessful_rate": {
-    "mean": 0.095,
-    "ci95": 0.039
+    "mean": 0.071,
+    "ci95": 0.038
    },
    "compliance_rate": {
     "mean": 1.0,
     "ci95": 0.0
    },
    "peak_queue": {
-    "mean": 51.8,
-    "ci95": 5.442
+    "mean": 53.95,
+    "ci95": 5.757
    },
    "peak_scan_queue": {
-    "mean": 14.9,
-    "ci95": 0.931
+    "mean": 14.45,
+    "ci95": 1.194
    },
    "util_A": {
-    "mean": 0.575,
-    "ci95": 0.008
-   },
-   "util_B": {
-    "mean": 0.245,
-    "ci95": 0.006
-   },
-   "peak_load_A": {
-    "mean": 1.028,
+    "mean": 0.573,
     "ci95": 0.009
    },
+   "util_B": {
+    "mean": 0.248,
+    "ci95": 0.007
+   },
+   "peak_load_A": {
+    "mean": 1.03,
+    "ci95": 0.006
+   },
    "peak_load_B": {
-    "mean": 0.708,
-    "ci95": 0.02
+    "mean": 0.721,
+    "ci95": 0.021
    },
    "students": {
     "mean": 2957.95,
@@ -2582,40 +2582,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 12.878,
-    "ci95": 0.586
+    "mean": 12.883,
+    "ci95": 0.749
    },
    "p90_wait_min": {
-    "mean": 33.687,
-    "ci95": 1.055
+    "mean": 33.864,
+    "ci95": 1.361
    },
    "mean_throughput_min": {
-    "mean": 29.451,
-    "ci95": 0.588
+    "mean": 32.532,
+    "ci95": 0.75
    },
    "p90_throughput_min": {
-    "mean": 50.128,
-    "ci95": 1.069
+    "mean": 53.257,
+    "ci95": 1.359
    },
    "mean_total_min": {
-    "mean": 29.451,
-    "ci95": 0.588
+    "mean": 32.532,
+    "ci95": 0.75
    },
    "quiet_throughput_min": {
-    "mean": 16.686,
-    "ci95": 0.018
+    "mean": 19.759,
+    "ci95": 0.025
    },
    "peak_throughput_min": {
-    "mean": 34.162,
-    "ci95": 0.831
+    "mean": 37.278,
+    "ci95": 1.08
    },
    "outages": {
-    "mean": 0,
-    "ci95": 0.0
+    "mean": 0.05,
+    "ci95": 0.098
    },
    "outage_minutes": {
-    "mean": 0.0,
-    "ci95": 0.0
+    "mean": 0.027,
+    "ci95": 0.053
    },
    "redirected": {
     "mean": 0,
@@ -2630,27 +2630,27 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 574.9,
-    "ci95": 18.064
+    "mean": 575,
+    "ci95": 22.388
    },
    "peak_scan_queue": {
-    "mean": 24.3,
-    "ci95": 3.392
+    "mean": 24.65,
+    "ci95": 3.326
    },
    "util_A": {
-    "mean": 0.815,
-    "ci95": 0.005
+    "mean": 0.813,
+    "ci95": 0.006
    },
    "util_B": {
-    "mean": 0.207,
+    "mean": 0.208,
     "ci95": 0.004
    },
    "peak_load_A": {
     "mean": 1.681,
-    "ci95": 0.013
+    "ci95": 0.014
    },
    "peak_load_B": {
-    "mean": 0.434,
+    "mean": 0.435,
     "ci95": 0.011
    },
    "students": {
@@ -2665,75 +2665,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.964,
-    "ci95": 0.308
+    "mean": 1.826,
+    "ci95": 0.155
    },
    "p90_wait_min": {
-    "mean": 5.055,
-    "ci95": 0.606
+    "mean": 4.782,
+    "ci95": 0.404
    },
    "mean_throughput_min": {
-    "mean": 18.53,
-    "ci95": 0.309
+    "mean": 21.477,
+    "ci95": 0.152
    },
    "p90_throughput_min": {
-    "mean": 21.626,
-    "ci95": 0.628
+    "mean": 24.494,
+    "ci95": 0.346
    },
    "mean_total_min": {
-    "mean": 18.621,
-    "ci95": 0.31
+    "mean": 21.567,
+    "ci95": 0.153
    },
    "quiet_throughput_min": {
-    "mean": 16.858,
-    "ci95": 0.031
+    "mean": 19.941,
+    "ci95": 0.039
    },
    "peak_throughput_min": {
-    "mean": 19.347,
-    "ci95": 0.306
+    "mean": 22.281,
+    "ci95": 0.209
    },
    "outages": {
-    "mean": 0.5,
-    "ci95": 0.302
+    "mean": 0.25,
+    "ci95": 0.195
    },
    "outage_minutes": {
-    "mean": 4.372,
-    "ci95": 2.699
+    "mean": 2.471,
+    "ci95": 2.069
    },
    "redirected": {
-    "mean": 537.25,
-    "ci95": 18.659
+    "mean": 537.9,
+    "ci95": 18.587
    },
    "unsuccessful_rate": {
-    "mean": 0.092,
-    "ci95": 0.044
+    "mean": 0.065,
+    "ci95": 0.051
    },
    "compliance_rate": {
-    "mean": 0.605,
+    "mean": 0.604,
     "ci95": 0.008
    },
    "peak_queue": {
-    "mean": 110.4,
-    "ci95": 13.553
+    "mean": 107.35,
+    "ci95": 11.407
    },
    "peak_scan_queue": {
-    "mean": 10.85,
-    "ci95": 1.313
+    "mean": 11,
+    "ci95": 1.747
    },
    "util_A": {
-    "mean": 0.631,
+    "mean": 0.632,
     "ci95": 0.004
    },
    "util_B": {
     "mean": 0.394,
-    "ci95": 0.007
+    "ci95": 0.008
    },
    "peak_load_A": {
-    "mean": 1.154,
+    "mean": 1.156,
     "ci95": 0.013
    },
    "peak_load_B": {
-    "mean": 1.023,
+    "mean": 1.024,
     "ci95": 0.009
    },
    "students": {
@@ -2748,76 +2748,76 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.779,
-    "ci95": 0.195
+    "mean": 1.857,
+    "ci95": 0.162
    },
    "p90_wait_min": {
-    "mean": 4.612,
-    "ci95": 0.494
+    "mean": 4.945,
+    "ci95": 0.395
    },
    "mean_throughput_min": {
-    "mean": 18.353,
-    "ci95": 0.197
+    "mean": 21.503,
+    "ci95": 0.161
    },
    "p90_throughput_min": {
-    "mean": 21.233,
-    "ci95": 0.474
+    "mean": 24.69,
+    "ci95": 0.379
    },
    "mean_total_min": {
-    "mean": 18.443,
-    "ci95": 0.197
+    "mean": 21.592,
+    "ci95": 0.161
    },
    "quiet_throughput_min": {
-    "mean": 16.867,
-    "ci95": 0.025
+    "mean": 19.929,
+    "ci95": 0.031
    },
    "peak_throughput_min": {
-    "mean": 19.217,
-    "ci95": 0.222
+    "mean": 22.344,
+    "ci95": 0.191
    },
    "outages": {
-    "mean": 0.4,
-    "ci95": 0.262
+    "mean": 0.35,
+    "ci95": 0.214
    },
    "outage_minutes": {
-    "mean": 2.792,
-    "ci95": 2.076
+    "mean": 3.337,
+    "ci95": 2.282
    },
    "redirected": {
-    "mean": 536.1,
-    "ci95": 19.621
+    "mean": 530.6,
+    "ci95": 18.459
    },
    "unsuccessful_rate": {
-    "mean": 0.064,
-    "ci95": 0.033
+    "mean": 0.055,
+    "ci95": 0.031
    },
    "compliance_rate": {
     "mean": 0.606,
-    "ci95": 0.009
+    "ci95": 0.007
    },
    "peak_queue": {
-    "mean": 100.7,
-    "ci95": 9.603
+    "mean": 105,
+    "ci95": 7.473
    },
    "peak_scan_queue": {
-    "mean": 9.7,
-    "ci95": 0.842
+    "mean": 9.6,
+    "ci95": 0.937
    },
    "util_A": {
-    "mean": 0.632,
-    "ci95": 0.004
+    "mean": 0.635,
+    "ci95": 0.005
    },
    "util_B": {
-    "mean": 0.393,
-    "ci95": 0.009
+    "mean": 0.39,
+    "ci95": 0.007
    },
    "peak_load_A": {
-    "mean": 1.153,
-    "ci95": 0.012
+    "mean": 1.159,
+    "ci95": 0.015
    },
    "peak_load_B": {
-    "mean": 1.016,
-    "ci95": 0.013
+    "mean": 1.011,
+    "ci95": 0.016
    },
    "students": {
     "mean": 2957.95,
@@ -2831,40 +2831,40 @@
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 2.11,
-    "ci95": 0.448
+    "mean": 1.793,
+    "ci95": 0.408
    },
    "p90_wait_min": {
-    "mean": 8.165,
-    "ci95": 2.01
+    "mean": 6.807,
+    "ci95": 1.727
    },
    "mean_throughput_min": {
-    "mean": 18.647,
-    "ci95": 0.447
+    "mean": 21.407,
+    "ci95": 0.41
    },
    "p90_throughput_min": {
-    "mean": 24.58,
-    "ci95": 1.946
+    "mean": 26.356,
+    "ci95": 1.665
    },
    "mean_total_min": {
-    "mean": 18.647,
-    "ci95": 0.447
+    "mean": 21.407,
+    "ci95": 0.41
    },
    "quiet_throughput_min": {
-    "mean": 16.681,
-    "ci95": 0.016
+    "mean": 19.747,
+    "ci95": 0.018
    },
    "peak_throughput_min": {
-    "mean": 19.612,
-    "ci95": 0.509
+    "mean": 22.282,
+    "ci95": 0.452
    },
    "outages": {
-    "mean": 0.65,
-    "ci95": 0.294
+    "mean": 0.5,
+    "ci95": 0.302
    },
    "outage_minutes": {
-    "mean": 4.987,
-    "ci95": 2.225
+    "mean": 3.914,
+    "ci95": 2.488
    },
    "redirected": {
     "mean": 0,
@@ -2879,28 +2879,28 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 204.5,
-    "ci95": 42.081
+    "mean": 180.25,
+    "ci95": 38.122
    },
    "peak_scan_queue": {
-    "mean": 23.9,
-    "ci95": 3.056
+    "mean": 24.85,
+    "ci95": 3.113
    },
    "util_A": {
-    "mean": 0.547,
-    "ci95": 0.005
+    "mean": 0.545,
+    "ci95": 0.006
    },
    "util_B": {
-    "mean": 0.138,
+    "mean": 0.139,
     "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.12,
-    "ci95": 0.008
+    "mean": 1.121,
+    "ci95": 0.009
    },
    "peak_load_B": {
-    "mean": 0.289,
-    "ci95": 0.008
+    "mean": 0.29,
+    "ci95": 0.007
    },
    "students": {
     "mean": 2957.95,
@@ -2914,324 +2914,75 @@
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.178,
-    "ci95": 0.384
+    "mean": 1.031,
+    "ci95": 0.375
    },
    "p90_wait_min": {
-    "mean": 4.555,
-    "ci95": 1.586
+    "mean": 3.845,
+    "ci95": 1.446
    },
    "mean_throughput_min": {
-    "mean": 17.715,
-    "ci95": 0.383
+    "mean": 20.648,
+    "ci95": 0.377
    },
    "p90_throughput_min": {
-    "mean": 21.298,
-    "ci95": 1.463
+    "mean": 23.822,
+    "ci95": 1.291
    },
    "mean_total_min": {
-    "mean": 17.73,
-    "ci95": 0.383
+    "mean": 20.662,
+    "ci95": 0.377
    },
    "quiet_throughput_min": {
-    "mean": 16.691,
-    "ci95": 0.02
+    "mean": 19.76,
+    "ci95": 0.019
    },
    "peak_throughput_min": {
-    "mean": 18.102,
-    "ci95": 0.436
+    "mean": 21.08,
+    "ci95": 0.392
    },
    "outages": {
-    "mean": 0.65,
-    "ci95": 0.294
+    "mean": 0.5,
+    "ci95": 0.302
    },
    "outage_minutes": {
-    "mean": 5.049,
-    "ci95": 2.263
+    "mean": 3.866,
+    "ci95": 2.475
    },
    "redirected": {
-    "mean": 87.35,
-    "ci95": 6.445
+    "mean": 87.2,
+    "ci95": 7.287
    },
    "unsuccessful_rate": {
-    "mean": 0.001,
-    "ci95": 0.003
-   },
-   "compliance_rate": {
-    "mean": 0.615,
-    "ci95": 0.018
-   },
-   "peak_queue": {
-    "mean": 132.1,
-    "ci95": 39.151
-   },
-   "peak_scan_queue": {
-    "mean": 16.95,
-    "ci95": 1.829
-   },
-   "util_A": {
-    "mean": 0.527,
-    "ci95": 0.006
-   },
-   "util_B": {
-    "mean": 0.158,
-    "ci95": 0.003
-   },
-   "peak_load_A": {
-    "mean": 1.003,
-    "ci95": 0.006
-   },
-   "peak_load_B": {
-    "mean": 0.405,
-    "ci95": 0.012
-   },
-   "students": {
-    "mean": 2957.95,
-    "ci95": 21.109
-   }
-  },
-  {
-   "group": "Faster serving: 12 students/min per station",
-   "scenario": "3 Queue + food (proposal)",
-   "compliance": 0.6,
-   "uses_food": true,
-   "runs": 20,
-   "mean_wait_min": {
-    "mean": 0.691,
-    "ci95": 0.156
-   },
-   "p90_wait_min": {
-    "mean": 2.254,
-    "ci95": 0.798
-   },
-   "mean_throughput_min": {
-    "mean": 17.227,
-    "ci95": 0.155
-   },
-   "p90_throughput_min": {
-    "mean": 19.234,
-    "ci95": 0.709
-   },
-   "mean_total_min": {
-    "mean": 17.254,
-    "ci95": 0.157
-   },
-   "quiet_throughput_min": {
-    "mean": 16.703,
-    "ci95": 0.02
-   },
-   "peak_throughput_min": {
-    "mean": 17.546,
-    "ci95": 0.132
-   },
-   "outages": {
-    "mean": 0.75,
-    "ci95": 0.345
-   },
-   "outage_minutes": {
-    "mean": 5.968,
-    "ci95": 2.66
-   },
-   "redirected": {
-    "mean": 158.65,
-    "ci95": 37.94
-   },
-   "unsuccessful_rate": {
-    "mean": 0.037,
-    "ci95": 0.054
+    "mean": 0.007,
+    "ci95": 0.014
    },
    "compliance_rate": {
     "mean": 0.611,
-    "ci95": 0.013
+    "ci95": 0.019
    },
    "peak_queue": {
-    "mean": 88.15,
-    "ci95": 23.89
+    "mean": 110.85,
+    "ci95": 36.377
    },
    "peak_scan_queue": {
-    "mean": 18.1,
-    "ci95": 2.23
+    "mean": 18.75,
+    "ci95": 2.727
    },
    "util_A": {
-    "mean": 0.508,
-    "ci95": 0.01
+    "mean": 0.526,
+    "ci95": 0.006
    },
    "util_B": {
-    "mean": 0.175,
-    "ci95": 0.009
-   },
-   "peak_load_A": {
-    "mean": 0.994,
-    "ci95": 0.007
-   },
-   "peak_load_B": {
-    "mean": 0.46,
-    "ci95": 0.033
-   },
-   "students": {
-    "mean": 2957.95,
-    "ci95": 21.109
-   }
-  },
-  {
-   "group": "More stock-outs: next batch never ready",
-   "scenario": "1 Current system",
-   "compliance": 0.0,
-   "uses_food": true,
-   "runs": 20,
-   "mean_wait_min": {
-    "mean": 6.397,
-    "ci95": 0.47
-   },
-   "p90_wait_min": {
-    "mean": 20.338,
-    "ci95": 0.881
-   },
-   "mean_throughput_min": {
-    "mean": 22.944,
-    "ci95": 0.473
-   },
-   "p90_throughput_min": {
-    "mean": 36.654,
-    "ci95": 0.885
-   },
-   "mean_total_min": {
-    "mean": 22.944,
-    "ci95": 0.473
-   },
-   "quiet_throughput_min": {
-    "mean": 16.711,
-    "ci95": 0.021
-   },
-   "peak_throughput_min": {
-    "mean": 25.322,
-    "ci95": 0.772
-   },
-   "outages": {
-    "mean": 2,
-    "ci95": 0.0
-   },
-   "outage_minutes": {
-    "mean": 9.802,
-    "ci95": 0.345
-   },
-   "redirected": {
-    "mean": 0,
-    "ci95": 0.0
-   },
-   "unsuccessful_rate": {
-    "mean": null,
-    "ci95": null
-   },
-   "compliance_rate": {
-    "mean": null,
-    "ci95": null
-   },
-   "peak_queue": {
-    "mean": 408,
-    "ci95": 17.56
-   },
-   "peak_scan_queue": {
-    "mean": 26.05,
-    "ci95": 2.759
-   },
-   "util_A": {
-    "mean": 0.655,
-    "ci95": 0.007
-   },
-   "util_B": {
-    "mean": 0.168,
+    "mean": 0.16,
     "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.343,
-    "ci95": 0.01
-   },
-   "peak_load_B": {
-    "mean": 0.348,
-    "ci95": 0.009
-   },
-   "students": {
-    "mean": 2957.95,
-    "ci95": 21.109
-   }
-  },
-  {
-   "group": "More stock-outs: next batch never ready",
-   "scenario": "2 Queue information only",
-   "compliance": 0.6,
-   "uses_food": false,
-   "runs": 20,
-   "mean_wait_min": {
-    "mean": 2.506,
-    "ci95": 0.291
-   },
-   "p90_wait_min": {
-    "mean": 6.031,
-    "ci95": 0.735
-   },
-   "mean_throughput_min": {
-    "mean": 19.056,
-    "ci95": 0.292
-   },
-   "p90_throughput_min": {
-    "mean": 23.198,
-    "ci95": 0.661
-   },
-   "mean_total_min": {
-    "mean": 19.096,
-    "ci95": 0.293
-   },
-   "quiet_throughput_min": {
-    "mean": 16.752,
-    "ci95": 0.019
-   },
-   "peak_throughput_min": {
-    "mean": 19.554,
-    "ci95": 0.369
-   },
-   "outages": {
-    "mean": 2,
-    "ci95": 0.0
-   },
-   "outage_minutes": {
-    "mean": 9.379,
-    "ci95": 0.476
-   },
-   "redirected": {
-    "mean": 238.7,
-    "ci95": 10.421
-   },
-   "unsuccessful_rate": {
-    "mean": 0.001,
-    "ci95": 0.002
-   },
-   "compliance_rate": {
-    "mean": 0.606,
-    "ci95": 0.013
-   },
-   "peak_queue": {
-    "mean": 172.25,
-    "ci95": 13.876
-   },
-   "peak_scan_queue": {
-    "mean": 12.3,
-    "ci95": 1.026
-   },
-   "util_A": {
-    "mean": 0.589,
-    "ci95": 0.006
-   },
-   "util_B": {
-    "mean": 0.232,
-    "ci95": 0.004
-   },
-   "peak_load_A": {
-    "mean": 1.038,
+    "mean": 1.005,
     "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.681,
+    "mean": 0.406,
     "ci95": 0.013
    },
    "students": {
@@ -3240,82 +2991,82 @@
    }
   },
   {
-   "group": "More stock-outs: next batch never ready",
+   "group": "Faster serving: 12 students/min per station",
    "scenario": "3 Queue + food (proposal)",
    "compliance": 0.6,
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.901,
-    "ci95": 0.1
+    "mean": 0.557,
+    "ci95": 0.056
    },
    "p90_wait_min": {
-    "mean": 2.334,
-    "ci95": 0.225
+    "mean": 1.73,
+    "ci95": 0.157
    },
    "mean_throughput_min": {
-    "mean": 17.448,
-    "ci95": 0.101
+    "mean": 20.168,
+    "ci95": 0.056
    },
    "p90_throughput_min": {
-    "mean": 19.338,
-    "ci95": 0.209
+    "mean": 22.013,
+    "ci95": 0.104
    },
    "mean_total_min": {
-    "mean": 17.509,
-    "ci95": 0.1
+    "mean": 20.192,
+    "ci95": 0.059
    },
    "quiet_throughput_min": {
-    "mean": 16.756,
-    "ci95": 0.02
+    "mean": 19.756,
+    "ci95": 0.017
    },
    "peak_throughput_min": {
-    "mean": 17.696,
-    "ci95": 0.115
+    "mean": 20.622,
+    "ci95": 0.068
    },
    "outages": {
-    "mean": 2.1,
-    "ci95": 0.135
+    "mean": 0.45,
+    "ci95": 0.265
    },
    "outage_minutes": {
-    "mean": 9.539,
-    "ci95": 1.003
+    "mean": 3.363,
+    "ci95": 2.072
    },
    "redirected": {
-    "mean": 361.4,
-    "ci95": 16.377
+    "mean": 141.5,
+    "ci95": 31.189
    },
    "unsuccessful_rate": {
-    "mean": 0.056,
-    "ci95": 0.022
+    "mean": 0.017,
+    "ci95": 0.019
    },
    "compliance_rate": {
-    "mean": 0.606,
-    "ci95": 0.009
+    "mean": 0.602,
+    "ci95": 0.015
    },
    "peak_queue": {
-    "mean": 70.7,
-    "ci95": 7.385
+    "mean": 65.35,
+    "ci95": 9.074
    },
    "peak_scan_queue": {
-    "mean": 11.45,
-    "ci95": 0.99
+    "mean": 17.1,
+    "ci95": 2.421
    },
    "util_A": {
-    "mean": 0.552,
-    "ci95": 0.006
+    "mean": 0.512,
+    "ci95": 0.012
    },
    "util_B": {
-    "mean": 0.267,
-    "ci95": 0.005
+    "mean": 0.172,
+    "ci95": 0.009
    },
    "peak_load_A": {
-    "mean": 1.031,
+    "mean": 0.999,
     "ci95": 0.007
    },
    "peak_load_B": {
-    "mean": 0.705,
-    "ci95": 0.012
+    "mean": 0.438,
+    "ci95": 0.028
    },
    "students": {
     "mean": 2957.95,
@@ -3323,46 +3074,46 @@
    }
   },
   {
-   "group": "No stock-outs: next batch always ready",
+   "group": "More stock-outs: next batch never ready",
    "scenario": "1 Current system",
    "compliance": 0.0,
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 3.506,
-    "ci95": 0.231
+    "mean": 6.524,
+    "ci95": 0.508
    },
    "p90_wait_min": {
-    "mean": 11.246,
-    "ci95": 0.576
+    "mean": 20.512,
+    "ci95": 0.893
    },
    "mean_throughput_min": {
-    "mean": 20.059,
-    "ci95": 0.231
+    "mean": 26.154,
+    "ci95": 0.509
    },
    "p90_throughput_min": {
-    "mean": 27.588,
-    "ci95": 0.553
+    "mean": 39.725,
+    "ci95": 0.899
    },
    "mean_total_min": {
-    "mean": 20.059,
-    "ci95": 0.231
+    "mean": 26.154,
+    "ci95": 0.509
    },
    "quiet_throughput_min": {
-    "mean": 16.738,
-    "ci95": 0.019
+    "mean": 19.788,
+    "ci95": 0.024
    },
    "peak_throughput_min": {
-    "mean": 21.384,
-    "ci95": 0.35
+    "mean": 28.593,
+    "ci95": 0.825
    },
    "outages": {
-    "mean": 0,
+    "mean": 2,
     "ci95": 0.0
    },
    "outage_minutes": {
-    "mean": 0.0,
-    "ci95": 0.0
+    "mean": 9.354,
+    "ci95": 0.376
    },
    "redirected": {
     "mean": 0,
@@ -3377,24 +3128,24 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 249.6,
-    "ci95": 12.202
+    "mean": 412.25,
+    "ci95": 19.413
    },
    "peak_scan_queue": {
-    "mean": 23.6,
-    "ci95": 3.464
+    "mean": 25.1,
+    "ci95": 2.442
    },
    "util_A": {
-    "mean": 0.653,
-    "ci95": 0.006
+    "mean": 0.659,
+    "ci95": 0.007
    },
    "util_B": {
     "mean": 0.166,
-    "ci95": 0.003
+    "ci95": 0.004
    },
    "peak_load_A": {
-    "mean": 1.341,
-    "ci95": 0.01
+    "mean": 1.345,
+    "ci95": 0.011
    },
    "peak_load_B": {
     "mean": 0.348,
@@ -3406,74 +3157,74 @@
    }
   },
   {
-   "group": "No stock-outs: next batch always ready",
+   "group": "More stock-outs: next batch never ready",
    "scenario": "2 Queue information only",
    "compliance": 0.6,
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.724,
-    "ci95": 0.076
+    "mean": 2.558,
+    "ci95": 0.236
    },
    "p90_wait_min": {
-    "mean": 2.025,
-    "ci95": 0.233
+    "mean": 6.088,
+    "ci95": 0.627
    },
    "mean_throughput_min": {
-    "mean": 17.281,
-    "ci95": 0.075
+    "mean": 22.184,
+    "ci95": 0.235
    },
    "p90_throughput_min": {
-    "mean": 18.973,
-    "ci95": 0.177
+    "mean": 26.595,
+    "ci95": 0.559
    },
    "mean_total_min": {
-    "mean": 17.321,
-    "ci95": 0.075
+    "mean": 22.224,
+    "ci95": 0.235
    },
    "quiet_throughput_min": {
-    "mean": 16.783,
-    "ci95": 0.019
+    "mean": 19.813,
+    "ci95": 0.022
    },
    "peak_throughput_min": {
-    "mean": 17.66,
-    "ci95": 0.1
+    "mean": 22.637,
+    "ci95": 0.316
    },
    "outages": {
-    "mean": 0,
+    "mean": 2,
     "ci95": 0.0
    },
    "outage_minutes": {
-    "mean": 0.0,
-    "ci95": 0.0
+    "mean": 9.464,
+    "ci95": 0.448
    },
    "redirected": {
-    "mean": 240.05,
-    "ci95": 10.91
+    "mean": 238.85,
+    "ci95": 10.524
    },
    "unsuccessful_rate": {
-    "mean": 0.013,
-    "ci95": 0.01
+    "mean": 0.003,
+    "ci95": 0.005
    },
    "compliance_rate": {
-    "mean": 0.612,
-    "ci95": 0.009
+    "mean": 0.607,
+    "ci95": 0.011
    },
    "peak_queue": {
-    "mean": 56.45,
-    "ci95": 4.783
+    "mean": 175.2,
+    "ci95": 11.567
    },
    "peak_scan_queue": {
-    "mean": 13.95,
-    "ci95": 1.807
+    "mean": 13.8,
+    "ci95": 1.692
    },
    "util_A": {
-    "mean": 0.588,
+    "mean": 0.592,
     "ci95": 0.004
    },
    "util_B": {
-    "mean": 0.234,
-    "ci95": 0.004
+    "mean": 0.232,
+    "ci95": 0.005
    },
    "peak_load_A": {
     "mean": 1.039,
@@ -3481,7 +3232,7 @@
    },
    "peak_load_B": {
     "mean": 0.681,
-    "ci95": 0.013
+    "ci95": 0.012
    },
    "students": {
     "mean": 2957.95,
@@ -3489,81 +3240,81 @@
    }
   },
   {
-   "group": "No stock-outs: next batch always ready",
+   "group": "More stock-outs: next batch never ready",
    "scenario": "3 Queue + food (proposal)",
    "compliance": 0.6,
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.73,
-    "ci95": 0.09
+    "mean": 0.938,
+    "ci95": 0.122
    },
    "p90_wait_min": {
-    "mean": 2.047,
-    "ci95": 0.278
+    "mean": 2.312,
+    "ci95": 0.303
    },
    "mean_throughput_min": {
-    "mean": 17.283,
-    "ci95": 0.091
+    "mean": 20.566,
+    "ci95": 0.124
    },
    "p90_throughput_min": {
-    "mean": 18.989,
-    "ci95": 0.204
+    "mean": 22.731,
+    "ci95": 0.278
    },
    "mean_total_min": {
-    "mean": 17.323,
-    "ci95": 0.091
+    "mean": 20.626,
+    "ci95": 0.123
    },
    "quiet_throughput_min": {
-    "mean": 16.772,
+    "mean": 19.852,
     "ci95": 0.019
    },
    "peak_throughput_min": {
-    "mean": 17.628,
-    "ci95": 0.132
+    "mean": 20.763,
+    "ci95": 0.162
    },
    "outages": {
-    "mean": 0,
-    "ci95": 0.0
+    "mean": 2.2,
+    "ci95": 0.18
    },
    "outage_minutes": {
-    "mean": 0.0,
-    "ci95": 0.0
+    "mean": 9.958,
+    "ci95": 1.49
    },
    "redirected": {
-    "mean": 238.85,
-    "ci95": 10.781
+    "mean": 359.8,
+    "ci95": 20.244
    },
    "unsuccessful_rate": {
-    "mean": 0.036,
-    "ci95": 0.038
+    "mean": 0.054,
+    "ci95": 0.039
    },
    "compliance_rate": {
-    "mean": 0.609,
-    "ci95": 0.01
+    "mean": 0.605,
+    "ci95": 0.009
    },
    "peak_queue": {
-    "mean": 55.3,
-    "ci95": 5.909
+    "mean": 71.75,
+    "ci95": 7.092
    },
    "peak_scan_queue": {
-    "mean": 13.25,
-    "ci95": 1.589
+    "mean": 12,
+    "ci95": 0.975
    },
    "util_A": {
-    "mean": 0.588,
-    "ci95": 0.005
+    "mean": 0.559,
+    "ci95": 0.006
    },
    "util_B": {
-    "mean": 0.233,
-    "ci95": 0.004
+    "mean": 0.266,
+    "ci95": 0.006
    },
    "peak_load_A": {
-    "mean": 1.038,
-    "ci95": 0.005
+    "mean": 1.033,
+    "ci95": 0.007
    },
    "peak_load_B": {
-    "mean": 0.68,
+    "mean": 0.704,
     "ci95": 0.014
    },
    "students": {
@@ -3572,46 +3323,46 @@
    }
   },
   {
-   "group": "Slower eating: 15-18 min",
+   "group": "No stock-outs: next batch always ready",
    "scenario": "1 Current system",
    "compliance": 0.0,
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 4.385,
-    "ci95": 0.525
+    "mean": 3.611,
+    "ci95": 0.264
    },
    "p90_wait_min": {
-    "mean": 13.472,
-    "ci95": 1.14
+    "mean": 11.778,
+    "ci95": 0.513
    },
    "mean_throughput_min": {
-    "mean": 23.935,
-    "ci95": 0.526
+    "mean": 23.236,
+    "ci95": 0.264
    },
    "p90_throughput_min": {
-    "mean": 32.805,
-    "ci95": 1.125
+    "mean": 31.117,
+    "ci95": 0.495
    },
    "mean_total_min": {
-    "mean": 23.935,
-    "ci95": 0.526
+    "mean": 23.236,
+    "ci95": 0.264
    },
    "quiet_throughput_min": {
-    "mean": 19.728,
-    "ci95": 0.02
+    "mean": 19.829,
+    "ci95": 0.023
    },
    "peak_throughput_min": {
-    "mean": 25.727,
-    "ci95": 0.863
+    "mean": 24.605,
+    "ci95": 0.382
    },
    "outages": {
-    "mean": 0.45,
-    "ci95": 0.224
+    "mean": 0,
+    "ci95": 0.0
    },
    "outage_minutes": {
-    "mean": 2.269,
-    "ci95": 1.132
+    "mean": 0.0,
+    "ci95": 0.0
    },
    "redirected": {
     "mean": 0,
@@ -3626,15 +3377,15 @@
     "ci95": null
    },
    "peak_queue": {
-    "mean": 292,
-    "ci95": 22.862
+    "mean": 259.9,
+    "ci95": 10.715
    },
    "peak_scan_queue": {
-    "mean": 25.1,
-    "ci95": 3.157
+    "mean": 24.2,
+    "ci95": 2.617
    },
    "util_A": {
-    "mean": 0.654,
+    "mean": 0.657,
     "ci95": 0.005
    },
    "util_B": {
@@ -3642,11 +3393,11 @@
     "ci95": 0.003
    },
    "peak_load_A": {
-    "mean": 1.342,
-    "ci95": 0.01
+    "mean": 1.344,
+    "ci95": 0.011
    },
    "peak_load_B": {
-    "mean": 0.348,
+    "mean": 0.347,
     "ci95": 0.009
    },
    "students": {
@@ -3655,81 +3406,81 @@
    }
   },
   {
-   "group": "Slower eating: 15-18 min",
+   "group": "No stock-outs: next batch always ready",
    "scenario": "2 Queue information only",
    "compliance": 0.6,
    "uses_food": false,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 1.299,
-    "ci95": 0.326
+    "mean": 0.78,
+    "ci95": 0.09
    },
    "p90_wait_min": {
-    "mean": 3.443,
-    "ci95": 0.756
+    "mean": 2.158,
+    "ci95": 0.265
    },
    "mean_throughput_min": {
-    "mean": 20.852,
-    "ci95": 0.325
+    "mean": 20.404,
+    "ci95": 0.095
    },
    "p90_throughput_min": {
-    "mean": 23.377,
-    "ci95": 0.769
+    "mean": 22.415,
+    "ci95": 0.197
    },
    "mean_total_min": {
-    "mean": 20.892,
-    "ci95": 0.325
+    "mean": 20.444,
+    "ci95": 0.095
    },
    "quiet_throughput_min": {
-    "mean": 19.755,
-    "ci95": 0.023
+    "mean": 19.855,
+    "ci95": 0.015
    },
    "peak_throughput_min": {
-    "mean": 21.297,
-    "ci95": 0.449
+    "mean": 20.721,
+    "ci95": 0.126
    },
    "outages": {
-    "mean": 0.6,
-    "ci95": 0.298
+    "mean": 0,
+    "ci95": 0.0
    },
    "outage_minutes": {
-    "mean": 2.828,
-    "ci95": 1.386
+    "mean": 0.0,
+    "ci95": 0.0
    },
    "redirected": {
-    "mean": 239.5,
-    "ci95": 10.79
+    "mean": 239,
+    "ci95": 10.803
    },
    "unsuccessful_rate": {
-    "mean": 0.007,
-    "ci95": 0.007
+    "mean": 0.012,
+    "ci95": 0.015
    },
    "compliance_rate": {
-    "mean": 0.613,
+    "mean": 0.604,
     "ci95": 0.01
    },
    "peak_queue": {
-    "mean": 95.95,
-    "ci95": 18.737
+    "mean": 57.35,
+    "ci95": 5.264
    },
    "peak_scan_queue": {
-    "mean": 12.8,
-    "ci95": 1.308
+    "mean": 12.35,
+    "ci95": 1.008
    },
    "util_A": {
-    "mean": 0.588,
-    "ci95": 0.005
+    "mean": 0.592,
+    "ci95": 0.004
    },
    "util_B": {
-    "mean": 0.234,
+    "mean": 0.232,
     "ci95": 0.005
    },
    "peak_load_A": {
-    "mean": 1.039,
-    "ci95": 0.005
+    "mean": 1.041,
+    "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.683,
+    "mean": 0.684,
     "ci95": 0.013
    },
    "students": {
@@ -3738,82 +3489,331 @@
    }
   },
   {
-   "group": "Slower eating: 15-18 min",
+   "group": "No stock-outs: next batch always ready",
    "scenario": "3 Queue + food (proposal)",
    "compliance": 0.6,
    "uses_food": true,
    "runs": 20,
    "mean_wait_min": {
-    "mean": 0.814,
-    "ci95": 0.09
+    "mean": 0.762,
+    "ci95": 0.092
    },
    "p90_wait_min": {
-    "mean": 2.247,
-    "ci95": 0.227
+    "mean": 2.102,
+    "ci95": 0.211
    },
    "mean_throughput_min": {
-    "mean": 20.365,
-    "ci95": 0.091
+    "mean": 20.39,
+    "ci95": 0.098
    },
    "p90_throughput_min": {
-    "mean": 22.166,
-    "ci95": 0.208
+    "mean": 22.369,
+    "ci95": 0.172
    },
    "mean_total_min": {
-    "mean": 20.414,
-    "ci95": 0.09
+    "mean": 20.43,
+    "ci95": 0.098
    },
    "quiet_throughput_min": {
-    "mean": 19.764,
-    "ci95": 0.017
+    "mean": 19.858,
+    "ci95": 0.02
    },
    "peak_throughput_min": {
-    "mean": 20.715,
-    "ci95": 0.12
+    "mean": 20.74,
+    "ci95": 0.095
    },
    "outages": {
-    "mean": 0.7,
-    "ci95": 0.351
+    "mean": 0,
+    "ci95": 0.0
    },
    "outage_minutes": {
-    "mean": 3.178,
-    "ci95": 1.57
+    "mean": 0.0,
+    "ci95": 0.0
    },
    "redirected": {
-    "mean": 286.05,
-    "ci95": 24.017
+    "mean": 238.55,
+    "ci95": 10.416
    },
    "unsuccessful_rate": {
-    "mean": 0.028,
-    "ci95": 0.018
+    "mean": 0.013,
+    "ci95": 0.013
    },
    "compliance_rate": {
-    "mean": 0.609,
-    "ci95": 0.011
-   },
-   "peak_queue": {
-    "mean": 65.05,
-    "ci95": 6.434
-   },
-   "peak_scan_queue": {
-    "mean": 13,
-    "ci95": 1.19
-   },
-   "util_A": {
-    "mean": 0.576,
+    "mean": 0.607,
     "ci95": 0.009
    },
+   "peak_queue": {
+    "mean": 58.4,
+    "ci95": 3.975
+   },
+   "peak_scan_queue": {
+    "mean": 12.7,
+    "ci95": 1.084
+   },
+   "util_A": {
+    "mean": 0.589,
+    "ci95": 0.006
+   },
    "util_B": {
-    "mean": 0.244,
-    "ci95": 0.008
+    "mean": 0.232,
+    "ci95": 0.005
    },
    "peak_load_A": {
-    "mean": 1.037,
+    "mean": 1.039,
     "ci95": 0.006
    },
    "peak_load_B": {
-    "mean": 0.697,
-    "ci95": 0.017
+    "mean": 0.682,
+    "ci95": 0.013
+   },
+   "students": {
+    "mean": 2957.95,
+    "ci95": 21.109
+   }
+  },
+  {
+   "group": "Slower eating: 17-21 min",
+   "scenario": "1 Current system",
+   "compliance": 0.0,
+   "uses_food": true,
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 4.31,
+    "ci95": 0.634
+   },
+   "p90_wait_min": {
+    "mean": 13.906,
+    "ci95": 1.58
+   },
+   "mean_throughput_min": {
+    "mean": 26.94,
+    "ci95": 0.632
+   },
+   "p90_throughput_min": {
+    "mean": 36.212,
+    "ci95": 1.543
+   },
+   "mean_total_min": {
+    "mean": 26.94,
+    "ci95": 0.632
+   },
+   "quiet_throughput_min": {
+    "mean": 22.821,
+    "ci95": 0.027
+   },
+   "peak_throughput_min": {
+    "mean": 28.587,
+    "ci95": 0.949
+   },
+   "outages": {
+    "mean": 0.45,
+    "ci95": 0.301
+   },
+   "outage_minutes": {
+    "mean": 2.023,
+    "ci95": 1.38
+   },
+   "redirected": {
+    "mean": 0,
+    "ci95": 0.0
+   },
+   "unsuccessful_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "compliance_rate": {
+    "mean": null,
+    "ci95": null
+   },
+   "peak_queue": {
+    "mean": 299.2,
+    "ci95": 29.861
+   },
+   "peak_scan_queue": {
+    "mean": 24.85,
+    "ci95": 2.592
+   },
+   "util_A": {
+    "mean": 0.658,
+    "ci95": 0.007
+   },
+   "util_B": {
+    "mean": 0.165,
+    "ci95": 0.004
+   },
+   "peak_load_A": {
+    "mean": 1.345,
+    "ci95": 0.01
+   },
+   "peak_load_B": {
+    "mean": 0.347,
+    "ci95": 0.009
+   },
+   "students": {
+    "mean": 2957.95,
+    "ci95": 21.109
+   }
+  },
+  {
+   "group": "Slower eating: 17-21 min",
+   "scenario": "2 Queue information only",
+   "compliance": 0.6,
+   "uses_food": false,
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 1.191,
+    "ci95": 0.328
+   },
+   "p90_wait_min": {
+    "mean": 3.126,
+    "ci95": 0.757
+   },
+   "mean_throughput_min": {
+    "mean": 23.815,
+    "ci95": 0.33
+   },
+   "p90_throughput_min": {
+    "mean": 26.38,
+    "ci95": 0.733
+   },
+   "mean_total_min": {
+    "mean": 23.856,
+    "ci95": 0.331
+   },
+   "quiet_throughput_min": {
+    "mean": 22.846,
+    "ci95": 0.02
+   },
+   "peak_throughput_min": {
+    "mean": 24.183,
+    "ci95": 0.433
+   },
+   "outages": {
+    "mean": 0.45,
+    "ci95": 0.265
+   },
+   "outage_minutes": {
+    "mean": 2.296,
+    "ci95": 1.454
+   },
+   "redirected": {
+    "mean": 239,
+    "ci95": 10.424
+   },
+   "unsuccessful_rate": {
+    "mean": 0.016,
+    "ci95": 0.015
+   },
+   "compliance_rate": {
+    "mean": 0.61,
+    "ci95": 0.007
+   },
+   "peak_queue": {
+    "mean": 88.7,
+    "ci95": 18.341
+   },
+   "peak_scan_queue": {
+    "mean": 12.55,
+    "ci95": 1.159
+   },
+   "util_A": {
+    "mean": 0.591,
+    "ci95": 0.004
+   },
+   "util_B": {
+    "mean": 0.232,
+    "ci95": 0.005
+   },
+   "peak_load_A": {
+    "mean": 1.04,
+    "ci95": 0.006
+   },
+   "peak_load_B": {
+    "mean": 0.684,
+    "ci95": 0.013
+   },
+   "students": {
+    "mean": 2957.95,
+    "ci95": 21.109
+   }
+  },
+  {
+   "group": "Slower eating: 17-21 min",
+   "scenario": "3 Queue + food (proposal)",
+   "compliance": 0.6,
+   "uses_food": true,
+   "runs": 20,
+   "mean_wait_min": {
+    "mean": 0.798,
+    "ci95": 0.101
+   },
+   "p90_wait_min": {
+    "mean": 2.104,
+    "ci95": 0.205
+   },
+   "mean_throughput_min": {
+    "mean": 23.423,
+    "ci95": 0.102
+   },
+   "p90_throughput_min": {
+    "mean": 25.423,
+    "ci95": 0.18
+   },
+   "mean_total_min": {
+    "mean": 23.467,
+    "ci95": 0.103
+   },
+   "quiet_throughput_min": {
+    "mean": 22.861,
+    "ci95": 0.019
+   },
+   "peak_throughput_min": {
+    "mean": 23.74,
+    "ci95": 0.105
+   },
+   "outages": {
+    "mean": 0.35,
+    "ci95": 0.214
+   },
+   "outage_minutes": {
+    "mean": 1.674,
+    "ci95": 1.034
+   },
+   "redirected": {
+    "mean": 260.95,
+    "ci95": 17.454
+   },
+   "unsuccessful_rate": {
+    "mean": 0.015,
+    "ci95": 0.011
+   },
+   "compliance_rate": {
+    "mean": 0.612,
+    "ci95": 0.01
+   },
+   "peak_queue": {
+    "mean": 62.95,
+    "ci95": 6.798
+   },
+   "peak_scan_queue": {
+    "mean": 12.35,
+    "ci95": 1.085
+   },
+   "util_A": {
+    "mean": 0.584,
+    "ci95": 0.007
+   },
+   "util_B": {
+    "mean": 0.237,
+    "ci95": 0.006
+   },
+   "peak_load_A": {
+    "mean": 1.034,
+    "ci95": 0.007
+   },
+   "peak_load_B": {
+    "mean": 0.688,
+    "ci95": 0.016
    },
    "students": {
     "mean": 2957.95,
