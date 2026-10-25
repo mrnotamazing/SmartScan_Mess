@@ -67,7 +67,22 @@ def _stage_stats(sim: Simulation) -> dict:
                         n += 1
                         ws += st - e
                         ss += f - st
-                rows.append([n, ws, ss, lq, ls])
+                rows.append([n, ws, ss, lq, ls, 0.0, 0.0, 0.0])
+            if stage in ("scanner", "station"):
+                # The serving-capacity rule on THIS lunch's counts, with the minutes the food was out taken off the stations'
+                # capacity (effective capacity): line(end) = max(0, line(start) + arrivals − rate × minutes available);
+                # a student joining in the slot waits (start + end) ÷ 2 ÷ rate. Stored as Σ wait × n, the line at the end,
+                # and the minutes out.
+                rate = m.scan_capacity_per_min if stage == "scanner" else m.capacity_per_min
+                spans = sim.halls[m.id].outage_spans if stage == "station" else []
+                line = 0.0
+                for b, row in enumerate(rows):
+                    out_min = sum(_overlap(a, z, b * SLOT_S, (b + 1) * SLOT_S) for a, z in spans) / 60
+                    end = max(0.0, line + row[0] - rate * (SLOT_S / 60 - out_min))
+                    row[5] = (line + end) / 2 / rate * row[0]
+                    row[6] = end
+                    row[7] = out_min
+                    line = end
             out[m.id][stage] = rows
         # peak seats in use, minute by minute
         occ = [sum(1 for s in studs if s.seated_at <= t < s.table_left) for t in range(0, (N_SLOTS + 3) * SLOT_S, 60)]
@@ -215,7 +230,7 @@ def main() -> None:
             for stage in STAGES:
                 slots = []
                 for b in range(N_SLOTS):
-                    tot = [sum(r[m.id][stage][b][k] for r in runs) for k in range(5)]
+                    tot = [sum(r[m.id][stage][b][k] for r in runs) for k in range(8)]
                     cnt = tot[0]
                     slots.append({
                         "lam": tot[0] / n / 10,  # per minute
@@ -223,6 +238,9 @@ def main() -> None:
                         "ws_min": tot[2] / cnt / 60 if cnt else 0.0,
                         "lq": tot[3] / n / SLOT_S,
                         "ls": tot[4] / n / SLOT_S,
+                        "rule_wq_min": tot[5] / cnt if cnt else 0.0,  # the rule applied lunch by lunch, then averaged
+                        "rule_line_end": tot[6] / n,
+                        "out_min": tot[7] / n,  # minutes the food was out in this slot (stations idle), average lunch
                     })
                 md[stage] = slots
             md["peak_seated"] = mean(r[m.id]["peak_seated"] for r in runs)

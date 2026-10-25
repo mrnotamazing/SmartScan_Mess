@@ -193,7 +193,7 @@ python -m messq.simulate           # Monte Carlo: no advice vs greedy vs equilib
 python -m messq.scenarios          # the four scenarios + stress tests -> results/scenarios.json
 python -m messq.scenarios --payoff # alternatives x kinds of day      -> results/payoff.json
 python -m messq.scenarios --reconcile  # spreadsheet-like -> full model -> results/reconcile.json
-pip install openpyxl scipy && python tools/build_workbook.py   # rebuild docs/MDS_Decision_Workbook.xlsx from those results
+pip install openpyxl scipy && python tools/build_workbook.py   # rebuild docs/Final_MDS_Decision_Workbook.xlsx from those results
 python -m messq.simulate --slot dinner --runs 50 --compliance 0.2 0.4 0.6 0.8 1.0
 python -m messq.simulate --replay samples/sample_day_log.csv              # list meals in a log
 python -m messq.simulate --replay samples/sample_day_log.csv --session 1  # replay one under each policy
@@ -274,19 +274,19 @@ Mainly **capacity management / load balancing** and **queuing theory**; also **b
 (habit, herding, partial compliance) and **demand shaping** (influencing where and when students eat
 with information rather than new capacity). With the simulated peak, total capacity is enough
 (~37 arrivals/min in the busiest 10 minutes against 40/min of serving) but the load is uneven: Central
-gets ~30/min against 20/min while Munch gets ~8/min. See section 1.1 of `docs/MDS_Queuing_Theory_and_Simulation.docx`.
+gets ~30/min against 20/min while Munch gets ~8/min. See section 1.1 of `docs/Final_MDS_Queuing_Theory_and_Simulation.docx`.
 (Not *yield* management: that means pricing perishable capacity, and a prepaid mess has no price lever.)
 
 ## Queue, capacity and load-balancing workbook
 
-`docs/Queue_Capacity_LoadBalancing.xlsx` works only on **simulated** data (20 lunches per scenario):
+`docs/Final_Queue_Capacity_LoadBalancing.xlsx` works only on **simulated** data (20 lunches per scenario):
 M/M/1 for the face scanner and M/M/c for the serving stations per 10-minute slot (stability and Little's Law),
 seats as M/G/c and disposal as M/G/∞, seat turnover and the bottleneck (900 / 492 seats), and how the
 Smart Scan routing compares with fixed rules such as "freshers at Munch, seniors at Central".
 
 ```bash
 python tools/queue_capacity_data.py            # simulate -> results/queue_capacity.json (~4 min)
-python tools/build_queue_capacity_workbook.py  # -> docs/Queue_Capacity_LoadBalancing.xlsx
+python tools/build_queue_capacity_workbook.py  # -> docs/Final_Queue_Capacity_LoadBalancing.xlsx
 ```
 
 ## Results (default config)

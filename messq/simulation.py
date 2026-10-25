@@ -123,6 +123,7 @@ class Hall:
         self.out_since: float | None = None
         self.outages = 0
         self.outage_minutes = 0.0
+        self.outage_spans: list[tuple[float, float]] = []  # (from, to) in seconds: food out, stations idle (for reporting)
         self.peak_queue = 0
         self._tie = 0
         self.busy_s: dict[int, float] = {}  # station-seconds busy, per 10-min bin
@@ -157,6 +158,7 @@ class Hall:
             self.free_at = [max(f, eta) for f in self.free_at]
         if self.out_since is not None:
             self.outage_minutes += (eta - self.out_since) / 60.0
+            self.outage_spans.append((self.out_since, eta))
             self.out_since = None
         self._tap(eta, FoodState.OK)
 

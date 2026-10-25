@@ -1,9 +1,9 @@
-"""Build docs/Queue_Capacity_LoadBalancing.xlsx: queue management (M/M/1, M/M/c per process),
+"""Build docs/Final_Queue_Capacity_LoadBalancing.xlsx: queue management (M/M/1, M/M/c per process),
 capacity management (seat turnover, bottleneck) and load balancing (dynamic vs static), all on
 SIMULATED data.
 
     python tools/queue_capacity_data.py              # simulate -> results/queue_capacity.json
-    python tools/build_queue_capacity_workbook.py    # -> docs/Queue_Capacity_LoadBalancing.xlsx
+    python tools/build_queue_capacity_workbook.py    # -> docs/Final_Queue_Capacity_LoadBalancing.xlsx
 
 Every number the sheets compute is a live formula on the Assumptions and Sim Data tabs.
 """
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from messq.config import load_config  # noqa: E402
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs" / "Queue_Capacity_LoadBalancing.xlsx")
+OUT = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs" / "Final_Queue_Capacity_LoadBalancing.xlsx")
 D = json.loads((ROOT / "results" / "queue_capacity.json").read_text())
 CFG = load_config()
 LUNCH = CFG.simulation.slot("lunch")
@@ -248,7 +248,8 @@ ROWS = [
     ("eat_lo", "Eating time: low", SIM.eat_min[0], "minutes", "Group estimate", "Group: 14–18 min", "0"),
     ("eat_hi", "Eating time: high", SIM.eat_min[1], "minutes", "Group estimate", "As above", "0"),
     ("changeover", "Seat changeover (next diner sits after the last leaves)", 0.2, "minutes", "Assumed",
-     "Students clear their own plate; no table cleaning delays between diners as such. Used in the seat-turnover formulas", "0.0"),
+     "Students clear their own plate; no table cleaning delays between diners as such. Used only in the seat-turnover formulas "
+     "(a small safety margin); the simulation frees a seat as soon as the diner gets up", "0.0"),
     ("sec", "Stage 4 · Dispose of plate (1–2 min)"),
     ("disp_lo", "Disposal: low", SIM.dispose_min[0], "minutes", "Group estimate", "Group: 2 min at most", "0.0"),
     ("disp_hi", "Disposal: high", SIM.dispose_min[1], "minutes", "Group estimate", "As above", "0.0"),
@@ -258,6 +259,9 @@ ROWS = [
     ("min_save", "Minimum saving before a screen suggests switching", CFG.layout.min_saving_min, "minutes", "Rule-based routing", "Our design choice", "0.0"),
     ("freshers", "Freshers as a share of every department (for the fixed freshers-at-Munch rule)", 0.25, "share", "Assumed",
      "First year of a four-year course; the messes first split students this way", "0%"),
+    ("sec", "Capacity planning"),
+    ("rho_t", "Target utilisation for planning capacity", 0.85, "share", "Policy",
+     "Above ~85% waits climb steeply (Variables, Q2); used to size stations for the peak", "0%"),
     ("sec", "Simulation"),
     ("seeds", "Simulated lunches averaged per scenario", D["seeds"], "lunches", "Design", "Seeds 0–19; the same students in every scenario", "0"),
     ("slot", "Time-slot length in the tables", 10, "minutes", "Design", "18 slots from 11:30", "0"),
@@ -313,9 +317,10 @@ AS_NUM = " ".join(NUM_INPUTS)
 # =============================================================================
 SD = "Sim Data"
 ws = sheet(SD, "Simulated data", f"Average of {D['seeds']} simulated lunches per 10-minute slot, mess, process and scenario. Simulated, not measured.",
-           [24, 14, 16, 10, 14, 16, 18, 18, 18], group="inputs")
+           [24, 14, 16, 10, 14, 16, 18, 18, 18, 20, 18, 16], group="inputs")
 heads(ws, 4, 1, ["Scenario", "Mess", "Process", "Slot", "λ arrivals (/min)", "Wq simulated (min)", "Stage time Ws simulated (min)",
-                 "Lq simulated (avg waiting)", "Ls simulated (avg in service)"], 44)
+                 "Lq simulated (avg waiting)", "Ls simulated (avg in service)", "Rule wait, each lunch then averaged (min)",
+                 "Rule line at end, each lunch then averaged", "Food out in the slot (min, stations idle)"], 44)
 WORLD = {"today": "Today (no screens)", "screens": "With Smart Scan screens"}
 MESS = {"A": "Central CT", "B": "Munch Mess"}
 STAGE = {"scanner": "Biometric scan", "station": "Serving station", "seat": "Seat (eating)", "disposal": "Disposal", "visit": "Whole visit"}
@@ -329,12 +334,12 @@ for w in WORLD:
                 put(ws, f"B{r}", MESS[m])
                 put(ws, f"C{r}", STAGE[st])
                 put(ws, f"D{r}", clock(b * 10))
-                for j, k in enumerate(["lam", "wq_min", "ws_min", "lq", "ls"]):
-                    put(ws, f"{L(5 + j)}{r}", round(x[k], 4), kind="data", fmt="0.00")
+                for j, k in enumerate(["lam", "wq_min", "ws_min", "lq", "ls", "rule_wq_min", "rule_line_end", "out_min"]):
+                    put(ws, f"{L(5 + j)}{r}", round(x.get(k, 0.0), 4), kind="data", fmt="0.00")
                 ROW[(w, m, st, b)] = r
                 r += 1
 SD_LAST = r - 1
-ws.auto_filter.ref = f"A4:I{SD_LAST}"
+ws.auto_filter.ref = f"A4:L{SD_LAST}"
 ws.freeze_panes = "E5"
 r += 1
 section(ws, f"A{r}", "Per mess, whole lunch")
@@ -405,7 +410,8 @@ r = var_block(4, "1. Serving stations at Central, 12:10–12:20 today (M/M/c, st
      "=1/(SUMPRODUCT(--({{0,1,2,3,4,5,6,7,8,9}}<{c}),{a}^{{0,1,2,3,4,5,6,7,8,9}}/FACT({{0,1,2,3,4,5,6,7,8,9}}))+{a}^{c}/FACT({c})/(1-{ρ}))", "", "0.000"),
     ("C", "Probability of waiting (Erlang C)", "Chance an arriving student has to wait at all", "C = aᶜ/(c!(1−ρ)) × P0", "={a}^{c}/FACT({c})/(1-{ρ})*{P0}", "", "0%"),
     ("Wq", "Wait in the line", "Average minutes from joining the line to reaching a station", "Wq = C ÷ (c·μ − λ)", "={C}/({c}*{μ}-{λ})", "min", "0.00"),
-    ("Wq cv", "Wait, corrected for regular serving", "Serving times vary less than M/M/c assumes (cv 0.6), so the real wait is shorter", "Wq × (1 + cv²) ÷ 2",
+    ("Wq cv", "Wait, corrected for regular serving", "Serving times vary less than M/M/c assumes (cv 0.6), so the real wait is shorter. "
+     "Allen–Cunneen approximation for M/G/c (exact only for one server, where it is Pollaczek–Khinchine)", "Wq × (1 + cv²) ÷ 2",
      f"={{Wq}}*(1+{REF['cv']}^2)/2", "min", "0.00"),
     ("W", "Time at the stage", "Wait plus being served", "W = Wq + Ws", "={Wq}+{Ws}", "min", "0.00"),
     ("Lq", "Students in the line", "Average number standing in the line", "Lq = λ × Wq (Little's Law)", "={λ}*{Wq}", "students", "0.0"),
@@ -422,7 +428,18 @@ r = var_block(r + 1, "2. Serving stations at Central, 13:10–13:20 today (overl
     ("ρ", "Utilisation", "Above 100% the stations cannot keep up", "ρ = λ ÷ (c·μ)", "={λ}/{c·μ}", "", "0%"),
     ("Growth", "Line growth", "Extra students added to the line during these 10 minutes", "(λ − c·μ) × 10", "=MAX(0,({λ}-{c·μ})*10)", "students", "0"),
     ("Wq", "Steady-state wait", "Not defined: with ρ ≥ 1 the line has no steady size", "only if ρ < 1", '=IF({ρ}<1,"defined","none (ρ ≥ 1)")', "", "@"),
-], "When ρ ≥ 1 the textbook formulas stop applying: the line grows every minute until arrivals fall.")
+    ("B start", "Line at the start", "Students still in line when the slot begins (carried in from 13:00–13:10)", "fluid queue, previous slot",
+     f"={q('Q2 Serving stations')}!$P${28 + ex2}", "students", "0"),
+    ("Out", "Minutes food was out", "Minutes in this slot the stations stood idle waiting for a refill (average lunch)", "from the simulation",
+     f"={sd('today', 'A', 'station', ex2, 'L')}", "min", "0.0"),
+    ("B end", "Line at the end", "Line at the start + arrivals − what the stations could serve while food was available (never below zero)",
+     "B start + λ × 10 − c·μ × (10 − Out)", "=MAX(0,{B start}+{λ}*10-{c·μ}*(10-{Out}))", "students", "0"),
+    ("W line", "Wait from the line", "Someone joining half-way through the slot meets the average line, cleared at c·μ a minute",
+     "(B start + B end) ÷ 2 ÷ c·μ", "=({B start}+{B end})/2/{c·μ}", "min", "0.0"),
+    ("Wq sim", "Simulated wait", "What the simulated students who joined in this slot actually waited", "from the simulation",
+     f"={sd('today', 'A', 'station', ex2, 'F')}", "min", "0.0"),
+], "When ρ ≥ 1 the textbook formulas stop applying: the line grows every minute until arrivals fall. Then the serving-capacity rule (a fluid "
+   "queue) takes over: carry the line from slot to slot and divide it by what the stations serve per minute.")
 ex3 = 10
 r = var_block(r + 1, "3. Biometric scanner at Central, 13:10–13:20 today (M/M/1)", [
     ("λ", "Arrival rate", "Students reaching the face scanner per minute", "counted in the simulation", f"={sd('today', 'A', 'scanner', ex3, 'E')}", "students/min", "0.0"),
@@ -464,15 +481,22 @@ for i, (a_, b_, c_, t_) in enumerate(MAP):
 # Queue tabs
 # =============================================================================
 def queue_tab(name, title, stage, c_ref, model, summary_note):
-    ws = sheet(name, title, f"{model}. Arrivals, waits and line lengths are simulated; utilisation, stability and the textbook waits are formulas.",
-               [24, 13, 8, 10, 11, 10, 7, 9, 22, 12, 13, 12, 11, 11, 13, 36])
+    ws = sheet(name, title, f"{model}. Arrivals, waits and line lengths are simulated; utilisation, stability, the textbook waits and the line carried "
+               "between slots (fluid queue) are formulas.",
+               [24, 13, 8, 10, 11, 10, 7, 9, 22, 12, 13, 12, 11, 11, 13, 11, 11, 12, 12, 13, 40])
     # ---- summary (rows 4-9) and takeaway
     section(ws, "A4", "Summary")
-    heads(ws, 5, 1, ["Scenario", "Mess", "Peak ρ", "Slots over", "Slots near", "Worst wait", "Avg wait"])
-    put(ws, "A10", "Slots over = ρ ≥ 100% · slots near = 85–100% · waits in minutes (simulated)", italic=True, color=MUTED, size=10)
+    heads(ws, 5, 1, ["Scenario", "Mess", "Peak ρ", "Slots over", "Slots near", "Worst wait", "Avg wait (simulated)", "Avg: formula on the average day",
+                     "Avg: rule lunch by lunch"])
+    put(ws, "A10", "Slots over = ρ ≥ 100% · slots near = 85–100% · worst and average wait are simulated · formula on the average day = column S "
+        "(line carried between slots + randomness) · rule lunch by lunch = the serving-capacity rule on each simulated lunch, then averaged "
+        "(column T) · all λ-weighted, in minutes", italic=True, color=MUTED, size=10)
     top = 27
+    cvname = "Wq M/G/1, Pollaczek–Khinchine (min)" if model.startswith("M/M/1") else "Wq M/G/c, Allen–Cunneen (min)"
     cols = ["Scenario", "Mess", "Slot", "λ (/min)", "Service time (min)", "μ (/min)", "c", "ρ", "Stable?", "Wq textbook (min)",
-            "Wq corrected for cv (min)", "Wq simulated (min)", "Lq simulated", "λ × Wq simulated", "Little's Law: Lq ÷ λWq", "What it means"]
+            cvname, "Wq simulated (min)", "Lq simulated", "λ × Wq simulated", "Little's Law: Lq ÷ λWq",
+            "Line at start (carried in)", "Line at end = start + λ×10 − cμ×(10 − minutes food out)", "Wait from the line (min)", "Best estimate, average day (min)",
+            "Rule, each lunch then averaged (min)", "What it means"]
     section(ws, f"A{top - 1}", "Slot by slot (filter by scenario or mess)")
     heads(ws, top, 1, cols)
     rows = []
@@ -490,10 +514,10 @@ def queue_tab(name, title, stage, c_ref, model, summary_note):
                 put(ws, f"H{r}", f"=D{r}/(G{r}*F{r})", kind="formula", fmt="0%")
                 put(ws, f"I{r}", f'=IF(D{r}=0,"no arrivals",IF(H{r}<0.85,"stable",IF(H{r}<1,"near capacity","over capacity")))', kind="formula")
                 a = f"(D{r}/F{r})"
+                K = "{0,1,2,3,4,5,6,7,8,9}"
                 if model.startswith("M/M/1"):
                     wq = f"=IF(AND(D{r}>0,H{r}<1),H{r}/(F{r}-D{r}),\"—\")"
                 else:
-                    K = "{0,1,2,3,4,5,6,7,8,9}"
                     top_ = f"({a}^G{r}/FACT(G{r})/(1-H{r}))"
                     wq = (f"=IF(AND(D{r}>0,H{r}<1),{top_}/(SUMPRODUCT(--({K}<G{r}),{a}^{K}/FACT({K}))+{top_})/(G{r}*F{r}-D{r}),\"—\")")
                 put(ws, f"J{r}", wq, kind="formula", fmt="0.00")
@@ -502,15 +526,31 @@ def queue_tab(name, title, stage, c_ref, model, summary_note):
                 put(ws, f"M{r}", f"={sd(w, m, stage, b, 'H')}", kind="link", fmt="0.0")
                 put(ws, f"N{r}", f"=D{r}*L{r}", kind="formula", fmt="0.0")
                 put(ws, f"O{r}", f'=IF(MAX(M{r},N{r})<0.5,"both ≈ 0",IF(N{r}=0,"no new arrivals",M{r}/N{r}))', kind="formula", fmt="0.00")
-                put(ws, f"P{r}", f'=IF(D{r}=0,"",IF(H{r}>=1,"No steady state: the line grows by about "&TEXT((D{r}-G{r}*F{r})*10,"0")&" in 10 min",IF(ISNUMBER(O{r}),IF(ABS(O{r}-1)<=0.2,"Steady: Little\'s Law holds",'
-                                 f'IF(O{r}>1,"Draining a line left from earlier","Line still building")),"Hardly any line")))',
+                # Fluid queue (the serving-capacity rule): the line is carried from one slot to the next.
+                put(ws, f"P{r}", "=0" if b == 0 else f"=Q{r - 1}", kind="formula", fmt="0")
+                # capacity this slot = stations × rate × minutes the food was available (effective capacity)
+                put(ws, f"Q{r}", f"=MAX(0,P{r}+D{r}*{REF['slot']}-G{r}*F{r}*({REF['slot']}-{sd(w, m, stage, b, 'L')}))", kind="formula", fmt="0")
+                put(ws, f"R{r}", f"=(P{r}+Q{r})/2/(G{r}*F{r})", kind="formula", fmt="0.00")
+                # Best estimate = wait from the line + the random part (textbook wait with ρ capped at 95%, corrected for cv).
+                lc = f"MIN(D{r},0.95*G{r}*F{r})"
+                if model.startswith("M/M/1"):
+                    rnd = f"({lc}/F{r})/(F{r}-{lc})"
+                else:
+                    ac = f"({lc}/F{r})"
+                    tc = f"({ac}^G{r}/FACT(G{r})/(1-{lc}/(G{r}*F{r})))"
+                    rnd = f"{tc}/(SUMPRODUCT(--({K}<G{r}),{ac}^{K}/FACT({K}))+{tc})/(G{r}*F{r}-{lc})"
+                put(ws, f"S{r}", f"=IF(D{r}>0,R{r}+(1+{CV[stage]}^2)/2*{rnd},0)", kind="formula", fmt="0.00")
+                put(ws, f"T{r}", f"={sd(w, m, stage, b, 'J')}", kind="link", fmt="0.00")
+                put(ws, f"U{r}", f'=IF(D{r}=0,IF(P{r}>0,"No new arrivals: the line left from earlier drains",""),IF(H{r}>=1,"Over capacity: the line grows by about "&TEXT((D{r}-G{r}*F{r})*10,"0")&" in 10 min (to "&TEXT(Q{r},"0")&")",'
+                                 f'IF(P{r}>=1,"Under capacity, but "&TEXT(P{r},"0")&" were already in line: it drains to "&TEXT(Q{r},"0"),IF(ISNUMBER(O{r}),IF(ABS(O{r}-1)<=0.2,"Steady: Little\'s Law holds",'
+                                 f'IF(O{r}>1,"Draining a line left from earlier","Line still building")),"Hardly any line"))))',
                     kind="formula")
-                for col in "CDEFGHIJKLMNO":
+                for col in "CDEFGHIJKLMNOPQRST":
                     ws[f"{col}{r}"].alignment = Alignment(horizontal="center", vertical="center")
                 rows.append((w, m, b, r))
                 r += 1
     last = r - 1
-    ws.auto_filter.ref = f"A{top}:P{last}"
+    ws.auto_filter.ref = f"A{top}:U{last}"
     ws.freeze_panes = f"D{top + 1}"
     ws.conditional_formatting.add(f"H{top + 1}:I{last}", FormulaRule(formula=[f"$H{top + 1}>=1"], fill=F_BAD, font=Font(name=FONT, color="9C0006", bold=True)))
     ws.conditional_formatting.add(f"H{top + 1}:I{last}", FormulaRule(formula=[f"AND($H{top + 1}>=0.85,$H{top + 1}<1)"], fill=F_WARN))
@@ -526,7 +566,11 @@ def queue_tab(name, title, stage, c_ref, model, summary_note):
         put(ws, f"F{rr}", f"=_xlfn.MAXIFS({rng('L')},{crit})", kind="formula", fmt="0.00")
         put(ws, f"G{rr}", f"=SUMPRODUCT(({rng('A')}=\"{WORLD[w]}\")*({rng('B')}=\"{MESS[m]}\")*{rng('L')}*{rng('D')})/"
                           f"SUMPRODUCT(({rng('A')}=\"{WORLD[w]}\")*({rng('B')}=\"{MESS[m]}\")*{rng('D')})", kind="formula", fmt="0.00")
-        for col in "CDEFG":
+        put(ws, f"H{rr}", f"=SUMPRODUCT(({rng('A')}=\"{WORLD[w]}\")*({rng('B')}=\"{MESS[m]}\")*{rng('S')}*{rng('D')})/"
+                          f"SUMPRODUCT(({rng('A')}=\"{WORLD[w]}\")*({rng('B')}=\"{MESS[m]}\")*{rng('D')})", kind="formula", fmt="0.00", fill=F_OUT, bold=True)
+        put(ws, f"I{rr}", f"=SUMPRODUCT(({rng('A')}=\"{WORLD[w]}\")*({rng('B')}=\"{MESS[m]}\")*{rng('T')}*{rng('D')})/"
+                          f"SUMPRODUCT(({rng('A')}=\"{WORLD[w]}\")*({rng('B')}=\"{MESS[m]}\")*{rng('D')})", kind="formula", fmt="0.00", fill=F_OUT, bold=True)
+        for col in "CDEFGHI":
             ws[f"{col}{rr}"].alignment = Alignment(horizontal="center", vertical="center")
     note(ws, "A12", summary_note, "G18")
     put(ws, "A20", "In the table below: red = over capacity (the line keeps growing), amber = near capacity (waits rise steeply).", italic=True, color=MUTED, size=10)
@@ -563,14 +607,17 @@ _sA = _peak_rho("today", "A", "scanner", 1)
 Q1, Q1_ROWS, Q1_TOP, Q1_LAST = queue_tab(
     "Q1 Scanner", "Biometric scan: M/M/1", "scanner", lambda m: REF["scanners"], "M/M/1, one face scanner per mess",
     f"One scanner per mess handles about 30 students a minute. It keeps up all lunch, though Central's scanner gets close (about {_sA:.0%} busy) "
-    "in the 13:10 surge. Real scans are steadier than M/M/1 assumes, so the corrected wait sits closer to the simulation. Anyone queueing "
-    "here is still outside the door, so the live system cannot see them yet.")
+    "in the 13:10 surge. The textbook M/M/1 wait assumes the surge lasts long enough for the queue to settle; a 10-minute surge never gets "
+    "there, so the formula overstates the wait (about 1.2 min corrected vs 0.3 min simulated at 13:10). Anyone queueing here is still outside "
+    "the door, so the live system cannot see them.")
 _pA, _pAs, _pBs = _peak_rho("today", "A", "station", 2), _peak_rho("screens", "A", "station", 2), _peak_rho("screens", "B", "station", 2)
 Q2, Q2_ROWS, Q2_TOP, Q2_LAST = queue_tab(
     "Q2 Serving stations", "Serving stations: M/M/c", "station", lambda m: REF["c"], "M/M/c, two serving stations per mess",
     f"This is the bottleneck. Two stations serve 20 students a minute. Today Central runs at up to {_pA:.0%} in the 13:10 surge, so the line "
     f"grows every minute and there is no steady state until the surge passes. With the screens Central peaks at {_pAs:.0%} for a short while "
-    f"and Munch takes the overflow (peak {_pBs:.0%}). The screens only ask students to walk when it saves at least 2 minutes, and only 60% follow.")
+    f"and Munch takes the overflow (peak {_pBs:.0%}). The screens only ask students to walk when it saves at least 2 minutes, and only 60% follow. "
+    "Per-slot textbook waits miss the line carried over from an overloaded slot (after 13:30 Central is under 100% again but ~200 are still "
+    "waiting), so the best-estimate column adds the line from the serving-capacity rule: line ÷ 20 per minute.")
 
 
 # =============================================================================
@@ -731,9 +778,20 @@ CAP = [
     ("effective", "Effective capacity per lunch (students)", lambda m, X: f"={X('design')}*(1-{X('outage')}/{REF['window']})", "#,##0", "Design × share of time food is available"),
     ("util", "Utilisation = actual ÷ design", lambda m, X: f"={X('served')}/{X('design')}", "0%", "OM definition"),
     ("eff", "Efficiency = actual ÷ effective", lambda m, X: f"={X('served')}/{X('effective')}", "0%", "OM definition"),
-    ("peak_arr", "Peak 10-min arrival rate at the serving stations (today, /min)",
+    ("cushion", "Capacity cushion = 1 − utilisation", lambda m, X: f"=1-{X('util')}", "0%",
+     "Spare capacity over the whole lunch. Averages hide the peak: see section 4"),
+    ("sec", "4. The peak decides: capacity needed in the busiest 10 minutes (serving stations)"),
+    ("peak_arr", "Peak 10-min arrival rate at the serving stations, today (/min)",
      lambda m, X: f"=MAX({q(SD)}!$E${ROW[('today', m, 'station', 0)]}:$E${ROW[('today', m, 'station', 17)]})", "0.0", "Sim Data"),
-    ("peak_ratio", "Peak arrivals ÷ serving capacity", lambda m, X: f"={X('peak_arr')}/{X('cap_st')}", "0%", "Above 100% the line grows"),
+    ("peak_ratio", "Peak load today: arrivals ÷ serving capacity", lambda m, X: f"={X('peak_arr')}/{X('cap_st')}", "0%", "Above 100% the line grows"),
+    ("peak_arr_s", "Peak 10-min arrival rate with the screens (/min)",
+     lambda m, X: f"=MAX({q(SD)}!$E${ROW[('screens', m, 'station', 0)]}:$E${ROW[('screens', m, 'station', 17)]})", "0.0", "Sim Data"),
+    ("peak_ratio_s", "Peak load with the screens", lambda m, X: f"={X('peak_arr_s')}/{X('cap_st')}", "0%", "Load balancing moves part of Central's peak to Munch"),
+    ("st_have", "Serving stations available", lambda m, X: f"={REF['c']}", "0", "Measured"),
+    ("st_need", "Stations needed today to keep the peak at or below the target utilisation",
+     lambda m, X: f"=ROUNDUP({X('peak_arr')}/({REF['mu']}*{REF['rho_t']}),0)", "0", "ROUNDUP(peak λ ÷ (μ × target)); target on Assumptions"),
+    ("st_need_s", "Stations needed with the screens", lambda m, X: f"=ROUNDUP({X('peak_arr_s')}/({REF['mu']}*{REF['rho_t']}),0)", "0",
+     "Same rule, after load balancing"),
 ]
 CROW = {}
 r = 5
@@ -751,7 +809,7 @@ for row in CAP:
         continue
     key, label, fn, fmt, how = row
     rr = CROW[key]
-    hl = key in ("turn", "turns_h", "seatcap", "bottle", "peakutil", "util", "st1", "st2", "st3", "st4", "visit")
+    hl = key in ("turn", "turns_h", "seatcap", "bottle", "peakutil", "util", "st1", "st2", "st3", "st4", "visit", "peak_ratio", "peak_ratio_s", "st_need", "st_need_s")
     put(ws, f"A{rr}", label, bold=hl).border = LINE
     for m, col in (("A", "B"), ("B", "C")):
         c = put(ws, f"{col}{rr}", fn(m, lambda k, col=col: f"{col}{CROW[k]}"), kind="auto", fmt=fmt, fill=F_OUT if hl else None, bold=hl)
@@ -760,7 +818,10 @@ for row in CAP:
 note(ws, f"A{CAP_LAST + 2}", f"A seat turns over about every {TURN_T:.1f} minutes, roughly {60 / TURN_T:.1f} diners an hour, so the seats could take "
      f"about {A_.seats / TURN_T:.0f} students a minute at Central and {B_.seats / TURN_T:.0f} at Munch. The serving stations (20 a minute per mess) are the bottleneck at both messes, below the scanner (30) "
      "and the seats. Total capacity is not the problem: at the peak Central gets far more than its 20 a minute while Munch runs well under, "
-     "so the answer is balancing the load, not adding seats.", f"D{CAP_LAST + 5}")
+     "so the answer is balancing the load, not adding seats. Averages hide this: over the whole lunch Central's stations look only about two-thirds used, "
+     "yet in the busiest 10 minutes they are far over capacity. Sizing for the peak at the target utilisation, Central alone would need more stations "
+     "today; with the screens the peak is shared, so it needs fewer. Seats can never fill: the stations let at most 20 students a minute through, "
+     "and 20 × ~16 min of eating ≈ 320 seats, well under 900 and 492.", f"D{CAP_LAST + 7}")
 bc = BarChart()
 bc.add_data(Reference(ws, min_col=2, max_col=3, min_row=CROW["cap_scan"], max_row=CROW["cap_seat"]), titles_from_data=False)
 bc.set_categories(Reference(ws, min_col=1, min_row=CROW["cap_scan"], max_row=CROW["cap_seat"]))
@@ -973,6 +1034,72 @@ ch.height, ch.width = 10, 24
 style_chart(ch, "Average wait by 10-minute slot (minutes)", "Minutes", colors=["7F7F7F", "F4B183", "C55A11", "9DC3E6", ACCENT])
 ws.add_chart(ch, f"A{r + 21}")
 
+# ---- 9. utilisation balance per slot (the load-balancing objective)
+q2r = lambda w, m, b: Q2_TOP + 1 + (list(WORLD).index(w) * 2 + list(MESS).index(m)) * 18 + b  # noqa: E731
+Q2N = q(Q2.title)
+r = LB_LAST + 3 + 48
+section(ws, f"A{r}", "9. Load balance: utilisation ρ of the serving stations at each mess, slot by slot")
+put(ws, f"A{r + 1}", "Load balancing aims for equal utilisation: ρ at Central ≈ ρ at Munch ≈ the pooled level (all arrivals ÷ all capacity). "
+    "The gap between the two messes is the imbalance the screens remove.", italic=True, color=MUTED, wrap=True)
+ws.merge_cells(f"A{r + 1}:I{r + 1}")
+heads(ws, r + 2, 1, ["Slot", "Today: ρ Central", "Today: ρ Munch", "Today: gap", "Screens: ρ Central", "Screens: ρ Munch", "Screens: gap",
+                     "Balanced level (pooled ρ)", "Pooled stations needed at target"], 44)
+BAL0 = r + 3
+for b in range(18):
+    rr = BAL0 + b
+    put(ws, f"A{rr}", clock(b * 10))
+    a_t, b_t, a_s, b_s = q2r("today", "A", b), q2r("today", "B", b), q2r("screens", "A", b), q2r("screens", "B", b)
+    put(ws, f"B{rr}", f"={Q2N}!H{a_t}", kind="link", fmt="0%")
+    put(ws, f"C{rr}", f"={Q2N}!H{b_t}", kind="link", fmt="0%")
+    put(ws, f"D{rr}", f"=ABS(B{rr}-C{rr})", kind="formula", fmt="0%")
+    put(ws, f"E{rr}", f"={Q2N}!H{a_s}", kind="link", fmt="0%")
+    put(ws, f"F{rr}", f"={Q2N}!H{b_s}", kind="link", fmt="0%")
+    put(ws, f"G{rr}", f"=ABS(E{rr}-F{rr})", kind="formula", fmt="0%")
+    put(ws, f"H{rr}", f"=({Q2N}!D{a_t}+{Q2N}!D{b_t})/({Q2N}!G{a_t}*{Q2N}!F{a_t}+{Q2N}!G{b_t}*{Q2N}!F{b_t})", kind="formula", fmt="0%")
+    put(ws, f"I{rr}", f"=ROUNDUP(({Q2N}!D{a_t}+{Q2N}!D{b_t})/({REF['mu']}*{REF['rho_t']}),0)", kind="formula", fmt="0")
+    for col in "BCDEFGHI":
+        ws[f"{col}{rr}"].alignment = Alignment(horizontal="center", vertical="center")
+BAL1 = BAL0 + 17
+ws.conditional_formatting.add(f"B{BAL0}:C{BAL1}", FormulaRule(formula=[f"B{BAL0}>=1"], fill=F_BAD))
+ws.conditional_formatting.add(f"E{BAL0}:F{BAL1}", FormulaRule(formula=[f"E{BAL0}>=1"], fill=F_BAD))
+_busy = max(range(18), key=lambda b: D["worlds"]["today"]["A"]["station"][b]["lam"])
+rr = BAL1 + 2
+put(ws, f"A{rr}", f"At the busiest 10 minutes ({clock(_busy * 10)}–{clock(_busy * 10 + 10)}, Central today)", bold=True)
+heads(ws, rr + 1, 1, ["Mess", "Today", "With the screens", "Balanced level"])
+BUSY0 = rr + 2
+for i, (mname, ct, cs) in enumerate([("Central CT", "B", "E"), ("Munch Mess", "C", "F")]):
+    put(ws, f"A{BUSY0 + i}", mname)
+    put(ws, f"B{BUSY0 + i}", f"={ct}{BAL0 + _busy}", kind="formula", fmt="0%", fill=F_OUT, bold=True)
+    put(ws, f"C{BUSY0 + i}", f"={cs}{BAL0 + _busy}", kind="formula", fmt="0%", fill=F_OUT, bold=True)
+    put(ws, f"D{BUSY0 + i}", f"=H{BAL0 + _busy}", kind="formula", fmt="0%")
+put(ws, f"A{BUSY0 + 2}", "Gap between the messes")
+put(ws, f"B{BUSY0 + 2}", f"=ABS(B{BUSY0}-B{BUSY0 + 1})", kind="formula", fmt="0%", bold=True)
+put(ws, f"C{BUSY0 + 2}", f"=ABS(C{BUSY0}-C{BUSY0 + 1})", kind="formula", fmt="0%", bold=True)
+put(ws, f"A{BUSY0 + 3}", "Pooled stations needed at the target (both messes; 4 available)")
+put(ws, f"B{BUSY0 + 3}", f"=I{BAL0 + _busy}", kind="formula", fmt="0", bold=True)
+note(ws, f"A{BUSY0 + 5}", "Today the load is badly unbalanced: Central's stations are far over capacity while Munch's are mostly idle. The screens move "
+     "both towards the balanced level without adding a station. They stop short of it because only 60% of students follow and the screens only "
+     "speak up when switching saves at least 2 minutes. In the busiest minutes even perfect balancing leaves both messes near the steep part of the "
+     "waiting curve: the balanced level is above 90%, so at the 85% planning target both messes together would need a fifth station for those "
+     "10 minutes. That is why the stagger options on the decision workbook (moving one department's lunch break) still matter.", f"I{BUSY0 + 8}")
+bc2 = BarChart()
+bc2.add_data(Reference(ws, min_col=2, max_col=3, min_row=BUSY0 - 1, max_row=BUSY0 + 1), titles_from_data=True)
+bc2.set_categories(Reference(ws, min_col=1, min_row=BUSY0, max_row=BUSY0 + 1))
+bc2.y_axis.number_format = "0%"
+bc2.height, bc2.width = 9, 14
+style_chart(bc2, "Busiest 10 minutes: utilisation ρ by mess", "Utilisation ρ", colors=["C55A11", ACCENT])
+ws.add_chart(bc2, f"K{BUSY0 - 2}")
+lc2 = LineChart()
+lc2.add_data(Reference(ws, min_col=2, max_col=3, min_row=r + 2, max_row=BAL1), titles_from_data=True)
+lc2.add_data(Reference(ws, min_col=5, max_col=6, min_row=r + 2, max_row=BAL1), titles_from_data=True)
+lc2.add_data(Reference(ws, min_col=8, max_col=8, min_row=r + 2, max_row=BAL1), titles_from_data=True)
+lc2.set_categories(Reference(ws, min_col=1, min_row=BAL0, max_row=BAL1))
+lc2.y_axis.number_format = "0%"
+lc2.height, lc2.width = 10, 22
+style_chart(lc2, "Utilisation ρ by slot: today vs with the screens", "Utilisation ρ", colors=["C55A11", "F4B183", ACCENT, "9DC3E6", "7F7F7F"])
+lc2.series[-1].graphicalProperties.line.dashStyle = "dash"
+ws.add_chart(lc2, f"K{BAL0}")
+
 # =============================================================================
 # Checks
 # =============================================================================
@@ -993,6 +1120,10 @@ checks = [
      "=IF(ABS(B10-1)<0.1,\"OK\",\"CHECK\")", "0.00"),
     ("Seats never the constraint: peak seat utilisation below 100% (both messes)", f"=MAX({q(CP)}!B{CROW['peakutil']},{q(CP)}!C{CROW['peakutil']})", "=IF(B11<1,\"OK\",\"CHECK\")", "0%"),
     ("Dynamic routing beats a fixed share at the same compliance on the average day", f"={q(LB)}!B{COMP_ROW}", "=IF(B12>0,\"OK\",\"CHECK\")", "0.00"),
+    ("The serving-capacity rule explains the queue: the rule applied to each lunch ÷ the simulated wait, Central today (within 25%)",
+     f"={q(Q2.title)}!I6/{q(Q2.title)}!G6", "=IF(ABS(B13-1)<=0.25,\"OK\",\"CHECK\")", "0.00"),
+    ("Load balancing narrows the gap between the messes at the busiest 10 minutes",
+     f"={q(LB)}!B{BUSY0 + 2}-{q(LB)}!C{BUSY0 + 2}", "=IF(B14>0,\"OK\",\"CHECK\")", "0%"),
 ]
 checks += [
     ("Every input on the Assumptions tab is a number (text such as '12-15' breaks the formulas)",
@@ -1056,6 +1187,10 @@ KEY = [
     ("Peak seats in use: Central / Munch", f"=TEXT({q(CP)}!B{CROW['peakutil']},\"0%\")&\" of 900 / \"&TEXT({q(CP)}!C{CROW['peakutil']},\"0%\")&\" of 492\"", None),
     ("Average wait: today → freshers-at-Munch rule → Smart Scan",
      f"=TEXT({q(LB)}!B{P0},\"0.0\")&\" → \"&TEXT({q(LB)}!B{P0 + 1},\"0.0\")&\" → \"&TEXT({q(LB)}!B{P0 + pol_names.index('Dynamic: Smart Scan screens (60% follow)')},\"0.0\")&\" min\"", None),
+    ("Load balance at the busiest 10 minutes: Central / Munch ρ, today → with screens",
+     f"=TEXT({q(LB)}!B{BUSY0},\"0%\")&\" / \"&TEXT({q(LB)}!B{BUSY0 + 1},\"0%\")&\" → \"&TEXT({q(LB)}!C{BUSY0},\"0%\")&\" / \"&TEXT({q(LB)}!C{BUSY0 + 1},\"0%\")&\" (balanced \"&TEXT({q(LB)}!D{BUSY0},\"0%\")&\")\"", None),
+    ("Stations needed at Central for its peak (target ρ): today → with screens",
+     f"={q(CP)}!B{CROW['st_need']}&\" → \"&{q(CP)}!B{CROW['st_need_s']}&\" (2 available)\"", None),
     ("All checks", f"={q(CK)}!C{CK_LAST + 2}", None),
 ]
 for i, (a, f, fmt) in enumerate(KEY):
@@ -1091,5 +1226,6 @@ for wsx in wb.worksheets:
             if c.value is not None and (c.font is None or c.font.name != FONT):
                 c.font = Font(name=FONT, size=c.font.size or 11, bold=c.font.bold, italic=c.font.italic, color=c.font.color,
                               underline=c.font.underline)
+wb.calculation.fullCalcOnLoad = True  # no cached values from openpyxl: make Excel compute every formula on open
 wb.save(OUT)
 print("saved", OUT)

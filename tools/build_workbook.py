@@ -1,6 +1,6 @@
-"""Build docs/MDS_Decision_Workbook.xlsx: the MDS decision workbook for Beyond the Bottleneck.
+"""Build docs/Final_MDS_Decision_Workbook.xlsx: the MDS decision workbook for Beyond the Bottleneck.
 
-    python tools/build_workbook.py docs/MDS_Decision_Workbook.xlsx
+    python tools/build_workbook.py docs/Final_MDS_Decision_Workbook.xlsx
 
 Needs openpyxl (and scipy, to solve the student-flow LP). Every spreadsheet
 calculation is a live formula that reads the Inputs tab. Simulator results are
@@ -21,7 +21,7 @@ from openpyxl.utils import get_column_letter as L
 from scipy.optimize import linprog
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs" / "MDS_Decision_Workbook.xlsx")
+OUT = sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "docs" / "Final_MDS_Decision_Workbook.xlsx")
 SCEN = json.loads((ROOT / "results" / "scenarios.json").read_text())
 PAYOFF = json.loads((ROOT / "results" / "payoff.json").read_text())
 RECON = json.loads((ROOT / "results" / "reconcile.json").read_text())
@@ -543,8 +543,9 @@ ws.add_chart(ch, "O4")
 B0 = 22
 put(ws, f"A{B0}", "3. Lunch by 10-minute slot: without vs with the door screens (M/M/c, plus a fluid queue for overload)", bold=True)
 note(ws, f"A{B0+1}", "Arrivals = the department lunch breaks added up (Arrival Curve tab; shape ASSUMED until the biometric logs "
-     "replace column C). Queue wait = backlog ÷ capacity + steady-state M/M/c wait at the serving stations. When ρ ≥ 1 the steady-state formula does not apply, "
-     "so the queue is carried forward: backlog = max(0, previous + arrivals − capacity × 10). Throughput = stage 1 + queue wait + serving + food line + "
+     "replace column C). Backlog (end of slot) = max(0, backlog at the start + arrivals − capacity × 10): the line carried from slot to slot. "
+     "Queue wait = (backlog at the start + backlog at the end) ÷ 2 ÷ capacity (the line a student meets half-way through the slot) + the M/M/c wait "
+     "with ρ capped at 95% for the randomness a smooth average misses (P(wait) and Wq random use the capped rate; the live engine uses the same rule). Throughput = stage 1 + queue wait + serving + food line + "
      "eating + disposal. 'With screens' moves the share who comply toward equal utilisation in every slot, with perfect knowledge (see Reconciliation).", f"AK{B0+1}", 58)
 put(ws, f"A{B0+3}", "Equal-utilisation share for Central")
 put(ws, f"E{B0+3}", f"={REF['cap_A']}/({REF['cap_A']}+{REF['cap_B']})", kind="link", fmt="0.0%")
@@ -563,7 +564,7 @@ put(ws, f"A{SR}", "Slot start", kind="head")
 put(ws, f"B{SR}", "Curve share", kind="head")
 put(ws, f"C{SR}", "Arrivals (both messes)", kind="head")
 put(ws, f"D{SR}", "λ total /min", kind="head")
-sub = ["λ /min", "Scanner ρ", "ρ", "P(wait)", "Wq steady (min)", "Backlog end", "Queue wait (min)", "Throughput (min)", "People inside"]
+sub = ["λ /min", "Scanner ρ", "ρ", "P(wait)", "Wq random (min)", "Backlog end", "Queue wait (min)", "Throughput (min)", "People inside"]
 COLS = {}
 col = 5
 for gname, mess, gk in groups:
@@ -592,13 +593,18 @@ for i in range(N_BINS):
         put(ws, f"{lam}{r_}", f"=$D{r_}*{share}", kind="link", fmt="0.0")
         put(ws, f"{scr}{r_}", f"={lam}{r_}/{REF['scan_A'] if A else REF['scan_B']}", kind="link", fmt="0%")
         put(ws, f"{rho}{r_}", f"={lam}{r_}/({c_}*{REF['mu']})", kind="link", fmt="0%")
-        a = f"({lam}{r_}/{REF['mu']})"
+        # Randomness term: the M/M/c wait with ρ capped at 95% (Erlang C blows up at 100%; the backlog handles overload).
+        # Same rule as the live engine (messq/waits.py, RHO_CAP).
+        lc = f"MIN({lam}{r_},0.95*{c_}*{REF['mu']})"
+        a = f"({lc}/{REF['mu']})"
         top = f"({a}^{c_}/FACT({c_})*{c_}/({c_}-{a}))"
-        put(ws, f"{pw}{r_}", f'=IF({rho}{r_}<1,{top}/(SUMPRODUCT(--({K}<{c_}),{a}^{K}/FACT({K}))+{top}),1)', kind="link", fmt="0.00")
-        put(ws, f"{wq}{r_}", f'=IF({rho}{r_}<1,{pw}{r_}/({c_}*{REF["mu"]}-{lam}{r_}),0)', kind="link", fmt="0.00")
+        put(ws, f"{pw}{r_}", f'=IF({lam}{r_}>0,{top}/(SUMPRODUCT(--({K}<{c_}),{a}^{K}/FACT({K}))+{top}),0)', kind="link", fmt="0.00")
+        put(ws, f"{wq}{r_}", f'=IF({lam}{r_}>0,{pw}{r_}/({c_}*{REF["mu"]}-{lc}),0)', kind="link", fmt="0.00")
         prev = "0" if i == 0 else f"{bl}{r_-1}"
         put(ws, f"{bl}{r_}", f"=MAX(0,{prev}+({lam}{r_}-{c_}*{REF['mu']})*10)", kind="link", fmt="0")
-        put(ws, f"{ew}{r_}", f"={bl}{r_}/({c_}*{REF['mu']})+{wq}{r_}", kind="link", fmt="0.0")
+        # A student arriving during the slot meets, on average, the line half-way through it (fluid part), plus the
+        # random part that a smooth average misses (M/M/c at ρ ≤ 95%).
+        put(ws, f"{ew}{r_}", f"=({prev}+{bl}{r_})/2/({c_}*{REF['mu']})+{wq}{r_}", kind="link", fmt="0.0")
         put(ws, f"{thr}{r_}", f"={REF['entry']}+{ew}{r_}+1/{REF['mu']}+{REF['line']}+{REF['eat']}+{REF['disp']}", kind="link", fmt="0.0")
         put(ws, f"{ppl}{r_}", f"={lam}{r_}*{thr}{r_}", kind="formula", fmt="0")
 S0 = LR + 2
@@ -613,7 +619,9 @@ measures = [
     ("Peak scanner utilisation", lambda gk: f"=MAX({rng(gk,'Scanner ρ')})", "0%"),
     ("Largest queue (students)", lambda gk: f"=MAX({rng(gk,'Backlog end')})", "0"),
     ("Longest queue wait (min)", lambda gk: f"=MAX({rng(gk,'Queue wait (min)')})", "0.0"),
-    ("Peak people inside (Little's Law L = λW)", lambda gk: f"=MAX({rng(gk,'People inside')})", "0"),
+    ("Peak people inside (Little's Law L = λW, includes the queue)", lambda gk: f"=MAX({rng(gk,'People inside')})", "0"),
+    ("Peak seats needed (served per min × eating time; the stations cap the served rate)",
+     lambda gk: f"=MIN(MAX({rng(gk,'λ /min')}),{REF['c_A'] if COLS[gk]['mess']=='A' else REF['c_B']}*{REF['mu']})*{REF['eat']}", "0"),
     ("Seats", lambda gk: f"={REF['seats_A'] if COLS[gk]['mess']=='A' else REF['seats_B']}", "0"),
 ]
 for k, (label, fn, fmt) in enumerate(measures):
@@ -1428,5 +1436,6 @@ for wsx in wb.worksheets:
         for c in row:
             if c.value is not None and (c.font is None or c.font.name != FONT):
                 c.font = Font(name=FONT, size=c.font.size or 10, bold=c.font.bold, italic=c.font.italic, color=c.font.color)
+wb.calculation.fullCalcOnLoad = True  # no cached values from openpyxl: make Excel compute every formula on open
 wb.save(OUT)
 print("saved", OUT, "| LP optimum avg", round(LP_OBJ / sum(D_BINS), 3), "redirected", round(float(sum(Y))), "food dual", round(float(LP_DUAL), 2))
