@@ -255,6 +255,7 @@ ROWS = [
     ("slot", "Time-slot length in the tables", 10, "minutes", "Design", "18 slots from 11:30", "0"),
 ]
 REF = {}
+NUM_INPUTS = []
 r = 5
 for row in ROWS:
     if row[0] == "sec":
@@ -266,6 +267,7 @@ for row in ROWS:
     key, label, val, unit, status, src, fmt = row
     put(ws, f"A{r}", label)
     c = put(ws, f"B{r}", val, kind="input", fmt=fmt)
+    NUM_INPUTS.append(f"B{r}")
     if status in ("Assumed", "Group estimate", "Calibrated"):
         c.fill = F_KEY
     put(ws, f"C{r}", unit)
@@ -290,6 +292,13 @@ for name, n, a, b in LUNCH.cohorts():
     for col in "AE":
         ws[f"{col}{r}"].border = LINE
 ws.freeze_panes = "A5"
+from openpyxl.worksheet.datavalidation import DataValidation  # noqa: E402
+_dv = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=False, showErrorMessage=True,
+                     errorTitle="Numbers only", error="Type one plain number, e.g. 12 (not \"12-15\" or \"12 min\"). Ranges have separate low and high rows.")
+ws.add_data_validation(_dv)
+for ref in NUM_INPUTS:
+    _dv.add(ref)
+AS_NUM = " ".join(NUM_INPUTS)
 
 # =============================================================================
 # Sim Data (long format)
@@ -969,6 +978,11 @@ checks = [
      "=IF(ABS(B10-1)<0.1,\"OK\",\"CHECK\")", "0.00"),
     ("Seats never the constraint: peak seat utilisation below 100% (both messes)", f"=MAX({q(CP)}!B{CROW['peakutil']},{q(CP)}!C{CROW['peakutil']})", "=IF(B11<1,\"OK\",\"CHECK\")", "0%"),
     ("Dynamic routing beats a fixed share at the same compliance on the average day", f"={q(LB)}!B{COMP_ROW}", "=IF(B12>0,\"OK\",\"CHECK\")", "0.00"),
+]
+checks += [
+    ("Every input on the Assumptions tab is a number (text such as '12-15' breaks the formulas)",
+     f"=SUMPRODUCT(--ISNUMBER({q(AS)}!$B$5:$B${NUM_INPUTS[-1][1:]}))", f'=IF(B{5 + len(checks)}={len(NUM_INPUTS)},"OK","CHECK: fix the yellow/blue inputs")', "0"),
+    ("No formula errors in Variables", f"=SUMPRODUCT(--ISERROR({q(VA)}!$A$4:$G$80))", f'=IF(B{6 + len(checks)}=0,"OK","CHECK")', "0"),
 ]
 for i, (lab, v, res, fmt) in enumerate(checks):
     put(ws, f"A{5 + i}", lab, wrap=True)
