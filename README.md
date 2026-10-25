@@ -96,6 +96,12 @@ that device has to wait 5 minutes.
   busiest 30 minutes (same clock time for all bars) or the whole meal so far. λ counts students joining the food
   line; c·μ is the mess's serving capacity. The dashed line is total demand ÷ total capacity, where both messes
   would sit if the load were shared perfectly.
+* **Check the numbers by hand** (table): the serving-capacity rule worked from the scanner log alone, per mess
+  and per 10 minutes: *line at end = line at start + scans − capacity × minutes* (never below 0; capacity =
+  stations × students per station per minute = 20/min), and *wait for a station = line ÷ capacity*. The
+  simulation's own line and wait sit beside each row as a check (they agree within ~10% while the line builds;
+  `test_capacity_rule_is_hand_checkable_and_matches_the_simulation`). It also flags blocks where scans are at the
+  scanner's limit, i.e. a queue outside that no scan count can see.
 
 ### Live spreadsheet
 

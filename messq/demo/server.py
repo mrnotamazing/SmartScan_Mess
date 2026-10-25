@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import math
 import os
 import secrets
 import socket
@@ -108,6 +109,9 @@ class Demo:
             for w in self.worlds.values():
                 w.engine.natural = natural
         self.history: dict[str, list[list[float]]] = {k: [] for k in self.worlds}
+        # The simulation's own line at each mess, every whole minute: {world: {mess: {minute: (food line, outside)}}}.
+        # The "20 per minute" rule check compares its hand calculation against these.
+        self.lines: dict[str, dict[str, dict[int, tuple[int, int]]]] = {k: {m.id: {} for m in self.cfg.messes} for k in self.worlds}
         # Expected arrivals per minute, every 5 minutes (the curve the simulated students are drawn from).
         self.expected_curve = [[m, round(arrival_rate_per_min(self.slot, m + 2.5), 1)]
                                for m in range(0, int(self.slot.duration_min), 5)] if arrivals is None else []
@@ -147,6 +151,10 @@ class Demo:
         if int(self.t) % HISTORY_EVERY_S == 0:
             for k, w in self.worlds.items():
                 self.history[k].append([round(self.t / 60, 2), _waiting(w), _recent_wait(w)])
+        if int(self.t) % 60 == 0:
+            for k, w in self.worlds.items():
+                for mid, h in w.halls.items():
+                    self.lines[k][mid][int(self.t // 60)] = (len(h.queue), h.outside_queue())
 
     def _record(self, action: Action) -> None:
         """Store a live action at the current time (dropping any 'future' ones
@@ -374,6 +382,52 @@ class Demo:
         return {"window_min": UTIL_WINDOW_MIN, "capacity": cap,
                 "rush": view(a_s, min(now_s, a_s + win_s)), "meal": view(0.0, now_s)}
 
+    def _rule_view(self, bin_min: int | None = None) -> dict:
+        """The '20 per minute' rule, worked from the scanner log alone, beside what the simulation shows.
+
+        Per mess and per 10-minute block: scans in the block (biometric) minus what the serving stations can
+        serve in it (capacity × minutes) is added to the line left over from the block before; the line can't
+        go below zero. Someone joining the line then waits (line ÷ capacity) minutes for a station.
+        No randomness and no queueing formula: it can be checked by hand on a calculator."""
+        bin_min = bin_min or RULE_BIN_MIN
+        sim = self.cfg.simulation
+        now_min = self.t / 60
+        out: dict = {"bin_min": bin_min, "worlds": {}}
+        for k, w in self.worlds.items():
+            per_mess = {}
+            for m in self.cfg.messes:
+                mu = m.capacity_per_min
+                scans = sorted(s.scanned_at for s in w.students
+                               if s.hall == m.id and s.scanned_at is not None and s.scanned_at <= self.t)
+                served = [(s.queue_join, s.service_start) for s in w.students if s.hall == m.id
+                          and s.service_start is not None and s.service_start <= self.t]
+                rows, line = [], 0.0
+                for a in range(0, int(math.ceil(now_min)), bin_min):
+                    minutes = min(bin_min, now_min - a)
+                    if minutes <= 0:
+                        break
+                    n = _count(scans, a * 60 - 1e-9, (a + minutes) * 60 - 1e-9)
+                    start = line
+                    line = max(0.0, start + n - mu * minutes)
+                    waits = [(ss - qj) / 60 for qj, ss in served if a * 60 <= qj < (a + minutes) * 60]
+                    sim_line = self.lines[k][m.id].get(int(a + minutes), (len(w.halls[m.id].queue), w.halls[m.id].outside_queue()))
+                    rows.append({
+                        "start": self.clock(a * 60), "end": self.clock((a + minutes) * 60), "minutes": round(minutes, 1),
+                        "scans": n, "per_min": round(n / minutes, 1), "capacity": round(mu * minutes),
+                        "rho": round(n / (mu * minutes), 3), "line_start": round(start), "line_end": round(line),
+                        "wait_min": round((start + line) / 2 / mu, 1),  # someone joining mid-block
+                        "sim_line": sim_line[0], "sim_outside": sim_line[1],
+                        "sim_wait_min": round(mean(waits), 1) if waits else None,
+                        "scanner_full": n / minutes >= 0.9 * m.scan_capacity_per_min,
+                    })
+                per_mess[m.id] = {"name": m.name, "capacity": mu, "counters": m.counters,
+                                  "per_counter": m.service_rate_per_counter_per_min, "seats": m.seats,
+                                  "scan_capacity": round(m.scan_capacity_per_min), "rows": rows}
+            out["worlds"][k] = per_mess
+        out["stages"] = {"plate_s": list(sim.plate_pickup_s), "food_line_s": list(sim.food_line_s),
+                         "eat_min": list(sim.eat_min), "dispose_min": list(sim.dispose_min)}
+        return out
+
     def clock(self, t_s: float) -> str:
         hh, mm = map(int, self.slot.start.split(":"))
         minutes = hh * 60 + mm + int(t_s // 60)
@@ -462,6 +516,7 @@ class Demo:
                 "worlds": {k: _world(w, self.history[k]) for k, w in self.worlds.items()},
                 "arrivals": self._arrivals_view(adv),
                 "util": self._util_view(),
+                "rule": self._rule_view(),
                 "advice": {"text": snap.advice, "headline": snap.headline.mess_id, "halls": halls},
                 "doors": doors,
                 "trays": trays,
@@ -483,6 +538,7 @@ def _write_atomic(path: Path, data: bytes) -> None:
 
 WAIT_WINDOW_S = 300  # the wait chart averages over students who sat down in the last 5 min
 UTIL_WINDOW_MIN = 30  # the utilisation chart's "rush" is the busiest 30 minutes
+RULE_BIN_MIN = 10  # the "20 per minute" rule check works in 10-minute blocks
 
 
 def _recent_wait(w: Simulation) -> float | None:

@@ -263,3 +263,24 @@ def test_wait_chart_leaves_a_gap_when_nobody_sat_down():
     hist = demo.state()["worlds"]["none"]["history"]
     assert hist[0][2] is None and hist[-1][2] is None  # before anyone eats, after everyone has sat
     assert any(p[2] is not None and p[2] > 0 for p in hist)
+
+
+def test_capacity_rule_is_hand_checkable_and_matches_the_simulation():
+    demo = Demo(load_config(), "lunch", 0.6, seed=2, speed=60)
+    demo.seek(demo.max_t)
+    r = demo.state()["rule"]
+    central = r["worlds"]["none"]["A"]
+    rows, cap = central["rows"], central["capacity"]
+    assert cap == 20 and r["bin_min"] == 10
+    for prev, row in zip(rows, rows[1:]):
+        assert row["line_start"] == prev["line_end"]  # each block starts where the last ended
+    for row in rows:
+        # line at end = line at start + scans - what the stations can serve, never below zero
+        assert row["line_end"] == pytest.approx(max(0, row["line_start"] + row["scans"] - row["capacity"]), abs=1)
+    # While the line is building (load well above 100%), the rule and the simulation agree within 10%.
+    building = [x for x in rows if x["rho"] > 1.2]
+    assert building
+    for x in building:
+        assert x["sim_line"] == pytest.approx(x["line_end"], rel=0.1)
+    # Munch never goes over capacity without the screens: no line by the rule.
+    assert all(x["line_end"] == 0 for x in r["worlds"]["none"]["B"]["rows"])

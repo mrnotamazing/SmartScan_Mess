@@ -117,6 +117,17 @@ input[type=file] { display: none; }
 .gantt .ax { position: relative; height: 14px; font-size: 10px; color: var(--text-3); }
 .gantt .ax span { position: absolute; transform: translateX(-50%); }
 #tip-arr { white-space: normal; max-width: 260px; }
+.rt-wrap { overflow-x: auto; margin-top: 10px; }
+.rt { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+.rt th, .rt td { padding: 5px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+.rt th { font-weight: 600; color: var(--text-2); font-size: 12px; vertical-align: bottom; }
+.rt th:first-child, .rt td:first-child { text-align: left; }
+.rt td.sim { color: var(--text-2); }
+.rt tr.over td { background: color-mix(in srgb, var(--critical) 9%, transparent); }
+.rt tr.pick td { background: color-mix(in srgb, var(--with) 16%, transparent); font-weight: 650; }
+.rt .grp { border-left: 1px solid var(--border); }
+.worked { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--grid); border-radius: 8px; font-size: 14px; }
+.worked code { font: inherit; font-weight: 650; }
 @media (max-width: 760px) {
   .funnel { grid-template-columns: repeat(3, 1fr); }
   .grid2, .row2, .arr { grid-template-columns: 1fr; }
@@ -218,6 +229,20 @@ input[type=file] { display: none; }
       </div>
       <div class="msg" id="util-side"></div>
     </div>
+  </section>
+
+  <section class="card" style="margin-top:16px" id="rule">
+    <div class="row" style="justify-content:space-between;align-items:start">
+      <div><h2>Check the numbers by hand: the serving-capacity rule</h2>
+        <div class="msg" id="rule-msg"></div></div>
+      <div class="row" style="gap:10px">
+        <div class="tbtn" role="group" aria-label="World"><button data-rw="none" class="on" id="rw-none">Without the system</button><button data-rw="advised">With the screens</button></div>
+        <div class="tbtn" role="group" aria-label="Mess" id="rule-mess"></div>
+      </div>
+    </div>
+    <div class="worked" id="rule-worked"></div>
+    <div class="rt-wrap"><table class="rt" id="rule-table"></table></div>
+    <div class="msg" id="rule-notes" style="margin-top:10px"></div>
   </section>
 
   <section class="card" style="margin-top:16px" id="arrivals">
@@ -584,6 +609,65 @@ function util(s) {
      <p>The "${utilMode === "rush" ? `busiest ${U.window_min} min` : "whole meal"}" window is the same clock time for all four bars${utilMode === "rush" ? ", picked as the busiest half hour without the system" : ""}.</p>`;
 }
 
+// ---- the serving-capacity rule, worked from scans only, beside the simulation ----
+let ruleWorld = "none", ruleMess = null;
+document.querySelectorAll("#rule [data-rw]").forEach(b => b.onclick = () => {
+  ruleWorld = b.dataset.rw;
+  document.querySelectorAll("#rule [data-rw]").forEach(x => x.classList.toggle("on", x === b));
+  if (last) rule(last);
+});
+const one = v => (+v).toFixed(1).replace(/\.0$/, "");
+const range = (r, f = x => x) => `${one(f(r[0]))}–${one(f(r[1]))}`;
+function rule(s) {
+  const R = s.rule, msgs = R.worlds[ruleWorld];
+  if (!ruleMess || !msgs[ruleMess]) ruleMess = Object.keys(msgs)[0];
+  $("rw-none").textContent = s.titles.none.split(" (")[0];
+  $("rule-mess").innerHTML = Object.entries(msgs).map(([id, m]) => `<button data-rm="${id}" class="${id === ruleMess ? "on" : ""}">${esc(m.name)}</button>`).join("");
+  $("rule-mess").querySelectorAll("button").forEach(b => b.onclick = () => { ruleMess = b.dataset.rm; rule(last); });
+  const M_ = msgs[ruleMess], st = R.stages, cap = M_.capacity, bm = R.bin_min;
+  const toFood = [st.plate_s[0] / 60 + st.food_line_s[0] / 60, st.plate_s[1] / 60 + st.food_line_s[1] / 60];
+  $("rule-msg").innerHTML =
+    `From the scanner log alone: every ${bm} minutes, <b>line at the end = line at the start + students who scanned in − students the stations can serve</b>
+     (never below 0). ${esc(M_.name)} has ${M_.counters} serving stations × ${one(M_.per_counter)} students/min = <b>${cap}/min</b>, so ${cap * bm} per ${bm} minutes.
+     Someone joining the line then waits <b>line ÷ ${cap}</b> minutes for a station. No randomness and no formula you can't do on a calculator.`;
+  const rows = M_.rows.filter(r => r.scans || r.line_start || r.line_end || r.sim_line);
+  if (!rows.length) {
+    $("rule-worked").textContent = "Nothing to check yet: no one has scanned in at this mess.";
+    $("rule-table").innerHTML = ""; $("rule-notes").innerHTML = "";
+    return;
+  }
+  // The example is the block where the line grew the most (the clearest case of "more in than out").
+  const grow = rows.reduce((a, r) => r.line_end - r.line_start > a.line_end - a.line_start ? r : a, rows[0]);
+  const ex = grow.line_end > grow.line_start ? grow : rows.reduce((a, r) => r.rho > a.rho ? r : a, rows[0]);
+  $("rule-worked").innerHTML = ex.line_end > 0
+    ? `<b>Worked example, ${ex.start}–${ex.end} at ${esc(M_.name)}:</b> ${ex.scans} students scanned in (${one(ex.per_min)}/min, ${Math.round(100 * ex.rho)}% of capacity).
+       The stations can serve ${cap}/min × ${one(ex.minutes)} min = ${ex.capacity}. Line: <code>${ex.line_start} + ${ex.scans} − ${ex.capacity} = ${ex.line_end} people</code>.
+       Someone joining at ${ex.end} waits about <code>${ex.line_end} ÷ ${cap} = ${one(ex.line_end / cap)} min</code> for a station,
+       on top of the normal ${range(toFood)} min to pick up a plate and collect food (your stage timings), so about <b>${one(ex.line_end / cap + toFood[0])}–${one(ex.line_end / cap + toFood[1])} min to food</b>.
+       The simulation, which follows every student, had <b>${ex.sim_line}</b> in that line at ${ex.end}.`
+    : `<b>No line builds at ${esc(M_.name)} here.</b> The busiest ${bm} minutes (${ex.start}–${ex.end}) had ${ex.scans} scans (${one(ex.per_min)}/min), below the ${cap}/min the stations serve,
+       so by the rule nobody waits for a station: a student takes the normal ${range(toFood)} min to get food.`;
+  $("rule-table").innerHTML =
+    `<tr><th>Time</th><th>Scanned in<br>(biometric)</th><th>Per min</th><th>Load ρ<br>(÷ ${cap}/min)</th>
+       <th class="grp">Line at<br>start</th><th>+ scanned</th><th>− can serve</th><th>= line<br>at end</th><th>Wait for a<br>station (rule)</th>
+       <th class="grp">Simulation:<br>line at end</th><th>Simulation:<br>avg wait</th><th></th></tr>` +
+    rows.map(r => `<tr class="${r.rho > 1 ? "over" : ""} ${r === ex ? "pick" : ""}">
+      <td>${r.start}–${r.end}</td><td>${r.scans}</td><td>${one(r.per_min)}</td><td>${Math.round(100 * r.rho)}%</td>
+      <td class="grp">${r.line_start}</td><td>+ ${r.scans}</td><td>− ${r.capacity}</td><td><b>${r.line_end}</b></td><td>${one(r.wait_min)} min</td>
+      <td class="grp sim">${r.sim_line}</td><td class="sim">${r.sim_wait_min == null ? "–" : one(r.sim_wait_min) + " min"}</td>
+      <td style="text-align:left">${r.scanner_full ? `<span class="chip low" title="Scans per minute are at the scanner's limit (${M_.scan_capacity}/min). Anyone arriving faster waits outside, where the system can't see them."><i>▲</i>scanner full</span>` : ""}</td></tr>`).join("");
+  $("rule-notes").innerHTML =
+    `<p style="margin:0 0 6px"><b>Reading the table.</b> Red rows are blocks where more students scanned in than the stations can serve (ρ above 100%): only then does the line grow, by
+       (scans per min − ${cap}) every minute. The rule's wait uses someone joining in the middle of the block: (line at start + line at end) ÷ 2 ÷ ${cap}.
+       The grey columns are the simulation's own count, as a check. Where they agree, the rule is enough to explain the chart.</p>
+     <p style="margin:0 0 6px"><b>Why the simulation is sometimes a little higher.</b> (1) Near 100% load students arrive in bunches, so short lines form that an average-per-minute rule can't see.
+       (2) The stations don't serve exactly ${cap} every minute: serving times vary, so in a ${bm}-minute block they manage a few less or more. (3) A student scans in ${range(st.plate_s)} s
+       before joining the line (picking up a plate), so the rule counts them slightly early.</p>
+     <p style="margin:0"><b>What the scanner log can't see.</b> The scanner takes about ${M_.scan_capacity} scans a minute. When scans sit near that limit ("scanner full"), students are arriving faster than
+       they can scan, and the extra wait outside the door is invisible to any scan-based count. <b>Seats never limit lunch:</b> ${M_.seats} seats ÷ ${range(st.eat_min)} min eating free up
+       about ${Math.round(M_.seats / st.eat_min[1])}–${Math.round(M_.seats / st.eat_min[0])} seats a minute, far more than the ${cap}/min the stations can hand out food.</p>`;
+}
+
 async function poll() {
   try {
     const s = await (await fetch("/api/state")).json();
@@ -599,7 +683,7 @@ async function poll() {
     $("w-none").innerHTML = worldCard(s.worlds.none, "none", s);
     $("w-advised").innerHTML = worldCard(s.worlds.advised, "advised", s);
     $("banner").innerHTML = banner(s);
-    doors(s); food(s); chart(s); util(s); arrivals(s);
+    doors(s); food(s); chart(s); util(s); rule(s); arrivals(s);
   } catch (e) { $("banner").textContent = "Lost connection to the demo server, or your login expired. Reload the page."; }
 }
 poll(); setInterval(poll, 700);
