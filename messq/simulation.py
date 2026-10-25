@@ -43,6 +43,7 @@ class Student:
     scanned_at: float | None = None  # scanned in: the time the biometric log records
     queue_join: float | None = None  # has a plate; joins the serving queue
     service_start: float | None = None  # reached a serving station
+    service_end: float | None = None  # served; walks the rest of the food line
     food_at: float | None = None  # has all the food (end of the food line)
     seated_at: float | None = None
     table_left: float | None = None  # finished eating, seat free
@@ -228,6 +229,7 @@ class Hall:
             s.service_start = start
             self.stock -= 1
             finish = start + self._service_time()
+            s.service_end = finish
             self.free_at[k] = finish
             b = int(start // 600)
             self.busy_s[b] = self.busy_s.get(b, 0.0) + (finish - start)
@@ -317,6 +319,7 @@ class Simulation:
         seed: int = 0,
         arrivals: list[tuple] | None = None,
         use_food: bool = True,
+        assign: dict[str, str] | None = None,
     ):
         """`use_food=False`: the engine never hears the manager's food taps (the
         "queue information only" scenario). `arrivals`: replay mode. (seconds since slot start, mess id[, name]) for
@@ -324,6 +327,11 @@ class Simulation:
         was heading (their habit); policies may then redirect them."""
         self.cfg, self.slot, self.policy, self.seed = cfg, slot, policy, seed
         self.use_food = use_food
+        # Static assignment (no screens): department name -> mess id. A student of an assigned
+        # department always eats there; others follow their habit. Cohorts are drawn from their
+        # own random stream, so the arrivals stay identical to the other scenarios.
+        self.assign = assign or {}
+        self._cohort_rng = random.Random(f"cohort-{seed}")
         self._replay = deque(sorted(arrivals, key=lambda a: a[0])) if arrivals is not None else None
         self._names = NameMaker(seed)
         sim = cfg.simulation
@@ -381,6 +389,15 @@ class Simulation:
                 (t + self._arrivals.random() * dt, self._arrivals.choices(self._habit_ids, self._habit_w)[0], self._names.next())
                 for _ in range(n)
             ]
+            if self.assign and new:
+                mid = (t + dt / 2) / 60
+                lag_m, lag_sd = self.slot.lag_mean_min, self.slot.lag_sd_min
+                coh = [(name, _truncated_normal(c, mid, a + lag_m, lag_sd, a, b)) for name, c, a, b in self.slot.cohorts()]
+                names_, w_ = [c[0] for c in coh], [c[1] for c in coh]
+                if sum(w_) > 0:
+                    for i, (ts, habit, label) in enumerate(new):
+                        dept = self._cohort_rng.choices(names_, w_)[0].split(" (")[0]
+                        new[i] = (ts, self.assign.get(dept, habit), label)
         for ts, habit, *label in new:
             follows = self._arrivals.random() < self.compliance
             if self.policy is Policy.NONE:
@@ -511,8 +528,9 @@ def simulate(
     keep_students: bool = False,
     natural: dict[str, float] | None = None,
     use_food: bool = True,
+    assign: dict[str, str] | None = None,
 ) -> SimResult:
-    sim = Simulation(cfg, slot, policy, compliance, seed, arrivals, use_food=use_food)
+    sim = Simulation(cfg, slot, policy, compliance, seed, arrivals, use_food=use_food, assign=assign)
     if natural:
         sim.engine.natural = natural
     snapshots: list[Snapshot] = []

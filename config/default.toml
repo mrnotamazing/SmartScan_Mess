@@ -67,7 +67,7 @@ items = ["Gravy sabji", "Dry sabji", "Dal", "Rice", "Special rice", "Roti", "Sam
 [[mess]]
 id = "B"
 name = "Munch Mess"
-seats = 500                   # MEASURED: Munch Mess seating capacity
+seats = 492                   # MEASURED: Munch Mess seating capacity (group recount, Oct 2026)
 counters = 2                  # MEASURED: serving stations
 service_rate_per_counter_per_min = 10.0  # ASSUMED, as for Central
 scanners = 1                  # MEASURED

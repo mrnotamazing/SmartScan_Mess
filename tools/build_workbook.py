@@ -186,7 +186,7 @@ ROWS = [
     ("start", "Lunch opens", "11:30", "time", "Measured", "Mess timings 11:30–14:30", OCT, "S15, LP Student Flow", "@"),
     ("dur", "Lunch window length", 180, "minutes", "Measured", "11:30–14:30", OCT, "S15", "0"),
     ("seats_A", "Seats: Central CT", 900, "seats", "Measured", "Group measurement", OCT, "S15, simulator", "#,##0"),
-    ("seats_B", "Seats: Munch Mess", 500, "seats", "Measured", "Group measurement", OCT, "S15, simulator", "#,##0"),
+    ("seats_B", "Seats: Munch Mess", 492, "seats", "Measured", "Group measurement", OCT, "S15, simulator", "#,##0"),
     ("c_A", "Serving stations: Central CT", 2, "stations", "Measured", "Group observation", OCT, "S15, LP, Decision Rule", "0"),
     ("c_B", "Serving stations: Munch Mess", 2, "stations", "Measured", "Group observation", OCT, "S15, LP, Decision Rule", "0"),
     ("sc_A", "Face scanners at the entrance: Central CT", 1, "scanners", "Measured", "Group observation", OCT, "S15", "0"),
@@ -1231,7 +1231,7 @@ table(ws, 4, 1, ["Component", "How it is modelled", "Parameters (Inputs / config
     ["Stage 2: food", "FCFS queue for 2 serving stations; service time gamma with mean 6 s and cv 0.6 (M/G/c); then walking the food line (uniform 40–80 s)", "mu, line_lo/hi, service_cv", "Stations measured; times assumed"],
     ["Food stock", "Star dish in batches (Central 900, Munch 500). At the call level the mess calls the kitchen; refill arrives in 10–14 min (70%) or 30 min. At zero stock nobody is served until the refill", "food_batch, refill trigger, ready_p, lead times", "Lead times measured; batches assumed"],
     ["Manager taps", "'Running low' at the call, 'out' at zero, 'refilled' on arrival; each tap made 90% of the time (forgotten taps expire)", "staff_signal_prob 0.9", "Assumed"],
-    ["Stage 3: eating", "Take a seat if free (900 / 500), else wait; eat for uniform 12–15 min", "seats, eat_lo/hi", "Seats measured; eating group estimate"],
+    ["Stage 3: eating", "Take a seat if free (900 / 492), else wait; eat for uniform 12–15 min", "seats, eat_lo/hi", "Seats measured; eating group estimate"],
     ["Stage 4: disposal", "Dispose of plate and leftovers, uniform 1–2 min (the seat is already free)", "disp_lo/hi", "Group estimate"],
     ["What the system sees", "Only scans and the manager's taps. Arrival rate from the last 5 min of scans; queue by a fluid model; wait by M/M/c + fluid growth + food delay", "rate window 5 min, horizon 5 min", "Design"],
     ["Routing", "Equal-wait (Wardrop) split found by bisection; at each door ask (h − p)/(h·κ) of students to switch, only if it saves ≥ 2 min after the walk", "min_save", "Design"],
@@ -1391,7 +1391,7 @@ for k_, line in enumerate([
     ws.merge_cells(f"A{10+k_}:C{10+k_}")
 put(ws, "A14", "Status tags", bold=True)
 table(ws, 15, 1, ["Tag", "Meaning", "Example"], [
-    ["Measured", "From field work, CT or the group", "2,960 students; seats 900 / 500; 2 stations + 1 scanner per mess"],
+    ["Measured", "From field work, CT or the group", "2,960 students; seats 900 / 492; 2 stations + 1 scanner per mess"],
     ["Group estimate", "The group's figure, not yet timed", "Eating 12–15 min; disposal ≤ 2 min; food ready 70% of the time"],
     ["Assumed", "A placeholder until measured", "10 students/min per station; MIT lab share; DLHS/MILHS size"],
     ["Calibrated", "Not measured: chosen so the model reproduces what was observed", "Lag from the start of a lunch break to the mess door"],

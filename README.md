@@ -262,9 +262,21 @@ with information rather than new capacity). With the simulated peak, total capac
 gets ~30/min against 20/min while Munch gets ~8/min. See section 1.1 of `docs/MDS_Queuing_Theory_and_Simulation.docx`.
 (Not *yield* management: that means pricing perishable capacity, and a prepaid mess has no price lever.)
 
+## Queue, capacity and load-balancing workbook
+
+`docs/Queue_Capacity_LoadBalancing.xlsx` works only on **simulated** data (20 lunches per scenario):
+M/M/1 for the face scanner and M/M/c for the serving stations per 10-minute slot (stability and Little's Law),
+seats as M/G/c and disposal as M/G/∞, seat turnover and the bottleneck (900 / 492 seats), and how the
+Smart Scan routing compares with fixed rules such as "freshers at Munch, seniors at Central".
+
+```bash
+python tools/queue_capacity_data.py            # simulate -> results/queue_capacity.json (~4 min)
+python tools/build_queue_capacity_workbook.py  # -> docs/Queue_Capacity_LoadBalancing.xlsx
+```
+
 ## Results (default config)
 
-**Measured:** lunch 11:30–14:30; 2,960 students (= plates served); seats 900 / 500; 2 serving stations and 1
+**Measured:** lunch 11:30–14:30; 2,960 students (= plates served); seats 900 / 492; 2 serving stations and 1
 face scanner per mess; ~2,360 eat at Central and ~600 at Munch without screens (80/20); ~18 min scan to leaving on a normal day; refill 30 min after the "running low" call
 if it must be made, 10–14 min if already made.
 **Group estimates:** throughput 17–25 min depending on the surge; eating 12–15 min; disposal ≤ 2 min;
@@ -421,7 +433,7 @@ and whether push/webhooks exist.
    cut the "people inside" error from ~34 to ~11 people without screens (~14 to
    ~8 with them). It still relies on the serving rate, so measure that next.
 2. **Seats are not the bottleneck; serving counters are.** With the measured
-   1,400 seats (900 + 500), the simulated waits barely changed from the earlier
+   1,392 seats (900 + 492), the simulated waits barely changed from the earlier
    guesses of 550 seats, and the deck's field notes point the same way.
    `load = occupancy / seats` is shown, but the wait estimate is driven by
    counter throughput. Measure the serving rate next.
