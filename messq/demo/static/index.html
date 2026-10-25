@@ -171,6 +171,9 @@ input[type=file] { display: none; }
   <div class="row2">
     <section class="card">
       <h2>People waiting in line</h2>
+      <div class="msg" style="margin-bottom:6px">A head count at each moment, both messes added together: everyone standing in a queue, i.e. outside
+        waiting for the face scanner, scanned in and waiting for a serving station, or holding food and waiting for a seat. People walking over,
+        picking up a plate, being served or eating are not counted. One point every 30 s of meal time.</div>
       <div class="legend">
         <span><i class="ln" style="background:var(--without)"></i><span id="lg-none">Without the system</span></span>
         <span><i class="ln" style="background:var(--with)"></i>With the screens</span>
@@ -180,7 +183,10 @@ input[type=file] { display: none; }
         <div class="tip" id="tip"></div>
       </div>
       <h2 style="margin-top:18px">Wait time (minutes)</h2>
-      <div class="msg" style="margin-bottom:6px">Average time spent queueing (scanner, serving station, seat) for students who got food in the last 5 minutes</div>
+      <div class="msg" style="margin-bottom:6px">Per student: minutes spent standing in queues = waiting for the scanner + waiting for a serving
+        station + waiting for a seat. It leaves out the time that isn't queueing (being scanned, picking up a plate, being served, walking the food line).
+        A student's wait is only known once they sit down, so each point averages the students who <b>sat down in the 5 minutes before it</b>.
+        That is why this line peaks a few minutes after the line above. A gap means nobody sat down in those 5 minutes (it is not a zero wait).</div>
       <div class="chartwrap">
         <svg id="chart-wait" viewBox="0 0 700 260" role="img" aria-label="Average wait in minutes over the meal, with and without the screens"></svg>
         <div class="tip" id="tip-wait"></div>
@@ -192,6 +198,27 @@ input[type=file] { display: none; }
       <p class="links" id="screenlinks"></p>
     </section>
   </div>
+
+  <section class="card" style="margin-top:16px" id="util">
+    <div class="row" style="justify-content:space-between;align-items:start">
+      <div><h2>Serving-station utilisation: smarter load balancing</h2>
+        <div class="msg" id="util-msg"></div></div>
+      <div class="tbtn" role="group" aria-label="Period shown"><button data-u="rush" class="on">Busiest 30 min</button><button data-u="meal">Whole meal so far</button></div>
+    </div>
+    <div class="arr">
+      <div>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--without)"></i><span id="lg-util-none">Without the system</span></span>
+          <span><i class="swatch" style="background:var(--with)"></i>With the screens</span>
+          <span><i class="ln" style="background:var(--text-3)"></i>Perfectly balanced</span>
+        </div>
+        <div class="chartwrap">
+          <svg id="chart-util" viewBox="0 0 700 260" role="img" aria-label="Serving-station utilisation of Central and Munch Mess, with and without the screens"></svg>
+        </div>
+      </div>
+      <div class="msg" id="util-side"></div>
+    </div>
+  </section>
 
   <section class="card" style="margin-top:16px" id="arrivals">
     <h2>When students arrive: department lunch breaks</h2>
@@ -396,7 +423,8 @@ function controls(s) {
 const W = 700, H = 260, M = { l: 40, r: 16, t: 10, b: 28 };
 const CHARTS = [
   { svg: "chart", tip: "tip", i: 1, steps: [40, 80, 120, 160, 200, 240, 320, 400, 600, 800, 1000], fmt: v => `${v} in line` },
-  { svg: "chart-wait", tip: "tip-wait", i: 2, steps: [4, 8, 12, 16, 20, 24, 32, 40, 60, 80], fmt: v => `${(+v).toFixed(1)} min wait` },
+  { svg: "chart-wait", tip: "tip-wait", i: 2, steps: [4, 8, 12, 16, 20, 24, 32, 40, 60, 80],
+    fmt: v => v == null ? "nobody sat down in the last 5 min" : `${(+v).toFixed(1)} min wait` },
 ];
 const hovers = {};
 function niceMax(v, steps) { return steps.find(x => x >= v) || Math.ceil(v / steps[steps.length - 1]) * steps[steps.length - 1]; }
@@ -405,7 +433,8 @@ function drawChart(s, c) {
   const pick = h => h.filter(p => p.length > c.i).map(p => [p[0], p[c.i]]);
   const hn = pick(s.worlds.none.history), ha = pick(s.worlds.advised.history);
   const xMax = s.max_t_min;
-  const yMax = niceMax(Math.max(c.steps[0] / 4, ...hn.map(p => p[1]), ...ha.map(p => p[1])), c.steps);
+  const vals = [...hn, ...ha].map(p => p[1]).filter(v => v != null);
+  const yMax = niceMax(Math.max(c.steps[0] / 4, ...vals), c.steps);
   const x = v => M.l + (W - M.l - M.r) * v / xMax, y = v => H - M.b - (H - M.t - M.b) * v / yMax;
   c.scale = { x, y, xMax, hn, ha };
   let g = "";
@@ -417,7 +446,8 @@ function drawChart(s, c) {
   const stepMin = xMax > 200 ? 60 : 30;
   for (let m = 0; m <= xMax; m += stepMin) g += `<text x="${x(m)}" y="${H - 8}" text-anchor="middle">${clockAt(m)}</text>`;
   g += `<line x1="${x(s.t_min)}" x2="${x(s.t_min)}" y1="${M.t}" y2="${H - M.b}" stroke="var(--border)" stroke-width="1"/>`;
-  const path = pts => pts.map((p, i) => `${i ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
+  // A null value (no data for that point) lifts the pen, leaving a gap.
+  const path = pts => pts.map((p, i) => p[1] == null ? "" : `${i && pts[i - 1][1] != null ? "L" : "M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
   g += `<path d="${path(hn)}" fill="none" stroke="var(--without)" stroke-width="2" stroke-linejoin="round"/>`;
   g += `<path d="${path(ha)}" fill="none" stroke="var(--with)" stroke-width="2" stroke-linejoin="round"/>`;
   g += `<g class="hover"></g><rect class="hit" x="${M.l}" y="${M.t}" width="${W - M.l - M.r}" height="${H - M.t - M.b}" fill="transparent"/>`;
@@ -436,8 +466,8 @@ function hover(c, e) {
   const pn = hn[i], pa = ha[Math.min(i, ha.length - 1)];
   svg.querySelector(".hover").innerHTML =
     `<line x1="${x(pn[0])}" x2="${x(pn[0])}" y1="${M.t}" y2="${H - M.b}" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="3 3"/>` +
-    `<circle cx="${x(pn[0])}" cy="${y(pn[1])}" r="4" fill="var(--without)" stroke="var(--surface)" stroke-width="2"/>` +
-    `<circle cx="${x(pa[0])}" cy="${y(pa[1])}" r="4" fill="var(--with)" stroke="var(--surface)" stroke-width="2"/>`;
+    (pn[1] == null ? "" : `<circle cx="${x(pn[0])}" cy="${y(pn[1])}" r="4" fill="var(--without)" stroke="var(--surface)" stroke-width="2"/>`) +
+    (pa[1] == null ? "" : `<circle cx="${x(pa[0])}" cy="${y(pa[1])}" r="4" fill="var(--with)" stroke="var(--surface)" stroke-width="2"/>`);
   const tip = $(c.tip);
   tip.innerHTML = `<b>${clockAt(pn[0])}</b><br>${esc(last.titles.none.split(" (")[0])}: ${c.fmt(pn[1])}<br>With the screens: ${c.fmt(pa[1])}`;
   tip.style.display = "block";
@@ -502,6 +532,58 @@ function arrivals(s) {
   $("arrivals").style.display = ex.length || ac.length ? "" : "none";
 }
 
+// ---- utilisation: ρ = λ ÷ (c·μ) per mess, without vs with the screens ----------
+let utilMode = "rush";
+document.querySelectorAll("#util [data-u]").forEach(b => b.onclick = () => {
+  utilMode = b.dataset.u;
+  document.querySelectorAll("#util [data-u]").forEach(x => x.classList.toggle("on", x === b));
+  if (last) util(last);
+});
+const pc = v => Math.round(100 * v) + "%";
+function util(s) {
+  const U = s.util, v = U[utilMode], halls = s.advice.halls, none = s.titles.none.split(" (")[0];
+  $("lg-util-none").textContent = none;
+  const svg = $("chart-util");
+  if (!v || !Object.values(v.none).some(r => r > 0)) {
+    svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">Bars appear once students reach the serving stations.</text>`;
+    $("util-msg").textContent = ""; $("util-side").innerHTML = "";
+    return;
+  }
+  const rows = halls.map(h => ({ name: h.name, cap: U.capacity[h.id], n: v.none[h.id], a: v.advised[h.id] }));
+  const yMax = Math.max(1.2, Math.ceil(Math.max(...rows.flatMap(r => [r.n, r.a])) * 1.12 / 0.25) * 0.25);
+  const y = r => H - M.b - (H - M.t - M.b) * r / yMax;
+  const gw = (W - M.l - M.r) / rows.length, bw = Math.min(110, gw * 0.3);
+  let g = "";
+  for (let r = 0; r <= yMax + 1e-9; r += 0.25) {
+    g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(r)}" y2="${y(r)}" stroke="var(--grid)"/><text x="${M.l - 6}" y="${y(r) + 4}" text-anchor="end">${pc(r)}</text>`;
+  }
+  rows.forEach((r, i) => {
+    const cx = M.l + gw * (i + 0.5);
+    [[r.n, "var(--without)", cx - bw - 4], [r.a, "var(--with)", cx + 4]].forEach(([val, col, bx]) => {
+      g += `<rect x="${bx}" y="${y(val)}" width="${bw}" height="${Math.max(0, y(0) - y(val))}" rx="3" fill="${col}"><title>${esc(r.name)}: ${pc(val)}</title></rect>` +
+           `<text x="${bx + bw / 2}" y="${y(val) - 6}" text-anchor="middle" style="fill:var(--text);font-weight:650;font-size:13px">${pc(val)}</text>`;
+    });
+    g += `<text x="${cx}" y="${H - 8}" text-anchor="middle" style="fill:var(--text-2);font-size:12px">${esc(r.name)}</text>`;
+  });
+  g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(1)}" y2="${y(1)}" stroke="var(--critical)" stroke-width="1.5"/>` +
+       `<text x="${W - M.r - 4}" y="${y(1) - 5}" text-anchor="end" style="fill:var(--critical)">100% = stations at full capacity</text>`;
+  g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(v.balanced)}" y2="${y(v.balanced)}" stroke="var(--text-3)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
+       `<text x="${M.l + gw}" y="${y(v.balanced) - 5}" text-anchor="middle">balanced: ${pc(v.balanced)}</text>`;
+  svg.innerHTML = g;
+  const gapN = Math.abs(rows[0].n - rows[1].n), gapA = Math.abs(rows[0].a - rows[1].a);
+  const period = utilMode === "rush" ? `busiest ${U.window_min} minutes (${v.start}–${v.end})` : `whole meal so far (${v.start}–${v.end})`;
+  $("util-msg").innerHTML = `${period[0].toUpperCase() + period.slice(1)}. ` + rows.map(r => `${esc(r.name)} ${pc(r.n)} → <b>${pc(r.a)}</b>`).join(" · ") +
+    `. The gap between the two messes goes from <b>${Math.round(100 * gapN)}</b> to <b>${Math.round(100 * gapA)}</b> percentage points.`;
+  $("util-side").innerHTML =
+    `<p style="margin-top:0"><b>What a bar is.</b> Utilisation ρ = λ ÷ (c·μ): students reaching the serving stations per minute (λ, counted when they join the food line with a plate)
+     divided by how many the stations can serve per minute (c·μ: ${rows.map(r => `${esc(r.name)} ${r.cap}/min`).join(", ")}).</p>
+     <p><b>Above 100%</b> students arrive faster than they can be served, so the line grows every minute it lasts. <b>Far below 100%</b> the stations stand idle.</p>
+     <p><b>The dashed line</b> is where both messes would sit if the same students were shared out in proportion to capacity: total demand ÷ total capacity.
+     The screens don't add capacity; they move the bars toward that line by sending some students to the mess with spare stations.
+     They stop short of it because only ${Math.round(100 * s.compliance)}% of students follow the screen and the screens only speak up when switching actually saves time.</p>
+     <p>The "${utilMode === "rush" ? `busiest ${U.window_min} min` : "whole meal"}" window is the same clock time for all four bars${utilMode === "rush" ? ", picked as the busiest half hour without the system" : ""}.</p>`;
+}
+
 async function poll() {
   try {
     const s = await (await fetch("/api/state")).json();
@@ -517,7 +599,7 @@ async function poll() {
     $("w-none").innerHTML = worldCard(s.worlds.none, "none", s);
     $("w-advised").innerHTML = worldCard(s.worlds.advised, "advised", s);
     $("banner").innerHTML = banner(s);
-    doors(s); food(s); chart(s); arrivals(s);
+    doors(s); food(s); chart(s); util(s); arrivals(s);
   } catch (e) { $("banner").textContent = "Lost connection to the demo server, or your login expired. Reload the page."; }
 }
 poll(); setInterval(poll, 700);

@@ -25,6 +25,7 @@ import secrets
 import socket
 import threading
 import time
+from bisect import bisect_right
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -343,6 +344,36 @@ class Demo:
             "depts": depts,
         }
 
+    def _util_view(self) -> dict:
+        """Serving-station utilisation ρ = λ ÷ (c·μ) per mess, without vs with the screens, up to now.
+        λ = students joining the serving queue per minute; c·μ = the mess's serving capacity per minute.
+        'rush' is the busiest 30 minutes so far for both messes together (picked from the world without
+        the screens, then used for every bar so they compare the same half hour); 'meal' is everything so far."""
+        now_s = self.t
+        cap = {m.id: m.capacity_per_min for m in self.cfg.messes}
+        joins = {k: {m.id: _join_times(w, m.id) for m in self.cfg.messes} for k, w in self.worlds.items()}
+        win_s = UTIL_WINDOW_MIN * 60
+        a_s = 0.0
+        if now_s > win_s:
+            busiest = -1
+            for start in range(0, int(now_s - win_s) + 1, 60):
+                n = sum(_count(ts, start, start + win_s) for ts in joins["none"].values())
+                if n > busiest:
+                    busiest, a_s = n, float(start)
+
+        def view(lo: float, hi: float) -> dict | None:
+            minutes = (hi - lo) / 60
+            if minutes < 1:
+                return None
+            rho = {k: {mid: round(_count(ts, lo, hi) / (cap[mid] * minutes), 3) for mid, ts in js.items()}
+                   for k, js in joins.items()}
+            total = sum(_count(ts, lo, hi) for ts in joins["none"].values())
+            return {"start": self.clock(lo), "end": self.clock(hi), "minutes": round(minutes),
+                    "balanced": round(total / (sum(cap.values()) * minutes), 3), **rho}
+
+        return {"window_min": UTIL_WINDOW_MIN, "capacity": cap,
+                "rush": view(a_s, min(now_s, a_s + win_s)), "meal": view(0.0, now_s)}
+
     def clock(self, t_s: float) -> str:
         hh, mm = map(int, self.slot.start.split(":"))
         minutes = hh * 60 + mm + int(t_s // 60)
@@ -430,6 +461,7 @@ class Demo:
                 },
                 "worlds": {k: _world(w, self.history[k]) for k, w in self.worlds.items()},
                 "arrivals": self._arrivals_view(adv),
+                "util": self._util_view(),
                 "advice": {"text": snap.advice, "headline": snap.headline.mess_id, "halls": halls},
                 "doors": doors,
                 "trays": trays,
@@ -449,15 +481,27 @@ def _write_atomic(path: Path, data: bytes) -> None:
         raise
 
 
-WAIT_WINDOW_S = 300  # the wait chart averages over students who got food in the last 5 min
+WAIT_WINDOW_S = 300  # the wait chart averages over students who sat down in the last 5 min
+UTIL_WINDOW_MIN = 30  # the utilisation chart's "rush" is the busiest 30 minutes
 
 
-def _recent_wait(w: Simulation) -> float:
-    """Average queue wait (scanner + serving station + seat) of students who got food in the last 5 minutes."""
+def _recent_wait(w: Simulation) -> float | None:
+    """Average queue wait (scanner + serving station + seat) of students who sat down with food
+    in the last 5 minutes. None when nobody sat down in that window (a gap, not a zero wait)."""
     lo = w.t - WAIT_WINDOW_S
     waits = [s.queue_wait_min for s in reversed(w.students)
              if s.seated_at is not None and lo < s.seated_at <= w.t]
-    return round(mean(waits), 1) if waits else 0.0
+    return round(mean(waits), 1) if waits else None
+
+
+def _join_times(w: Simulation, mess_id: str) -> list[float]:
+    """When each student joined the serving queue at this mess (plate in hand), up to now, sorted."""
+    return sorted(s.queue_join for s in w.students
+                  if s.hall == mess_id and s.queue_join is not None and s.queue_join <= w.t)
+
+
+def _count(times: list[float], a_s: float, b_s: float) -> int:
+    return bisect_right(times, b_s) - bisect_right(times, a_s)
 
 
 def _waiting(w: Simulation) -> int:

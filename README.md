@@ -87,6 +87,15 @@ that device has to wait 5 minutes.
 * **When students arrive** (panel): the simulated lunch's arrival curve built from the department lunch breaks
   (`[[simulation.slot.group]]` in `config/default.toml`), the arrivals so far, the serving capacity (40/min both
   messes, 20/min Central), and a bar per department lit while its break is on. Hover a point to see who is on break.
+* **People waiting in line** (chart): a head count every 30 s of meal time, both messes together, of everyone
+  in a queue: outside for the scanner, scanned in and waiting for a serving station, or waiting for a seat.
+* **Wait time** (chart): per student, time spent queueing (scanner queue + serving-station queue + seat queue;
+  not the time being scanned, served or walking the food line), averaged over students who sat down in the
+  previous 5 minutes. It trails the line above by about one wait; a gap means nobody sat down in that window.
+* **Serving-station utilisation** (bar chart): ρ = λ ÷ (c·μ) per mess, without vs with the screens, for the
+  busiest 30 minutes (same clock time for all bars) or the whole meal so far. λ counts students joining the food
+  line; c·μ is the mess's serving capacity. The dashed line is total demand ÷ total capacity, where both messes
+  would sit if the load were shared perfectly.
 
 ### Live spreadsheet
 

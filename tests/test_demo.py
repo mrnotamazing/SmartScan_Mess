@@ -237,3 +237,29 @@ def test_dashboard_shows_department_breaks_and_arrivals():
     assert sum(r for _m, r in a["expected"]) * 5 == pytest.approx(2960, rel=0.03)
     header, rows = demo.sheet("advised", 30)["summary_header"], demo.sheet("advised", 30)["summary"]
     assert header[-1] == "On lunch break" and "TAPMI" in rows[-1][-1] and rows[0][-1] == ""
+
+
+def test_utilisation_bars_show_load_balancing():
+    demo = Demo(load_config(), "lunch", 0.6, seed=2, speed=60)
+    demo.seek(demo.max_t)
+    u = demo.state()["util"]
+    rush, meal = u["rush"], u["meal"]
+    assert rush["minutes"] == u["window_min"] == 30 and meal["minutes"] == 180
+    # Same students in both worlds, so the combined ("balanced") load is the same.
+    for v in (rush, meal):
+        cap = u["capacity"]
+        total = lambda k: sum(v[k][m] * cap[m] for m in cap)  # noqa: E731
+        assert total("advised") == pytest.approx(total("none"), rel=0.02)
+    # Without the screens Central is overloaded at the rush and Munch is mostly idle;
+    # the screens move both toward the balanced level.
+    assert rush["none"]["A"] > 1.0 > rush["balanced"] > rush["none"]["B"]
+    assert rush["none"]["A"] > rush["advised"]["A"] and rush["none"]["B"] < rush["advised"]["B"]
+    assert abs(rush["advised"]["A"] - rush["advised"]["B"]) < abs(rush["none"]["A"] - rush["none"]["B"])
+
+
+def test_wait_chart_leaves_a_gap_when_nobody_sat_down():
+    demo = Demo(load_config(), "lunch", 0.6, seed=2, speed=60)
+    demo.seek(demo.max_t)
+    hist = demo.state()["worlds"]["none"]["history"]
+    assert hist[0][2] is None and hist[-1][2] is None  # before anyone eats, after everyone has sat
+    assert any(p[2] is not None and p[2] > 0 for p in hist)
