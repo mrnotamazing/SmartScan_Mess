@@ -9,4 +9,5 @@ results/*
 !results/scenarios.json
 !results/payoff.json
 !results/reconcile.json
+!results/queue_capacity.json
 live_sheets/
