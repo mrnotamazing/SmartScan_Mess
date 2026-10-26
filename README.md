@@ -292,10 +292,10 @@ python tools/build_queue_capacity_workbook.py  # -> docs/Final_Queue_Capacity_Lo
 ## Results (default config)
 
 **Measured:** lunch 11:30–14:30; 2,960 students (= plates served); seats 900 / 492; 2 serving stations and 1
-face scanner per mess; ~2,360 eat at Central and ~600 at Munch without screens (80/20); ~20 min scan to leaving on a normal day; refill 30 min after the "running low" call
+face scanner per mess; ~2,360 eat at Central and ~600 at Munch without screens (80/20); ~29 min scan to leaving on a normal day (with time at the table); refill 30 min after the "running low" call
 if it must be made, 10–14 min if already made.
 **Group estimates (the four stages):** scan + collect a plate 30–45 s; collect food 1–2 min plus the queue (up to
-~15 min in the rush); eat 14–18 min; dispose of the plate 1–2 min; total 17–35 min door to leaving. The next
+~15 min in the rush); eat 14–18 min, then stay at the table ~9 min (a seat is held ~25 min, which is why the hall looks full); dispose of the plate 1–2 min; total 17–35 min door to leaving. The next
 batch is already made ~70% of the time.
 **Assumed:** ~10 students/min per serving station (it must be about this fast for
 2 stations to serve ~2,360 Central students, mostly in the two hours of lunch breaks); 2 s per face scan (of the 30–45 s) and ~6 s at the serving station (of the 1–2 min);
@@ -311,7 +311,8 @@ in the field visit. `[[simulation.slot.group]]` in `config/default.toml`; workbo
 **A visit has four stages** (simulator): scan + collect a plate → queue for a serving station, served,
 the rest of food collection → eat at a table (wait for a seat if full) → dispose of the plate. **Queue wait** =
 time queueing for the scanner, a station and a seat. **Throughput** = door to leaving. Simulated
-throughput: ~19.8 min for students who meet no queue, ~25.6 min around today's 13:17 peak (group: 17–35).
+throughput: ~28.8 min for students who meet no queue, ~34.6 min around today's 13:17 peak (group: 17–35). Peak seats in use:
+57% at Central, 38% at Munch (77% with the screens): the stations, not the seats, limit the flow.
 
 ### Four scenarios, busy day, 60% follow the screens, 20 simulated lunches each (same students)
 

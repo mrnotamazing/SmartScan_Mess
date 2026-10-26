@@ -270,7 +270,8 @@ class Hall:
 
     def _sit(self, s: Student, t: float) -> None:
         s.seated_at = t
-        s.table_left = t + self._uniform_s(self.sim.eat_min, 60.0)
+        # The seat is held while eating and for a while after (chatting, waiting for friends).
+        s.table_left = t + self._uniform_s(self.sim.eat_min, 60.0) + self.sim.linger_min * 60.0
         s.left_at = s.table_left + self._uniform_s(self.sim.dispose_min, 60.0)
         self._tie += 1
         heapq.heappush(self.seated, (s.table_left, self._tie, s))

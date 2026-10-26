@@ -33,7 +33,8 @@ SIM = CFG.simulation
 SIM_PLATE = f"{SIM.plate_pickup_s[0]:.0f}–{SIM.plate_pickup_s[1]:.0f} s"
 SIM_LINE = f"{SIM.food_line_s[0]:.0f}–{SIM.food_line_s[1]:.0f} s"
 EAT_MEAN = sum(SIM.eat_min) / 2
-TURN_T = EAT_MEAN + 0.2
+SEAT_HOLD = EAT_MEAN + SIM.linger_min
+TURN_T = SEAT_HOLD + 0.2
 
 
 FONT = "Aptos Narrow"
@@ -227,7 +228,7 @@ ROWS = [
     ("students", "Students per lunch (both messes)", LUNCH.expected_students, "students", "Measured", "Plates served (Phase 1)", "#,##0"),
     ("hA", "Share who eat at Central by habit (no screens)", round(SIM.habit_share["A"], 3), "share", "Measured", "Group: ~2,360 Central, ~600 Munch", "0.0%"),
     ("window", "Lunch window", LUNCH.duration_min, "minutes", "Measured", "11:30–14:30", "0"),
-    ("visit_lo", "Total time in the mess: low (quiet)", 17, "minutes", "Group estimate", "Group: 17–35 min door to leaving, depending on the rush", "0"),
+    ("visit_lo", "Total time in the mess: low (quiet)", 17, "minutes", "Group estimate", "Group: 17–35 min door to leaving, depending on the rush (measured through small sample)", "0"),
     ("visit_hi", "Total time in the mess: high (rush)", 35, "minutes", "Group estimate", "As above", "0"),
     ("lag_m", "Arrival lag after a department's lunch break starts: mean", LUNCH.lag_mean_min, "minutes", "Calibrated",
      "Fits the 17–35 min visit and ~15 min peak delay; department breaks from the group's timetable", "0"),
@@ -235,18 +236,20 @@ ROWS = [
     ("sec", "Stage 1 · Scan & collect plate (30–45 s)"),
     ("scanners", "Face scanners per mess", A_.scanners, "scanners", "Measured", "Group observation", "0"),
     ("scan_s", "Time per face scan", A_.scan_time_s, "seconds", "Assumed", "Stopwatch at the scanner", "0.0"),
-    ("plate", f"Collect a plate after the scan ({SIM_PLATE})", sum(SIM.plate_pickup_s) / 2, "seconds", "Group estimate", "Group: scan + plate takes 30–45 s", "0"),
+    ("plate", f"Collect a plate + scan (plate {SIM_PLATE}; 30–45 s with the scan)", sum(SIM.plate_pickup_s) / 2, "seconds", "Group estimate", "Group: scan + plate takes 30–45 s", "0"),
     ("sec", "Stage 2 · Collect food (1–2 min, plus the queue)"),
     ("c", "Serving stations per mess", A_.counters, "stations", "Measured", "Group observation", "0"),
     ("mu", "Service rate per station", A_.service_rate_per_counter_per_min, "students/min", "Assumed", "≈6 s per student; stopwatch 20–30 students", "0.0"),
     ("cv", "Variability of serving time (coefficient of variation)", SIM.service_cv, "ratio", "Assumed", "1.0 would be exponential, as M/M/c assumes", "0.0"),
     ("line", f"Rest of food collection after the station ({SIM_LINE})", sum(SIM.food_line_s) / 2, "seconds", "Group estimate",
      "Group: collecting food takes 1–2 min without a queue (serving ≈ 6 s + the rest); the queue adds up to ~15 min in the rush", "0"),
-    ("sec", "Stage 3 · Eat (14–18 min)"),
+    ("sec", "Stage 3 · Eat and stay at the table (seat held ~25 min)"),
     ("seats_A", "Seats: Central CT", A_.seats, "seats", "Measured", "CT manager", "#,##0"),
     ("seats_B", "Seats: Munch Mess", B_.seats, "seats", "Measured", "CT manager", "#,##0"),
     ("eat_lo", "Eating time: low", SIM.eat_min[0], "minutes", "Group estimate", "Group: 14–18 min", "0"),
     ("eat_hi", "Eating time: high", SIM.eat_min[1], "minutes", "Group estimate", "As above", "0"),
+    ("linger", "Staying at the table after eating (chatting, waiting for friends)", SIM.linger_min, "minutes", "Group estimate",
+     "The seat stays taken: eating 14–18 + ~9 = ~25 min per seat, which is why the hall looks full", "0"),
     ("changeover", "Seat changeover (next diner sits after the last leaves)", 0.2, "minutes", "Assumed",
      "Students clear their own plate; no table cleaning delays between diners as such. Used only in the seat-turnover formulas "
      "(a small safety margin); the simulation frees a seat as soon as the diner gets up", "0.0"),
@@ -452,7 +455,7 @@ r = var_block(r + 1, "3. Biometric scanner at Central, 13:10–13:20 today (M/M/
 ], "One scanner per mess: the simplest queue, a single server.")
 r = var_block(r + 1, "4. Seats at Munch Mess (capacity)", [
     ("N", "Seats", "Seats at Munch Mess", "measured", f"={REF['seats_B']}", "seats", "0"),
-    ("T", "Seat turnover time", "Minutes one diner holds a seat, plus changeover", "eating time + changeover", f"=({REF['eat_lo']}+{REF['eat_hi']})/2+{REF['changeover']}", "min", "0.0"),
+    ("T", "Seat turnover time", "Minutes one diner holds a seat, plus changeover", "eating + staying + changeover", f"=({REF['eat_lo']}+{REF['eat_hi']})/2+{REF['linger']}+{REF['changeover']}", "min", "0.0"),
     ("Turns", "Turnover rate", "Diners one seat serves per hour", "60 ÷ T", "=60/{T}", "per hour", "0.0"),
     ("λmax", "Seating capacity", "Most students per minute the seats can take (Little's Law rearranged)", "λmax = N ÷ T", "={N}/{T}", "students/min", "0.0"),
 ], "Little's Law also measures capacity: the seats can absorb N ÷ T students a minute.")
@@ -627,7 +630,7 @@ Q3 = "Q3 Seats & disposal"
 ws = sheet(Q3, "Seats and disposal", "Each seat is a server and one meal is its service (M/G/c with c = seats); disposal never queues (M/G/∞).",
            [24, 13, 8, 12, 12, 9, 11, 22, 13, 13, 13, 18])
 section(ws, "A4", "Summary")
-heads(ws, 5, 1, ["Scenario", "Mess", "Peak seat ρ", "Peak seats in use", "Seats", "Average eating time (min)"])
+heads(ws, 5, 1, ["Scenario", "Mess", "Peak seat ρ", "Peak seats in use", "Seats", "Average seat time (min)"])
 TOP3 = 20
 section(ws, f"A{TOP3 - 1}", "Slot by slot")
 heads(ws, TOP3, 1, ["Scenario", "Mess", "Slot", "λ sitting down (/min)", "Eating time W (min)", "Seats c", "ρ = λW ÷ c", "Stable?",
@@ -641,7 +644,7 @@ for w in WORLD:
             put(ws, f"B{r}", MESS[m]).border = LINE
             put(ws, f"C{r}", clock(b * 10)).border = LINE
             put(ws, f"D{r}", f"={sd(w, m, 'seat', b, 'E')}", kind="link", fmt="0.0")
-            put(ws, f"E{r}", f"=IF({sd(w, m, 'seat', b, 'G')}>0,{sd(w, m, 'seat', b, 'G')},({REF['eat_lo']}+{REF['eat_hi']})/2)", kind="link", fmt="0.0")
+            put(ws, f"E{r}", f"=IF({sd(w, m, 'seat', b, 'G')}>0,{sd(w, m, 'seat', b, 'G')},({REF['eat_lo']}+{REF['eat_hi']})/2+{REF['linger']})", kind="link", fmt="0.0")
             put(ws, f"F{r}", f"={seats}", kind="link", fmt="#,##0")
             put(ws, f"G{r}", f"=D{r}*E{r}/F{r}", kind="formula", fmt="0%")
             put(ws, f"H{r}", f'=IF(D{r}=0,"no arrivals",IF(G{r}<1,"stable: seats free","over capacity"))', kind="formula")
@@ -667,9 +670,10 @@ for k, (w, m) in enumerate([(w, m) for w in WORLD for m in MESS]):
     put(ws, f"F{rr}", f"={wavg_expr(w, m, 'seat', 'G')}", kind="link", fmt="0.0")
     for col in "CDEF":
         ws[f"{col}{rr}"].alignment = Alignment(horizontal="center", vertical="center")
-note(ws, "A11", "Seats are never the constraint. Even in the surge, arrivals × eating time stays far below the 900 seats at Central and 492 at "
-     "Munch, so nobody waits for a seat. Little's Law fits well in the middle of the lunch; at the edges it drifts because a meal (about "
-     f"{EAT_MEAN:.0f} minutes) is longer than a 10-minute slot. Disposal never queues.", "F16")
+note(ws, "A11", f"The hall gets busy but the seats still do not run out. A seat is held about {SEAT_HOLD:.0f} minutes (eating plus staying at "
+     "the table), and the stations let at most 20 students a minute through, so at most about 20 × 25 = 500 seats are taken at once: over half of "
+     "Central's 900 at the peak, plus everyone standing in the food line. Nobody waits for a seat. Little's Law fits well in the middle of the lunch; at the edges it drifts because a meal (about "
+     f"{SEAT_HOLD:.0f} minutes at the table) is longer than a 10-minute slot. Disposal never queues.", "F16")
 
 # =============================================================================
 # Little's Law on the whole visit
@@ -745,7 +749,7 @@ CAP = [
      lambda m, X: f"={wavg('today', m, 'scanner', 'F')}+{wavg('today', m, 'scanner', 'G')}+{REF['plate']}/60", "0.00", "Group: 30–45 s, plus any queue at the scanner"),
     ("st2", "Stage 2 · Collect food (minutes)",
      lambda m, X: f"={wavg('today', m, 'station', 'F')}+{wavg('today', m, 'station', 'G')}+{REF['line']}/60", "0.00", "Group: 1–2 min, plus the queue (up to ~15 min in the rush)"),
-    ("st3", "Stage 3 · Eat (minutes)", lambda m, X: f"={wavg('today', m, 'seat', 'F')}+{wavg('today', m, 'seat', 'G')}", "0.0", "Group: 14–18 min"),
+    ("st3", "Stage 3 · Eat and stay at the table (minutes)", lambda m, X: f"={wavg('today', m, 'seat', 'F')}+{wavg('today', m, 'seat', 'G')}", "0.0", "Group: eating 14–18 min + ~9 min staying"),
     ("st4", "Stage 4 · Dispose of plate (minutes)", lambda m, X: f"={wavg('today', m, 'disposal', 'G')}", "0.0", "Group: 1–2 min"),
     ("visit", "Total time in the mess, door to leaving (minutes)", lambda m, X: f"={wavg('today', m, 'visit', 'G')}", "0.0", "Group: 17–35 min"),
     ("sec", "Detail: queues and service times"),
@@ -754,10 +758,10 @@ CAP = [
     ("stq", "Average wait at the serving station (minutes)", lambda m, X: f"={wavg('today', m, 'station', 'F')}", "0.00", "Queue for the 2 stations"),
     ("sts", "Average serving time (minutes)", lambda m, X: f"={wavg('today', m, 'station', 'G')}", "0.00", "At the station"),
     ("stt", "Average time at the kitchen / serving station (wait + serving, minutes)", lambda m, X: f"={X('stq')}+{X('sts')}", "0.00", "Queue + service"),
-    ("eat", "Average lunch (eating) time at the table (minutes)", lambda m, X: f"={wavg('today', m, 'seat', 'G')}", "0.0", "Seat held from sitting down to getting up"),
+    ("eat", "Average time a seat is held: eating + staying (minutes)", lambda m, X: f"={wavg('today', m, 'seat', 'G')}", "0.0", "Seat held from sitting down to getting up"),
     ("sec", "2. Seat turnover"),
     ("seats", "Seats", lambda m, X: f"={REF['seats_A'] if m == 'A' else REF['seats_B']}", "#,##0", "Measured (Munch recounted: 492)"),
-    ("turn", "Seat turnover time T (minutes per diner)", lambda m, X: f"={X('eat')}+{REF['changeover']}", "0.0", "Eating time + changeover (0.2 min)"),
+    ("turn", "Seat turnover time T (minutes per diner)", lambda m, X: f"={X('eat')}+{REF['changeover']}", "0.0", "Seat held (eating + staying) + changeover (0.2 min)"),
     ("turns_h", "Seat turnover rate (diners per seat per hour)", lambda m, X: f"=60/{X('turn')}", "0.00", "60 ÷ T"),
     ("seatcap", "Seating capacity (students per minute)", lambda m, X: f"={X('seats')}/{X('turn')}", "0.0", "Seats ÷ T (Little's Law: λmax = L ÷ W)"),
     ("seatcap_l", "Seating capacity over the lunch window (students)", lambda m, X: f"={X('seats')}*{REF['window']}/{X('turn')}", "#,##0", "Seats × 180 ÷ T"),
@@ -820,8 +824,9 @@ note(ws, f"A{CAP_LAST + 2}", f"A seat turns over about every {TURN_T:.1f} minute
      "and the seats. Total capacity is not the problem: at the peak Central gets far more than its 20 a minute while Munch runs well under, "
      "so the answer is balancing the load, not adding seats. Averages hide this: over the whole lunch Central's stations look only about two-thirds used, "
      "yet in the busiest 10 minutes they are far over capacity. Sizing for the peak at the target utilisation, Central alone would need more stations "
-     "today; with the screens the peak is shared, so it needs fewer. Seats can never fill: the stations let at most 20 students a minute through, "
-     "and 20 × ~16 min of eating ≈ 320 seats, well under 900 and 492.", f"D{CAP_LAST + 7}")
+     "today; with the screens the peak is shared, so it needs fewer. The hall looks full because a seat is held about 25 minutes (eating plus "
+     "staying at the table) and the food line stands inside too, but the seats cannot all fill: the stations let at most 20 students a minute "
+     "through, and 20 × 25 min ≈ 500 seats.", f"D{CAP_LAST + 7}")
 bc = BarChart()
 bc.add_data(Reference(ws, min_col=2, max_col=3, min_row=CROW["cap_scan"], max_row=CROW["cap_seat"]), titles_from_data=False)
 bc.set_categories(Reference(ws, min_col=1, min_row=CROW["cap_scan"], max_row=CROW["cap_seat"]))
@@ -841,7 +846,7 @@ SHORT = {"Today": "Today", "freshers": "Freshers rule", "fixed 40% to": "Fixed 4
          "everyone follows": "Screens (100%)"}
 ws = sheet(LB, "Load balancing", "How Smart Scan decides when to send a student to the other mess, and why a fixed 'department X eats at mess Y' rule does not work.",
            [54, 14, 14, 14, 14, 14, 14, 13, 13], group="balance")
-section(ws, "A4", "1. How the routing works (every 5 seconds)")
+section(ws, "A4", "1. How the routing works (every 5 seconds/or after every scan)")
 STEPS = [
     "Scans in: every face scan arrives with a timestamp and the mess (no face data, only id + time + mess).",
     "Arrival rate: λ̂ for each mess = scans in the last 5 minutes ÷ 5.",
